@@ -1,10 +1,10 @@
 # Harmony Jekyll theme general configurations
 
 # Base URL
-baseurl: /me
+baseurl:
 
 # Site live URL
-url: http://3manuek.com
+url: http://www.3manuek.com
 
 # Localhost
 #url: http://127.0.0.1:4000
