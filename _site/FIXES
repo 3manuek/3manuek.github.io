@@ -1,0 +1,10 @@
+
+```
+kramdown was missing from the requirements 
+```
+
+Loading locally:
+
+```
+bundle exec jekyll serve --watch 
+```
