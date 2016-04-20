@@ -3,6 +3,7 @@
 ## Credits
 
 > Author: Emanuel Calvo
+>
 > Company: Pythian
 >
 > Thanks to Valerie Parham-Thompson @ Pythian and Daniel Prince @ Oracle.
@@ -18,8 +19,8 @@ over InnoDB engine. Although the question is not answered in the current article
 I came up with the conclusion that FTS is sometimes misunderstood.
 
 The point of this _article_ is to show dynamically how the search algorithms work,
-using non-fictional data (data sources were downloaded from www.gutenberg.org
-project) within an easy interface.  
+using non-fictional data (data sources were downloaded from [Gutenberg project](www.gutenberg.org)
+ ) within an easy interface.  
 
 In order to show the effects off the field sizes over the query expansion algorithm,
 you will see two main tables (bookContent and bookContentByLine) both containing
