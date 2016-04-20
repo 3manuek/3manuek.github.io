@@ -1,4 +1,4 @@
-#[InnoDB's Full Text Search overview (with Shiny/R)](https://3manuek.shinyapps.io/FTS_Innodb/)
+# [InnoDB's Full Text Search overview (with Shiny/R)](https://3manuek.shinyapps.io/FTS_Innodb/)
 
 ## Credits
 
