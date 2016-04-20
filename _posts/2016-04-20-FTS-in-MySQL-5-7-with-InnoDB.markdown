@@ -1,3 +1,12 @@
+---
+layout: post
+title:  "MySQL 5.7 InnoDB's Full Text Search overview."
+date:   2016-04-20
+description: MySQL 5.7 InnoDB's Full Text Search overview with a dynamic application.
+categories:
+- blog
+permalink: fts-innodb
+---
 
 Main application:
 [InnoDB's Full Text Search overview (with Shiny/R)](https://3manuek.shinyapps.io/FTS_Innodb/)
