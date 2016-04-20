@@ -9,7 +9,7 @@
 >
 > Repository available at [Github](https://github.com/3manuek/fts_article).
 
-For the whole article and the application https://3manuek.shinyapps.io/FTS_Innodb/ .
+For the whole article and the Shinyapp application is available [here](https://3manuek.shinyapps.io/FTS_Innodb/).
 
 ## Some initial thoughts
 
