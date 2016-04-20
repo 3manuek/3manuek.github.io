@@ -27,7 +27,7 @@ harmony:
     url: http://3manuek.github.io
 
   # Google Analytics key, leave blank to ignore
-  google_analytics_key: 
+  google_analytics_key:
 
   # Profile links, leave blank to ignore
   social:
@@ -40,7 +40,7 @@ harmony:
     #dribble: gayan
     #pinterest:
   # Toggle disclaimer in footer
-  show_disclaimer: true
+  show_disclaimer: false
 
 # Conversion / Build settings
 markdown:    kramdown
