@@ -2,7 +2,7 @@
 layout: post
 title:  "Multi source data injection to Postgres RDS with encryption and FTS support"
 date:   2016-03-23
-description: Multi source data injection to [Postgres RDS](https://aws.amazon.com/rds/postgresql/) with encryption and FTS support.
+description: "Multi source data injection to [Postgres RDS]() with encryption and FTS support."
 categories:
 - blog
 permalink: rds-hipaa-fts
@@ -19,12 +19,12 @@ permalink: rds-hipaa-fts
 > This is something that is related for [HIPAA](https://en.wikipedia.org/wiki/Health_Insurance_Portability_and_Accountability_Act) compliant.
 
 
-## [KMS](http://aws.amazon.com/kms/)
+## [KMS](http://aws.amazon.com/kms/) - [RDS](https://aws.amazon.com/rds/postgresql/)
 
-: The POC on this article was developed before the releasing of the Key Management service
+The POC on this article was developed before the releasing of the Key Management service
 for RDS.
 
-: I totally discourage to use the current approach for encrypting data.
+I totally discourage to use the current approach for encrypting data. _Use REST._
 
 
 ## Introduction
