@@ -19,7 +19,7 @@ permalink: rds-hipaa-fts
 > This is something that is related for [HIPAA](https://en.wikipedia.org/wiki/Health_Insurance_Portability_and_Accountability_Act) compliant.
 
 
-## [KMS](http://aws.amazon.com/kms/) - [RDS](https://aws.amazon.com/rds/postgresql/)
+## [KMS](http://aws.amazon.com/kms/)/[RDS](https://aws.amazon.com/rds/postgresql/)
 
 The POC on this article was developed before the releasing of the Key Management service
 for RDS.
