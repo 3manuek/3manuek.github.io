@@ -8,13 +8,13 @@
         <meta name="description" content="Emanuel Calvo is a Database Architect and Consultant. https://github.com/3manuek/
 ">
         <link rel="canonical" 
-        href="http://127.0.0.1:4000/me/blog/">
+        href="http://127.0.0.1:4000/blog/">
         
         <!-- Harmony styles -->
-        <link rel="stylesheet" type="text/css" href="/me/assets/css/main.css">
+        <link rel="stylesheet" type="text/css" href="/assets/css/main.css">
 
         <!-- Modernizr js -->
-        <script async src="/me/assets/js/modernizr.js"></script>    
+        <script async src="/assets/js/modernizr.js"></script>    
 
         <!-- IE Fixes -->
         <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -27,24 +27,33 @@
     <body class="theme-base-01">
         <header class="main-header">
             <div class="wc-container">
-                <h1><a href="/me/">3manuek's Hub.</a></h1>
-                <h2>Databases and service developing.</h2>
+                <h1><a href="/">3manuek's Hub.</a></h1>
+                <h2>Databases, posts and service developing.</h2>
                 <ul>
 	<li>
-		<a href="http://127.0.0.1:4000/me/about">About</a><span>/</span>
+		<a href="http://127.0.0.1:4000/about">About</a><span>/</span>
 	</li>
 	<li>
-		<a href="http://127.0.0.1:4000/me/blog">Blog</a><span>/</span>
+		<a href="http://127.0.0.1:4000/blog">Blog</a><span>/</span>
 	</li>
+	<li>
+		<a href="http://127.0.0.1:4000/postgresql">PostgreSQL</a><span>/</span>
+	</li>
+	<li>
+		<a href="http://127.0.0.1:4000/mysql">MySQL</a><span>/</span>
+	</li>
+	<!--
 	
 	<li>
-		<a title="3manuek on Github" 
+		<a title="3manuek on Github"
 			href="https://github.com/gayanvirajith/harmony" target="_blank">
 			Download
 		</a><span>/</span>
 	</li>
 	
-</ul>                
+  -->
+</ul>
+                
             </div>
         </header>
         <div class="page-content wc-container">
@@ -53,12 +62,16 @@
   	
   	
     	
-    		<h5>2014</h5>
+    		<h5>2016</h5>
     		<ul class="posts">
     		 
   		
-    <li><a href="/me/first-post">Just a first post to avoid an empty site :)</a></li>
-
+    <li><a href="/fts-innodb">MySQL 5.7 InnoDB's Full Text Search overview.</a></li>
+   
+  	
+  	
+    <li><a href="/rds-hipaa-fts">Multi source data injection to Postgres RDS with encryption and FTS support</a></li>
+   
 
 </ul></div>
 
@@ -67,9 +80,9 @@
                 <div class="column one">
                     <h6>Few more links</h6>
 <ul class="menu">
-    <li><a href="http://127.0.0.1:4000/me/about">About</a></li>
-    <li><a href="http://127.0.0.1:4000/me/blog">Blog</a></li>
-    <li><a href="http://127.0.0.1:4000/me/faq">Help / FAQ</a></li>    
+    <li><a href="http://127.0.0.1:4000/about">About</a></li>
+    <li><a href="http://127.0.0.1:4000/blog">Blog</a></li>
+    <li><a href="http://127.0.0.1:4000/faq">Help / FAQ</a></li>    
 </ul>		                    
                 </div>
                 <div class="column two">
@@ -113,8 +126,6 @@
             </div>
             <p class="wc-container disclaimer">
                 
-	Made by <a href="http://gayan.me" target="_blank">Gayan Virajith</a> For everyone.      
-
 Powered by <a href="http://jekyllrb.com" target="_blank">Jekyll</a>
             </p>
         </footer>
@@ -133,24 +144,10 @@ Powered by <a href="http://jekyllrb.com" target="_blank">Jekyll</a>
         <!-- jQuery -->
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         <!-- When no internet load JQuery from local -->
-        <script>window.jQuery || document.write('<script src="/me/assets/js/jquery.min.js"><\/script>')</script>
+        <script>window.jQuery || document.write('<script src="/assets/js/jquery.min.js"><\/script>')</script>
         <!-- Site js -->
-        <script src="/me/assets/js/all.js"></script>
+        <script src="/assets/js/all.js"></script>
         <!-- Google analytics  -->
         
-<script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-xxxx-x']);
-  _gaq.push(['_trackPageview']);
-
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-
-</script>
-
     </body>        
 </html>

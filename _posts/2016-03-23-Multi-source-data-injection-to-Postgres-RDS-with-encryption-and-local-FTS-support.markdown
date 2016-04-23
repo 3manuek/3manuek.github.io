@@ -5,6 +5,8 @@ date:   2016-03-23
 description: "Multi source data injection to [Postgres RDS]() with encryption and FTS support."
 categories:
 - blog
+- PostgreSQL
+- RDS
 permalink: rds-hipaa-fts
 ---
 
@@ -61,7 +63,7 @@ FROM generate_series(1,10000);
 ```
 
 There are a lot of things and functions you can combine from the `pgcrypto` package
-(you will see that the repostory contemplates all of them).
+(you will see that the repository contemplates all of them).
 I will try to post another blog post regarding this kind of benchmarks. In the
 meantime, this query should be enough to have a rough idea of the performance difference
 between RDS instance vCPU and your server CPUs.

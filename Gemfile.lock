@@ -21,10 +21,10 @@ GEM
       multipart-post (>= 1.2, < 3)
     ffi (1.9.10)
     gemoji (2.1.0)
-    github-pages (71)
+    github-pages (73)
       RedCloth (= 4.2.9)
       github-pages-health-check (= 1.1.0)
-      jekyll (= 3.0.3)
+      jekyll (= 3.0.4)
       jekyll-coffeescript (= 1.0.1)
       jekyll-feed (= 0.5.1)
       jekyll-gist (= 1.4.0)
@@ -54,7 +54,7 @@ GEM
       activesupport (>= 2, < 5)
       nokogiri (>= 1.4)
     i18n (0.7.0)
-    jekyll (3.0.3)
+    jekyll (3.0.4)
       colorator (~> 0.1)
       jekyll-sass-converter (~> 1.0)
       jekyll-watch (~> 1.1)
@@ -92,7 +92,7 @@ GEM
     json (1.8.3)
     kramdown (1.10.0)
     liquid (3.0.6)
-    listen (3.0.6)
+    listen (3.1.1)
       rb-fsevent (>= 0.9.3)
       rb-inotify (>= 0.9.7)
     mercenary (0.3.6)
@@ -133,7 +133,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  github-pages (= 71)
+  github-pages
   json
   kramdown
   pygments.rb
