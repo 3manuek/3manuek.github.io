@@ -4,10 +4,10 @@
 baseurl:
 
 # Site live URL
-#url: http://www.3manuek.com
+url: http://www.3manuek.com
 
 # Localhost
-url: http://127.0.0.1:4000
+#url: http://127.0.0.1:4000
 
 # Harmony theme configuration. Please change accordingly.
 harmony:
