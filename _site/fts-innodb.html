@@ -151,8 +151,9 @@ set global innodb_ft_aux_table = ‘ftslab/bookContentByLine’;</p>
      LIMIT 10 ;
 ```</p>
 
-<p>Result:
-<code>
+<p>Result:</p>
+
+<p><code>
 +-----------------------------------------------------------------------------+--------+-----+--------+--------+
 |content                                                                      | bookid | pos | QERank |BoolRank|
 +-----------------------------------------------------------------------------+--------+-----+--------+--------+
@@ -206,12 +207,14 @@ SET GLOBAL innodb_ft_aux_table = ‘ftslab/bookContent’;</p>
           GROUP BY FTS_DOC_ID
           ORDER BY QERank DESC
           LIMIT 10 ;
-<code>
-Result:
-</code>
-+——–+————+—————–+——–+————-+——-+
+```</p>
+
+<p>Result:</p>
+
+<p><code>
++--------+------------+-----------------+--------+-------------+-------+
 | bookid | FTS_DOC_ID | positions       | QERank | BooleanRank | len   |
-+——–+————+—————–+——–+————-+——-+
++--------+------------+-----------------+--------+-------------+-------+
 |  16452 |      17637 | 942,2552,9084   |  32494 |          10 | 51790 |
 |  16452 |      17827 | 31699           |  30232 |           3 | 51701 |
 |  16452 |      17761 | 667,47646       |  29517 |           7 | 50264 |
@@ -222,9 +225,9 @@ Result:
 |  16452 |      17729 | 895,16485,24034 |  23305 |          10 | 42612 |
 |  16452 |      17621 | 1765            |  19935 |           3 | 36698 |
 |  16452 |      17803 | 3942            |  17552 |           3 | 30586 |
-+——–+————+—————–+——–+————-+——-+
++--------+------------+-----------------+--------+-------------+-------+
 10 rows in set (1,88 sec)
-```</p>
+</code></p>
 
 <p>The query expansion is useful when you intend to search which entries contain
 more words that appear frequently within the search term. Having large text fields
@@ -251,8 +254,9 @@ SELECT WORD,count(*)
            limit 10;
 </code></p>
 
-<p>Result:
-<code>
+<p>Result:</p>
+
+<p><code>
 +--------+----------+
 | WORD   | count(*) |
 +--------+----------+
@@ -292,7 +296,7 @@ yet,you,your
 <p>Let’s build our filter table using both default and new entries and keeping the
 alphabetical order:</p>
 
-<p>```
+<p>```sql
 CREATE TABLE bookContentByLine_stopwords(value VARCHAR(30)) ENGINE = INNODB;</p>
 
 <p>INSERT INTO bookContentByLine_stopwords

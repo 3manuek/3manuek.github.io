@@ -5,8 +5,8 @@
     <description>Databases, posts and service developing.</description>
     <link>http://www.3manuek.com/</link>
     <atom:link href="http://www.3manuek.com/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 24 Apr 2016 18:19:02 -0300</pubDate>
-    <lastBuildDate>Sun, 24 Apr 2016 18:19:02 -0300</lastBuildDate>
+    <pubDate>Sun, 24 Apr 2016 18:29:38 -0300</pubDate>
+    <lastBuildDate>Sun, 24 Apr 2016 18:29:38 -0300</lastBuildDate>
     <generator>Jekyll v3.0.4</generator>
     
       <item>
@@ -89,8 +89,9 @@ set global innodb_ft_aux_table = ‘ftslab/bookContentByLine’;&lt;/p&gt;
      LIMIT 10 ;
 ```&lt;/p&gt;
 
-&lt;p&gt;Result:
-&lt;code&gt;
+&lt;p&gt;Result:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
 +-----------------------------------------------------------------------------+--------+-----+--------+--------+
 |content                                                                      | bookid | pos | QERank |BoolRank|
 +-----------------------------------------------------------------------------+--------+-----+--------+--------+
@@ -144,12 +145,14 @@ SET GLOBAL innodb_ft_aux_table = ‘ftslab/bookContent’;&lt;/p&gt;
           GROUP BY FTS_DOC_ID
           ORDER BY QERank DESC
           LIMIT 10 ;
-&lt;code&gt;
-Result:
-&lt;/code&gt;
-+——–+————+—————–+——–+————-+——-+
+```&lt;/p&gt;
+
+&lt;p&gt;Result:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
++--------+------------+-----------------+--------+-------------+-------+
 | bookid | FTS_DOC_ID | positions       | QERank | BooleanRank | len   |
-+——–+————+—————–+——–+————-+——-+
++--------+------------+-----------------+--------+-------------+-------+
 |  16452 |      17637 | 942,2552,9084   |  32494 |          10 | 51790 |
 |  16452 |      17827 | 31699           |  30232 |           3 | 51701 |
 |  16452 |      17761 | 667,47646       |  29517 |           7 | 50264 |
@@ -160,9 +163,9 @@ Result:
 |  16452 |      17729 | 895,16485,24034 |  23305 |          10 | 42612 |
 |  16452 |      17621 | 1765            |  19935 |           3 | 36698 |
 |  16452 |      17803 | 3942            |  17552 |           3 | 30586 |
-+——–+————+—————–+——–+————-+——-+
++--------+------------+-----------------+--------+-------------+-------+
 10 rows in set (1,88 sec)
-```&lt;/p&gt;
+&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;The query expansion is useful when you intend to search which entries contain
 more words that appear frequently within the search term. Having large text fields
@@ -189,8 +192,9 @@ SELECT WORD,count(*)
            limit 10;
 &lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;Result:
-&lt;code&gt;
+&lt;p&gt;Result:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;
 +--------+----------+
 | WORD   | count(*) |
 +--------+----------+
@@ -230,7 +234,7 @@ yet,you,your
 &lt;p&gt;Let’s build our filter table using both default and new entries and keeping the
 alphabetical order:&lt;/p&gt;
 
-&lt;p&gt;```
+&lt;p&gt;```sql
 CREATE TABLE bookContentByLine_stopwords(value VARCHAR(30)) ENGINE = INNODB;&lt;/p&gt;
 
 &lt;p&gt;INSERT INTO bookContentByLine_stopwords
