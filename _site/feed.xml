@@ -3,10 +3,10 @@
   <channel>
     <title></title>
     <description>Databases, posts and service developing.</description>
-    <link>http://127.0.0.1:4000/</link>
-    <atom:link href="http://127.0.0.1:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 24 Apr 2016 18:10:11 -0300</pubDate>
-    <lastBuildDate>Sun, 24 Apr 2016 18:10:11 -0300</lastBuildDate>
+    <link>http://www.3manuek.com/</link>
+    <atom:link href="http://www.3manuek.com/feed.xml" rel="self" type="application/rss+xml" />
+    <pubDate>Sun, 24 Apr 2016 18:19:02 -0300</pubDate>
+    <lastBuildDate>Sun, 24 Apr 2016 18:19:02 -0300</lastBuildDate>
     <generator>Jekyll v3.0.4</generator>
     
       <item>
@@ -74,7 +74,7 @@ the exact match has been found.&lt;/p&gt;
 &lt;p&gt;In the &lt;code&gt;SELECT&lt;/code&gt; clause you’ll see both FTS expressions using &lt;code&gt;NATURAL LANGUAGE&lt;/code&gt;
 with query expansion and &lt;code&gt;BOOLEAN&lt;/code&gt;modes respectively.&lt;/p&gt;
 
-&lt;p&gt;```
+&lt;p&gt;```sql
 set global innodb_ft_aux_table = ‘ftslab/bookContentByLine’;&lt;/p&gt;
 
 &lt;p&gt;SELECT  content, bookid, group_concat(it.POSITION) as pos,
@@ -86,30 +86,32 @@ set global innodb_ft_aux_table = ‘ftslab/bookContentByLine’;&lt;/p&gt;
           AND it.WORD = ‘country’
      GROUP BY FTS_DOC_ID
      ORDER BY 4 DESC
-     LIMIT 10 ;&lt;/p&gt;
+     LIMIT 10 ;
+```&lt;/p&gt;
 
-&lt;p&gt;+—————————————————————————–+——–+—–+——–+——–+
+&lt;p&gt;Result:
+&lt;code&gt;
++-----------------------------------------------------------------------------+--------+-----+--------+--------+
 |content                                                                      | bookid | pos | QERank |BoolRank|
-+—————————————————————————–+——–+—–+——–+——–+
-|”country in September, migrating into Holland, and leave their mates behind” |  15707 | 1   |    105 |      7 |
-|”unsatisfied desire to serve his country, the two prevalent enthusiasms at”  |  15707 | 33  |     98 |      7 |
-|”Language, Vol. I. p. 212. In this country, where four or five horses travel”|  15707 | 35  |     93 |      7 |
-|”inflicting immense damage upon the country. Whereupon the Florentines”      |   1232 | 36  |     89 |      7 |
-|”made for a country of twenty or thirty millionsâ€™ population, can be laid” |  39064 | 12  |     89 |      7 |
-|”The spiders of this country manufacture nets of various forms, adapted to”  |  15707 | 21  |     87 |      7 |
-|”a velvet-covered arm-chair at my head! This country is too decadent”        |  33415 | 45  |     86 |      7 |
-|”country may be ennobled, and under its auspices may be verified that”       |   1232 | 1   |     84 |      7 |
-|”name. The writer of this unpublished pamphlet sees his country in a”        |  39064 | 56  |     84 |      7 |
-|”In our country, Mr. Pennant informs us, that some quails migrate, and”      |  15707 | 8   |     83 |      7 |
-|”all the morning in passing over the adjacent country.” (Voyage to Senegal,” |  15707 | 46  |     82 |      7 |
-|”the electoral system of the country. Immediately an outcry burst out”       |  39064 | 29  |     82 |      7 |
-|”country, under a most excellent president, wherein all cities had their”    |   1232 | 1   |     81 |      7 |
-|”Though in this country horses shew little vestiges of policy, yet in the”   |  15707 | 16  |     81 |      7 |
-|”country districts. As Lucca had five gates, he divided his own country”     |   1232 | 1,63|     80 |     14 |
-+—————————————————————————–+——–+—–+——–+——–+
-15 rows in set (1,16 sec)&lt;/p&gt;
-
-&lt;p&gt;```&lt;/p&gt;
++-----------------------------------------------------------------------------+--------+-----+--------+--------+
+|&quot;country in September, migrating into Holland, and leave their mates behind&quot; |  15707 | 1   |    105 |      7 |
+|&quot;unsatisfied desire to serve his country, the two prevalent enthusiasms at&quot;  |  15707 | 33  |     98 |      7 |
+|&quot;Language, Vol. I. p. 212. In this country, where four or five horses travel&quot;|  15707 | 35  |     93 |      7 |
+|&quot;inflicting immense damage upon the country. Whereupon the Florentines&quot;      |   1232 | 36  |     89 |      7 |
+|&quot;made for a country of twenty or thirty millionsâ€™ population, can be laid&quot; |  39064 | 12  |     89 |      7 |
+|&quot;The spiders of this country manufacture nets of various forms, adapted to&quot;  |  15707 | 21  |     87 |      7 |
+|&quot;a velvet-covered arm-chair at my head! This country is too decadent&quot;        |  33415 | 45  |     86 |      7 |
+|&quot;country may be ennobled, and under its auspices may be verified that&quot;       |   1232 | 1   |     84 |      7 |
+|&quot;name. The writer of this unpublished pamphlet sees his country in a&quot;        |  39064 | 56  |     84 |      7 |
+|&quot;In our country, Mr. Pennant informs us, that some quails migrate, and&quot;      |  15707 | 8   |     83 |      7 |
+|&quot;all the morning in passing over the adjacent country.&quot; (Voyage to Senegal,&quot; |  15707 | 46  |     82 |      7 |
+|&quot;the electoral system of the country. Immediately an outcry burst out&quot;       |  39064 | 29  |     82 |      7 |
+|&quot;country, under a most excellent president, wherein all cities had their&quot;    |   1232 | 1   |     81 |      7 |
+|&quot;Though in this country horses shew little vestiges of policy, yet in the&quot;   |  15707 | 16  |     81 |      7 |
+|&quot;country districts. As Lucca had five gates, he divided his own country&quot;     |   1232 | 1,63|     80 |     14 |
++-----------------------------------------------------------------------------+--------+-----+--------+--------+
+15 rows in set (1,16 sec)
+&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;The noise generated by the query expansion is expected and described in the official documentation &lt;a href=&quot;https://dev.mysql.com/doc/refman/5.7/en/fulltext-query-expansion.html&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
@@ -117,19 +119,21 @@ set global innodb_ft_aux_table = ‘ftslab/bookContentByLine’;&lt;/p&gt;
 extension. Remember, this is expected.&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;
-| &quot;country districts. As Lucca had five gates, he divided his own country&quot; |   1232 | 1,63 |     80 |       14 |
+Text: &quot;country districts. As Lucca had five gates, he divided his own country&quot;
+bookid: 1232
+pos: 1,63
+QERank: 80
+BoolRank: 14
 &lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;This is even worser when using large sentences. In the example bellow you will see the same query, against the table
 storing by paragraph. The boolean rank shows some of the entries way above others, however the query extension
 locates at the top records that not necessarily has a lot of exact matches.&lt;/p&gt;
 
-&lt;p&gt;```&lt;/p&gt;
+&lt;p&gt;```sql
+SET GLOBAL innodb_ft_aux_table = ‘ftslab/bookContent’;&lt;/p&gt;
 
-&lt;p&gt;(ftslab) &amp;gt; set global innodb_ft_aux_table = ‘ftslab/bookContent’;
-Query OK, 0 rows affected (0,00 sec)&lt;/p&gt;
-
-&lt;p&gt;(ftslab) &amp;gt; SELECT bookid, FTS_DOC_ID,
+&lt;p&gt;SELECT bookid, FTS_DOC_ID,
                 group_concat(it.POSITION) as positions,
                 round(MATCH(content) AGAINST (“country” IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION)) as QERank,
                 round(MATCH(content) AGAINST (“country” IN BOOLEAN MODE)) as BooleanRank,
@@ -139,9 +143,11 @@ Query OK, 0 rows affected (0,00 sec)&lt;/p&gt;
               AND it.WORD = ‘country’
           GROUP BY FTS_DOC_ID
           ORDER BY QERank DESC
-          LIMIT 10 ;&lt;/p&gt;
-
-&lt;p&gt;+——–+————+—————–+——–+————-+——-+
+          LIMIT 10 ;
+&lt;code&gt;
+Result:
+&lt;/code&gt;
++——–+————+—————–+——–+————-+——-+
 | bookid | FTS_DOC_ID | positions       | QERank | BooleanRank | len   |
 +——–+————+—————–+——–+————-+——-+
 |  16452 |      17637 | 942,2552,9084   |  32494 |          10 | 51790 |
@@ -175,12 +181,16 @@ and require SUPER privileges.&lt;/p&gt;
 
 &lt;p&gt;i.e. You can easily get the most frequent tokens:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-(ftslab) &amp;gt; SELECT WORD,count(*)
+&lt;p&gt;&lt;code&gt;sql
+SELECT WORD,count(*)
            FROM information_schema.INNODB_FT_INDEX_TABLE   
            group by WORD having count(*) &amp;gt; 1000
            order by 2
            limit 10;
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Result:
+&lt;code&gt;
 +--------+----------+
 | WORD   | count(*) |
 +--------+----------+
@@ -205,18 +215,17 @@ in your own stopwords table. Specially if you are more interested in boolean sea
 some part of the language expressions. I built I query for this situation to allow us to build
 the stopwords table using the current words that we want to add to the filtering:&lt;/p&gt;
 
-&lt;p&gt;```
-(ftslab) &amp;gt; select group_concat(WORD) FROM (select distinct WORD&lt;br /&gt;
-  FROM information_schema.INNODB_FT_INDEX_TABLE             &lt;br /&gt;
-  group by WORD having count(&lt;em&gt;) &amp;gt; 1000) d\G
-&lt;strong&gt;**&lt;/strong&gt;&lt;/em&gt;&lt;strong&gt;**&lt;/strong&gt;&lt;strong&gt;**&lt;/strong&gt;&lt;strong&gt;**&lt;/strong&gt;** 1. row &lt;strong&gt;**&lt;/strong&gt;&lt;strong&gt;**&lt;/strong&gt;&lt;strong&gt;**&lt;/strong&gt;&lt;strong&gt;**&lt;/strong&gt;***
+&lt;p&gt;&lt;code&gt;
+(ftslab) &amp;gt; select group_concat(WORD) FROM (select distinct WORD  
+  FROM information_schema.INNODB_FT_INDEX_TABLE               
+  group by WORD having count(*) &amp;gt; 1000) d\G
+*************************** 1. row ***************************
 group_concat(WORD): all,and,any,been,but,can,first,had,has,have,her,him,his,into,
 its,like,may,more,nor,not,now,one,only,other,our,said,shall,she,should,some,such,
 than,their,them,then,there,these,they,those,thou,thus,thy,time,were,which,would,
 yet,you,your
-1 row in set (5,28 sec)&lt;/p&gt;
-
-&lt;p&gt;```&lt;/p&gt;
+1 row in set (5,28 sec)
+&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;Let’s build our filter table using both default and new entries and keeping the
 alphabetical order:&lt;/p&gt;
@@ -312,8 +321,8 @@ it consumes a considerably amount of CPU. InnoDB orders by the latest expression
 the “no ranking” FT_hints. The &lt;code&gt;limit&lt;/code&gt; hint won’t be used if invoked explicitely an &lt;code&gt;ORDER BY&lt;/code&gt; and th &lt;code&gt;MATCH&lt;/code&gt; clause in the projection.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;```
-(ftslab) &amp;gt;  explain  select  *
+&lt;p&gt;```sql
+explain  select  *
                       from bookContentByLine
                       where match(content) against (“+home” IN BOOLEAN MODE)
                       ORDER BY FTS_DOC_ID&lt;br /&gt;
@@ -323,7 +332,7 @@ the “no ranking” FT_hints. The &lt;code&gt;limit&lt;/code&gt; hint won’t b
          type: fulltext
         Extra: Using where; Ft_hints: no_ranking; Using filesort&lt;/p&gt;
 
-&lt;p&gt;(ftslab) &amp;gt;  explain  select  *
+&lt;p&gt;explain  select  *
                       from bookContentByLine
                       where match(content) against (“+home” IN BOOLEAN MODE)
                       LIMIT 10\G
@@ -331,7 +340,7 @@ the “no ranking” FT_hints. The &lt;code&gt;limit&lt;/code&gt; hint won’t b
          type: fulltext
         Extra: Using where; Ft_hints: no_ranking, limit = 10&lt;/p&gt;
 
-&lt;p&gt;(ftslab) &amp;gt;  explain  select  count(content)
+&lt;p&gt;explain  select  count(content)
                     from bookContentByLine
                     where match(content) against (“+home” IN BOOLEAN MODE) \G
         table: bookContentByLine
@@ -347,7 +356,7 @@ a single column PRIMARY KEY constraint or as an UNIQUE index. Also, the data
 type is stricted as &lt;code&gt;bigint unsigned&lt;/code&gt;. i.e:&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;&lt;code&gt;
+&lt;p&gt;&lt;code&gt;sql
 CREATE TABLE test ( FTS_DOC_ID bigint unsigned  AUTO_INCREMENT,
                     mainPk bigint, other text,
                     PRIMARY KEY(mainPk),
@@ -367,7 +376,7 @@ CREATE TABLE test ( FTS_DOC_ID bigint unsigned  AUTO_INCREMENT,
   &lt;p&gt;Submitted https://bugs.mysql.com/bug.php?id=80347&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;p&gt;```
+&lt;p&gt;```bash
 emanuel@3laptop ~/sandboxes/rsandbox_5_7_9 $ ./m dumpTest &amp;lt; full.dump
 ERROR 182 (HY000) at line 73: Invalid InnoDB FTS Doc ID&lt;/p&gt;
 
@@ -416,8 +425,8 @@ readers to change the assumptions underlying your analysis and see the results i
 To learn more, see &lt;a href=&quot;http://rmarkdown.rstudio.com/authoring_shiny.html&quot;&gt;Interactive Documents&lt;/a&gt;.&lt;/p&gt;
 </description>
         <pubDate>Wed, 20 Apr 2016 00:00:00 -0300</pubDate>
-        <link>http://127.0.0.1:4000/fts-innodb</link>
-        <guid isPermaLink="true">http://127.0.0.1:4000/fts-innodb</guid>
+        <link>http://www.3manuek.com/fts-innodb</link>
+        <guid isPermaLink="true">http://www.3manuek.com/fts-innodb</guid>
         
         
         <category>blog</category>
@@ -1061,8 +1070,8 @@ LANGUAGE ‘sql’ VOLATILE;
 &lt;p&gt;Discussion in the community mailing lis &lt;a href=&quot;http://postgresql.nabble.com/Fast-Search-on-Encrypted-Feild-td1863960.html&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
 </description>
         <pubDate>Wed, 23 Mar 2016 00:00:00 -0300</pubDate>
-        <link>http://127.0.0.1:4000/rds-hipaa-fts</link>
-        <guid isPermaLink="true">http://127.0.0.1:4000/rds-hipaa-fts</guid>
+        <link>http://www.3manuek.com/rds-hipaa-fts</link>
+        <guid isPermaLink="true">http://www.3manuek.com/rds-hipaa-fts</guid>
         
         
         <category>blog</category>
