@@ -89,6 +89,7 @@ SELECT  content, bookid, group_concat(it.POSITION) as pos,
 ```
 
 Result:
+
 ```
 +-----------------------------------------------------------------------------+--------+-----+--------+--------+
 |content                                                                      | bookid | pos | QERank |BoolRank|
@@ -145,7 +146,9 @@ SELECT bookid, FTS_DOC_ID,
           ORDER BY QERank DESC
           LIMIT 10 ;
 ```
+
 Result:
+
 ```
 +--------+------------+-----------------+--------+-------------+-------+
 | bookid | FTS_DOC_ID | positions       | QERank | BooleanRank | len   |
@@ -190,6 +193,7 @@ SELECT WORD,count(*)
 ```
 
 Result:
+
 ```
 +--------+----------+
 | WORD   | count(*) |
@@ -230,7 +234,7 @@ yet,you,your
 Let's build our filter table using both default and new entries and keeping the
 alphabetical order:
 
-```
+```sql
 CREATE TABLE bookContentByLine_stopwords(value VARCHAR(30)) ENGINE = INNODB;
 
 INSERT INTO bookContentByLine_stopwords
