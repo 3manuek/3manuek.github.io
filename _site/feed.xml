@@ -5,8 +5,8 @@
     <description>Databases, posts and service developing.</description>
     <link>http://127.0.0.1:4000/</link>
     <atom:link href="http://127.0.0.1:4000/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sat, 23 Apr 2016 14:39:12 -0700</pubDate>
-    <lastBuildDate>Sat, 23 Apr 2016 14:39:12 -0700</lastBuildDate>
+    <pubDate>Sun, 24 Apr 2016 18:10:11 -0300</pubDate>
+    <lastBuildDate>Sun, 24 Apr 2016 18:10:11 -0300</lastBuildDate>
     <generator>Jekyll v3.0.4</generator>
     
       <item>
@@ -415,7 +415,7 @@ workflow of creating static reports, you can now create documents that allow you
 readers to change the assumptions underlying your analysis and see the results immediately.&lt;br /&gt;
 To learn more, see &lt;a href=&quot;http://rmarkdown.rstudio.com/authoring_shiny.html&quot;&gt;Interactive Documents&lt;/a&gt;.&lt;/p&gt;
 </description>
-        <pubDate>Wed, 20 Apr 2016 00:00:00 -0700</pubDate>
+        <pubDate>Wed, 20 Apr 2016 00:00:00 -0300</pubDate>
         <link>http://127.0.0.1:4000/fts-innodb</link>
         <guid isPermaLink="true">http://127.0.0.1:4000/fts-innodb</guid>
         
@@ -1060,7 +1060,7 @@ LANGUAGE ‘sql’ VOLATILE;
 
 &lt;p&gt;Discussion in the community mailing lis &lt;a href=&quot;http://postgresql.nabble.com/Fast-Search-on-Encrypted-Feild-td1863960.html&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
 </description>
-        <pubDate>Wed, 23 Mar 2016 00:00:00 -0700</pubDate>
+        <pubDate>Wed, 23 Mar 2016 00:00:00 -0300</pubDate>
         <link>http://127.0.0.1:4000/rds-hipaa-fts</link>
         <guid isPermaLink="true">http://127.0.0.1:4000/rds-hipaa-fts</guid>
         
