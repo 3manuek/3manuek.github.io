@@ -11,7 +11,7 @@ permalink: rds-hipaa-fts
 ---
 
 
-Sponsored: _Pythian Inc._
+Sponsored: [Pythian Inc.](http://pythian.com)
 
 > Note 1:
 > All the of this presentation is published in this [repository](). You will find a lot of folders and information, probably part of a blog series.
