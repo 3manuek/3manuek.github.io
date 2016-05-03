@@ -10,3 +10,5 @@ gem 'rake'
 
 gem 'pygments.rb'
 gem 'kramdown'
+
+gem 'jekyll-archives'
