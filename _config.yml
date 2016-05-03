@@ -63,5 +63,15 @@ sass:
     sass_dir: assets/css/_sass
     style: :compressed
 
+jekyll-archives:
+  enabled: []
+  layout: 'archive'
+  permalinks:
+    year: '/:year/'
+    month: '/:year/:month/'
+    day: '/:year/:month/:day/'
+    tag: '/tag/:name/'
+    category: '/category/:name/'
+
 gems:
   - jekyll-archives
