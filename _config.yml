@@ -64,7 +64,7 @@ sass:
     style: :compressed
 
 jekyll-archives:
-  enabled: []
+  enabled: all
   layout: 'archive'
   permalinks:
     year: '/:year/'
