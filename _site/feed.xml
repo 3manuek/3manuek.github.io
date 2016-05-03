@@ -5,9 +5,9 @@
     <description>Databases, posts and service developing.</description>
     <link>http://www.3manuek.com/</link>
     <atom:link href="http://www.3manuek.com/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Mon, 25 Apr 2016 14:05:20 -0300</pubDate>
-    <lastBuildDate>Mon, 25 Apr 2016 14:05:20 -0300</lastBuildDate>
-    <generator>Jekyll v3.0.4</generator>
+    <pubDate>Mon, 02 May 2016 21:56:03 -0300</pubDate>
+    <lastBuildDate>Mon, 02 May 2016 21:56:03 -0300</lastBuildDate>
+    <generator>Jekyll v3.0.5</generator>
     
       <item>
         <title>MySQL 5.7 InnoDB&#39;s Full Text Search overview.</title>
@@ -445,7 +445,9 @@ To learn more, see &lt;a href=&quot;http://rmarkdown.rstudio.com/authoring_shiny
     
       <item>
         <title>Multi source data injection to Postgres RDS with encryption and FTS support</title>
-        <description>&lt;blockquote&gt;
+        <description>&lt;p&gt;Sponsored: &lt;a href=&quot;http://pythian.com&quot;&gt;Pythian Inc.&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
   &lt;p&gt;Note 1:
 All the of this presentation is published in this &lt;a href=&quot;&quot;&gt;repository&lt;/a&gt;. You will find a lot of folders and information, probably part of a blog series.&lt;/p&gt;
 &lt;/blockquote&gt;
