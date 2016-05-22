@@ -53,7 +53,7 @@ can't implement them, just keep in mind that a standard CPU against vCPU could
 have a lot difference. If you want to benchmark your local CPU against RDS vCPU,
 you can run the following query inside `psql` on both instances:
 
-```
+```sql
 \o /dev/null
 \timing
 SELECT convert_from(
