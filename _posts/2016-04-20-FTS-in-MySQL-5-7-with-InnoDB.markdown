@@ -3,8 +3,8 @@ layout: post
 title:  "MySQL 5.7 InnoDB's Full Text Search overview."
 date:   2016-04-20
 description: MySQL 5.7 InnoDB's Full Text Search overview with a dynamic application.
+tags: [FTS, MySQL, InnoDB]
 categories:
-- blog
 - MySQL
 - FTS
 - InnoDB
