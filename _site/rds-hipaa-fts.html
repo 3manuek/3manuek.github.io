@@ -148,7 +148,7 @@ can’t implement them, just keep in mind that a standard CPU against vCPU could
 have a lot difference. If you want to benchmark your local CPU against RDS vCPU,
 you can run the following query inside <code class="highlighter-rouge">psql</code> on both instances:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="err">\</span><span class="n">o</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="k">null</span>
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="err">\</span><span class="n">o</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="k">null</span>
 <span class="err">\</span><span class="n">timing</span>
 <span class="k">SELECT</span> <span class="n">convert_from</span><span class="p">(</span>
           <span class="n">pgp_sym_decrypt_bytea</span><span class="p">(</span>

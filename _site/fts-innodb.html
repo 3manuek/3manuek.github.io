@@ -165,7 +165,7 @@ the exact match has been found.</p>
 <p>In the <code class="highlighter-rouge">SELECT</code> clause you’ll see both FTS expressions using <code class="highlighter-rouge">NATURAL LANGUAGE</code>
 with query expansion and <code class="highlighter-rouge">BOOLEAN</code>modes respectively.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="k">set</span> <span class="k">global</span> <span class="n">innodb_ft_aux_table</span> <span class="o">=</span> <span class="s1">'ftslab/bookContentByLine'</span><span class="p">;</span>
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">set</span> <span class="k">global</span> <span class="n">innodb_ft_aux_table</span> <span class="o">=</span> <span class="s1">'ftslab/bookContentByLine'</span><span class="p">;</span>
 
 <span class="k">SELECT</span>  <span class="n">content</span><span class="p">,</span> <span class="n">bookid</span><span class="p">,</span> <span class="n">group_concat</span><span class="p">(</span><span class="n">it</span><span class="p">.</span><span class="k">POSITION</span><span class="p">)</span> <span class="k">as</span> <span class="n">pos</span><span class="p">,</span>
         <span class="n">round</span><span class="p">(</span><span class="k">MATCH</span><span class="p">(</span><span class="n">content</span><span class="p">)</span> <span class="n">AGAINST</span> <span class="p">(</span><span class="nv">"country"</span> <span class="k">IN</span> <span class="k">NATURAL</span> <span class="k">LANGUAGE</span> <span class="k">MODE</span> <span class="k">WITH</span> <span class="n">QUERY</span> <span class="n">EXPANSION</span><span class="p">))</span> <span class="k">as</span> <span class="n">QERank</span><span class="p">,</span>
@@ -222,7 +222,7 @@ BoolRank: 14
 storing by paragraph. The boolean rank shows some of the entries way above others, however the query extension
 locates at the top records that not necessarily has a lot of exact matches.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="k">SET</span> <span class="k">GLOBAL</span> <span class="n">innodb_ft_aux_table</span> <span class="o">=</span> <span class="s1">'ftslab/bookContent'</span><span class="p">;</span>
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">SET</span> <span class="k">GLOBAL</span> <span class="n">innodb_ft_aux_table</span> <span class="o">=</span> <span class="s1">'ftslab/bookContent'</span><span class="p">;</span>
 
 <span class="k">SELECT</span> <span class="n">bookid</span><span class="p">,</span> <span class="n">FTS_DOC_ID</span><span class="p">,</span>
                 <span class="n">group_concat</span><span class="p">(</span><span class="n">it</span><span class="p">.</span><span class="k">POSITION</span><span class="p">)</span> <span class="k">as</span> <span class="n">positions</span><span class="p">,</span>
@@ -275,7 +275,7 @@ and require SUPER privileges.</p>
 
 <p>i.e. You can easily get the most frequent tokens:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="k">SELECT</span> <span class="n">WORD</span><span class="p">,</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">SELECT</span> <span class="n">WORD</span><span class="p">,</span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
            <span class="k">FROM</span> <span class="n">information_schema</span><span class="p">.</span><span class="n">INNODB_FT_INDEX_TABLE</span>   
            <span class="k">group</span> <span class="k">by</span> <span class="n">WORD</span> <span class="k">having</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1000</span>
            <span class="k">order</span> <span class="k">by</span> <span class="mi">2</span>
@@ -325,7 +325,7 @@ yet,you,your
 <p>Let’s build our filter table using both default and new entries and keeping the
 alphabetical order:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">bookContentByLine_stopwords</span><span class="p">(</span><span class="n">value</span> <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">30</span><span class="p">))</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">INNODB</span><span class="p">;</span>
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">bookContentByLine_stopwords</span><span class="p">(</span><span class="n">value</span> <span class="n">VARCHAR</span><span class="p">(</span><span class="mi">30</span><span class="p">))</span> <span class="n">ENGINE</span> <span class="o">=</span> <span class="n">INNODB</span><span class="p">;</span>
 
 <span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">bookContentByLine_stopwords</span>
 <span class="k">SELECT</span> <span class="n">value</span> <span class="k">FROM</span> <span class="p">(</span>
@@ -416,7 +416,7 @@ it consumes a considerably amount of CPU. InnoDB orders by the latest expression
 the “no ranking” FT_hints. The <code class="highlighter-rouge">limit</code> hint won’t be used if invoked explicitely an <code class="highlighter-rouge">ORDER BY</code> and th <code class="highlighter-rouge">MATCH</code> clause in the projection.</li>
 </ul>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="k">explain</span>  <span class="k">select</span>  <span class="o">*</span>
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">explain</span>  <span class="k">select</span>  <span class="o">*</span>
                       <span class="k">from</span> <span class="n">bookContentByLine</span>
                       <span class="k">where</span> <span class="k">match</span><span class="p">(</span><span class="n">content</span><span class="p">)</span> <span class="n">against</span> <span class="p">(</span><span class="nv">"+home"</span> <span class="k">IN</span> <span class="n">BOOLEAN</span> <span class="k">MODE</span><span class="p">)</span>
                       <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">FTS_DOC_ID</span>  
@@ -451,7 +451,7 @@ a single column PRIMARY KEY constraint or as an UNIQUE index. Also, the data
 type is stricted as <code class="highlighter-rouge">bigint unsigned</code>. i.e:</li>
 </ul>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">test</span> <span class="p">(</span> <span class="n">FTS_DOC_ID</span> <span class="n">bigint</span> <span class="n">unsigned</span>  <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">test</span> <span class="p">(</span> <span class="n">FTS_DOC_ID</span> <span class="n">bigint</span> <span class="n">unsigned</span>  <span class="n">AUTO_INCREMENT</span><span class="p">,</span>
                     <span class="n">mainPk</span> <span class="n">bigint</span><span class="p">,</span> <span class="n">other</span> <span class="n">text</span><span class="p">,</span>
                     <span class="k">PRIMARY</span> <span class="k">KEY</span><span class="p">(</span><span class="n">mainPk</span><span class="p">),</span>
                     <span class="k">UNIQUE</span><span class="p">(</span><span class="n">FTS_DOC_ID</span><span class="p">)</span>
@@ -471,7 +471,7 @@ type is stricted as <code class="highlighter-rouge">bigint unsigned</code>. i.e:
   <p>Submitted https://bugs.mysql.com/bug.php?id=80347</p>
 </blockquote>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>emanuel@3laptop ~/sandboxes/rsandbox_5_7_9 <span class="nv">$ </span>./m dumpTest &lt; full.dump
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code>emanuel@3laptop ~/sandboxes/rsandbox_5_7_9 <span class="nv">$ </span>./m dumpTest &lt; full.dump
 ERROR 182 <span class="o">(</span>HY000<span class="o">)</span> at line 73: Invalid InnoDB FTS Doc ID
 
 emanuel@3laptop ~/sandboxes/rsandbox_5_7_9 <span class="nv">$ </span>./m dumpTest &lt; ddl.dump
