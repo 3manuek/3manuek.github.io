@@ -7,7 +7,7 @@ title: The Front Page
 
 ## Who am I?
 
-![alt text](https://github.com/3manuek/3manuek.github.io/tree/master/_posts/images/whoami.gif "Who am I? Zoolander")
+![alt text](https://github.com/3manuek/3manuek.github.io/blob/master/_posts/images/whoami.gif "Who am I? Zoolander")
 
 
 Hi there! I'm Emanuel Calvo, a Database Consultant and Data Engineer _currently_ located in
