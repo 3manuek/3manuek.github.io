@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
  
  <title>3manuek&#39;s site</title>
- <link href="http://3manuek.github.io/atom.xml" rel="self"/>
- <link href="http://3manuek.github.io"/>
- <updated>2016-06-18T02:03:30-03:00</updated>
- <id>http://3manuek.github.io</id>
+ <link href="https://github.com/3manuek/3manuek.github.io.git/atom.xml" rel="self"/>
+ <link href="https://github.com/3manuek/3manuek.github.io.git"/>
+ <updated>2016-06-18T02:19:44-03:00</updated>
+ <id>https://github.com/3manuek/3manuek.github.io.git</id>
  <author>
    <name>Emanuel Calvo</name>
    <email>3manuek@gmail.com</email>
@@ -14,9 +14,9 @@
  
  <entry>
    <title>MySQL 5.7 InnoDB&#39;s Full Text Search overview.</title>
-   <link href="http://3manuek.github.io/fts-innodb"/>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/fts-innodb"/>
    <updated>2016-04-20T00:00:00-03:00</updated>
-   <id>http://3manuek.github.io/FTS-in-MySQL-5-7-with-InnoDB</id>
+   <id>https://github.com/3manuek/3manuek.github.io.git/FTS-in-MySQL-5-7-with-InnoDB</id>
    <content type="html">&lt;p&gt;Main application:
 &lt;a href=&quot;https://3manuek.shinyapps.io/FTS_Innodb/&quot;&gt;InnoDB’s Full Text Search overview (with Shiny/R)&lt;/a&gt;&lt;/p&gt;
 
@@ -438,9 +438,9 @@ To learn more, see &lt;a href=&quot;http://rmarkdown.rstudio.com/authoring_shiny
  
  <entry>
    <title>Multi source data injection to Postgres RDS with encryption and FTS support</title>
-   <link href="http://3manuek.github.io/rds-hipaa-fts"/>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/rds-hipaa-fts"/>
    <updated>2016-03-23T00:00:00-03:00</updated>
-   <id>http://3manuek.github.io/Multi-source-data-injection-to-Postgres-RDS-with-encryption-and-local-FTS-support</id>
+   <id>https://github.com/3manuek/3manuek.github.io.git/Multi-source-data-injection-to-Postgres-RDS-with-encryption-and-local-FTS-support</id>
    <content type="html">&lt;p&gt;Sponsored: &lt;a href=&quot;http://pythian.com&quot;&gt;Pythian Inc.&lt;/a&gt;&lt;/p&gt;
 
 &lt;blockquote&gt;
@@ -1087,9 +1087,9 @@ LANGUAGE &#39;sql&#39; VOLATILE;
  
  <entry>
    <title>Ser anónimo, el derecho del futuro.</title>
-   <link href="http://3manuek.github.io/anonimato"/>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/anonimato"/>
    <updated>2015-04-03T00:00:00-03:00</updated>
-   <id>http://3manuek.github.io/anonimato</id>
+   <id>https://github.com/3manuek/3manuek.github.io.git/anonimato</id>
    <content type="html">&lt;blockquote&gt;
   &lt;p&gt;Agradecimiento a Guido Vilariño por la revisión del artículo.&lt;/p&gt;
 &lt;/blockquote&gt;
