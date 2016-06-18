@@ -27,7 +27,7 @@ as officer in several institutions, from medium to high security.
 July 2nd, 2013: [AWS - Postgres in AWS](http://media.amazonwebservices.com/AWS_RDBMS_PostgreSQL.pdf)
     PostgreSQL running over EC2 instances with EBS/PIOPS storage. Minimum architecture, tips and advises.
 
-[Download AWS in Postgres from local]({{ site.url }}/assets/AWS_RDBMS_PostgreSQL.pdf)
+[Download AWS in Postgres from local](assets/AWS_RDBMS_PostgreSQL.pdf)
 
 ## Certifications
 
