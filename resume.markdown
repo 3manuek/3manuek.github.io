@@ -1,6 +1,6 @@
 ---
 layout: page
-title : Resume
+title : Resume -- Emanuel Calvo
 header : About 3manuek
 group: navigation
 ---
@@ -11,7 +11,7 @@ For professional contact, you can send a contact request or message through my
 
 ## Summary
 
-- Since 2006 years, I've worked with a very heterogeneous set of technologies  and companies, from boutique services to large consulting firms, telecommunications companies for training and consulting.
+- Since 2006, I've worked with a very heterogeneous set of technologies  and companies, from boutique services to large consulting firms, telecommunications companies for training and consulting.
 - Mostly focused on data and its process, from pipelines, workers, queues and databases/datastores.
 - Code fixing in several languages is something that I do on a daily basis (Python, Perl, Go, R, Bash and other shells).
 - Although I've played with Windows in the past, I consider that at least 98% of the servers run Linux, Unix BSD or Solaris.

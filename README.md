@@ -6,6 +6,13 @@ The quickest way to start and publish your Jekyll powered blog. 100% compatible 
 bundle exec jekyll serve --watch
 ```
 
+Clean bundle if errors:
+
+```
+bundle clean --force
+```
+
+
 ## Usage
 
 For all usage and documentation please see: <http://jekyllbootstrap.com>
