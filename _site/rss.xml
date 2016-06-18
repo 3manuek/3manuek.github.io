@@ -3,10 +3,10 @@
 <channel>
         <title>3manuek&#39;s site</title>
         <description>3manuek&#39;s site - Emanuel Calvo</description>
-        <link>http://3manuek.github.io</link>
-        <atom:link href="http://3manuek.github.io/rss.xml" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Sat, 18 Jun 2016 01:59:27 -0300</lastBuildDate>
-        <pubDate>Sat, 18 Jun 2016 01:59:27 -0300</pubDate>
+        <link>https://github.com/3manuek/3manuek.github.io.git</link>
+        <atom:link href="https://github.com/3manuek/3manuek.github.io.git/rss.xml" rel="self" type="application/rss+xml" />
+        <lastBuildDate>Sat, 18 Jun 2016 02:07:22 -0300</lastBuildDate>
+        <pubDate>Sat, 18 Jun 2016 02:07:22 -0300</pubDate>
         <ttl>60</ttl>
 
 
@@ -429,8 +429,8 @@ workflow of creating static reports, you can now create documents that allow you
 readers to change the assumptions underlying your analysis and see the results immediately.&lt;br /&gt;
 To learn more, see &lt;a href=&quot;http://rmarkdown.rstudio.com/authoring_shiny.html&quot;&gt;Interactive Documents&lt;/a&gt;.&lt;/p&gt;
 </description>
-                <link>http://3manuek.github.io/fts-innodb</link>
-                <guid>http://3manuek.github.io/FTS-in-MySQL-5-7-with-InnoDB</guid>
+                <link>https://github.com/3manuek/3manuek.github.io.git/fts-innodb</link>
+                <guid>https://github.com/3manuek/3manuek.github.io.git/FTS-in-MySQL-5-7-with-InnoDB</guid>
                 <pubDate>Wed, 20 Apr 2016 00:00:00 -0300</pubDate>
         </item>
 
@@ -1078,8 +1078,8 @@ LANGUAGE &#39;sql&#39; VOLATILE;
 &lt;p&gt;Discussion in the community mailing lis &lt;a href=&quot;http://postgresql.nabble.com/Fast-Search-on-Encrypted-Feild-td1863960.html&quot;&gt;here&lt;/a&gt;&lt;/p&gt;
 
 </description>
-                <link>http://3manuek.github.io/rds-hipaa-fts</link>
-                <guid>http://3manuek.github.io/Multi-source-data-injection-to-Postgres-RDS-with-encryption-and-local-FTS-support</guid>
+                <link>https://github.com/3manuek/3manuek.github.io.git/rds-hipaa-fts</link>
+                <guid>https://github.com/3manuek/3manuek.github.io.git/Multi-source-data-injection-to-Postgres-RDS-with-encryption-and-local-FTS-support</guid>
                 <pubDate>Wed, 23 Mar 2016 00:00:00 -0300</pubDate>
         </item>
 
@@ -1135,8 +1135,8 @@ de las búsquedas no son anónimas.&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;http://es.wikibooks.org/wiki/Anonimato_y_privacidad_en_internet&quot;&gt;Anonimato y privacidad en internet&lt;/a&gt;. Este es un “wikilibro” y aún está en desarrollo, pero es un buen punto de partida.&lt;/li&gt;
 &lt;/ul&gt;
 </description>
-                <link>http://3manuek.github.io/anonimato</link>
-                <guid>http://3manuek.github.io/anonimato</guid>
+                <link>https://github.com/3manuek/3manuek.github.io.git/anonimato</link>
+                <guid>https://github.com/3manuek/3manuek.github.io.git/anonimato</guid>
                 <pubDate>Fri, 03 Apr 2015 00:00:00 -0300</pubDate>
         </item>
 
