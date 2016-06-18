@@ -41,6 +41,10 @@
   
     
       
+    
+  
+    
+      
       	
       	<li><a href="/archive">Archive</a></li>
       	
@@ -66,7 +70,7 @@
     
       
       	
-      	<li><a href="/resume">Resume</a></li>
+      	<li><a href="/resume">Resume -- Emanuel Calvo</a></li>
       	
       
     
@@ -138,7 +142,7 @@ very deeply to understand the basics of the present article moto.</p>
 rules are complex and if you need to deal with them, you’ll probably need to go
 through a careful read.</p>
 
-<p><code>tl;dr</code>? they tell us to store data encrypted on servers that are not in the premises.
+<p><code class="highlighter-rouge">tl;dr</code>? they tell us to store data encrypted on servers that are not in the premises.
 And that’s the case of RDS. However, all the communications are encrypted using
 SSL protocol, but is not enough to compliant with HIPAA rules.</p>
 
@@ -146,19 +150,20 @@ SSL protocol, but is not enough to compliant with HIPAA rules.</p>
 FTS features not very well suited for this kind of service. I not saying that you
 can’t implement them, just keep in mind that a standard CPU against vCPU could
 have a lot difference. If you want to benchmark your local CPU against RDS vCPU,
-you can run the following query inside <code>psql</code> on both instances:</p>
+you can run the following query inside <code class="highlighter-rouge">psql</code> on both instances:</p>
 
-<pre><code class="language-sql">\o /dev/null
-\timing
-SELECT convert_from(
-          pgp_sym_decrypt_bytea(
-              pgp_sym_encrypt_bytea('Text to be encrypted using pgp_sym_decrypt_bytea' || gen_random_uuid()::text::bytea,'key', 'compress-algo=2'),
-          'key'),
-        'SQL-ASCII')
-FROM generate_series(1,10000);
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="err">\</span><span class="n">o</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="k">null</span>
+<span class="err">\</span><span class="n">timing</span>
+<span class="k">SELECT</span> <span class="n">convert_from</span><span class="p">(</span>
+          <span class="n">pgp_sym_decrypt_bytea</span><span class="p">(</span>
+              <span class="n">pgp_sym_encrypt_bytea</span><span class="p">(</span><span class="s1">'Text to be encrypted using pgp_sym_decrypt_bytea'</span> <span class="o">||</span> <span class="n">gen_random_uuid</span><span class="p">()::</span><span class="n">text</span><span class="p">::</span><span class="n">bytea</span><span class="p">,</span><span class="s1">'key'</span><span class="p">,</span> <span class="s1">'compress-algo=2'</span><span class="p">),</span>
+          <span class="s1">'key'</span><span class="p">),</span>
+        <span class="s1">'SQL-ASCII'</span><span class="p">)</span>
+<span class="k">FROM</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">10000</span><span class="p">);</span>
 </code></pre>
+</div>
 
-<p>There are a lot of things and functions you can combine from the <code>pgcrypto</code> package
+<p>There are a lot of things and functions you can combine from the <code class="highlighter-rouge">pgcrypto</code> package
 (you will see that the repository contemplates all of them).
 I will try to post another blog post regarding this kind of benchmarks. In the
 meantime, this query should be enough to have a rough idea of the performance difference
@@ -175,7 +180,7 @@ between server/client. It’s important to clarify this, to avoid confusions bet
 communication encryption and storing data encrypted.</p>
 
 <p>The simple trigger will split the unencrypted data between a local table storing
-in a <code>tsvector</code> column (jsonb in the TODO), it will encrypt and push the encrypted
+in a <code class="highlighter-rouge">tsvector</code> column (jsonb in the TODO), it will encrypt and push the encrypted
 data into RDS using FDW (the standard postgres_fdw package).</p>
 
 <p>A simple flight view of the idea can be observed in the image bellow.</p>
@@ -189,7 +194,7 @@ data into RDS using FDW (the standard postgres_fdw package).</p>
 <p>RDS instance schema structure contains a parent table , a partitioning trigger  and
 its trigger:</p>
 
-<pre><code>CREATE SCHEMA enc_schema;
+<div class="highlighter-rouge"><pre class="highlight"><code>CREATE SCHEMA enc_schema;
 
 SET search_path TO enc_schema;
 
@@ -243,8 +248,9 @@ FOR EACH ROW EXECUTE PROCEDURE basic_ins_trig() ;
 
 
 </code></pre>
+</div>
 
-<p>We are not going to use the <code>partial SSN</code> column in the examples, but I found it very helpful to
+<p>We are not going to use the <code class="highlighter-rouge">partial SSN</code> column in the examples, but I found it very helpful to
 do RDS searches over encrypted data without fall into the need of decrypting in-the-fly the SSN.
 The last SSN’s 4-digits do not provide useful information if stolen.</p>
 
@@ -261,7 +267,7 @@ allowing a better organization for data management.</p>
 
 <p>Local nodes structure:</p>
 
-<pre><code>CREATE DATABASE fts_proxy;  --  connect using \c fts_proxy on psql
+<div class="highlighter-rouge"><pre class="highlight"><code>CREATE DATABASE fts_proxy;  --  connect using \c fts_proxy on psql
 
 -- The sauce
 CREATE EXTENSION postgres_fdw;
@@ -291,35 +297,37 @@ CREATE FOREIGN TABLE __person__pgp_RDS
 SERVER RDS_server
 OPTIONS (schema_name 'enc_schema', table_name '__person__pgp');
 </code></pre>
+</div>
 
-<p>Same table. Everytime we want to deal with the RDS table, we are going to do so using the <code>__person__pgp_RDS</code> table, which is just a mapping table. We can query this table as any other usual table.</p>
+<p>Same table. Everytime we want to deal with the RDS table, we are going to do so using the <code class="highlighter-rouge">__person__pgp_RDS</code> table, which is just a mapping table. We can query this table as any other usual table.</p>
 
 <p>For testing purposes, I also created a table with the same structure as the above with
-<code>__person_rds_RDS_URE</code> table name and added the <code>use_remote_estimate 'true'</code> option.
+<code class="highlighter-rouge">__person_rds_RDS_URE</code> table name and added the <code class="highlighter-rouge">use_remote_estimate 'true'</code> option.
 When enabled, postgres_fdw obtains the row count and estimates from the remote server.</p>
 
 <h2 id="inserting-keys-locally">Inserting keys locally</h2>
 
 <p>Just to avoid an extended article, I will skip the GPG key creation commands here. Please follow the instructions on the link at the referece section about keys.</p>
 
-<p>We can insert they keys in several ways, but I found very convenient to use <code>psql</code>
-features to do so. Once the keys are in place you can use <code>\lo_import</code> command:</p>
+<p>We can insert they keys in several ways, but I found very convenient to use <code class="highlighter-rouge">psql</code>
+features to do so. Once the keys are in place you can use <code class="highlighter-rouge">\lo_import</code> command:</p>
 
-<pre><code>postgres=# \lo_import /var/lib/postgresql/9.4/main/private.key
+<div class="highlighter-rouge"><pre class="highlight"><code>postgres=# \lo_import /var/lib/postgresql/9.4/main/private.key
 lo_import 33583
 postgres=# \lo_import /var/lib/postgresql/9.4/main/public.key
 lo_import 33584
 </code></pre>
+</div>
 
 <p>The next steps are very straightforward. In a real scenario, you won’t probably
 want to upload private keys into the table, just for practical purposes of this
 article I’m going to do so (only for decrypt data in the SELECT query).</p>
 
 <blockquote>
-  <p><code>pgp_key_id</code> will return the same key no matter if you use private or public key.</p>
+  <p><code class="highlighter-rouge">pgp_key_id</code> will return the same key no matter if you use private or public key.</p>
 </blockquote>
 
-<pre><code>CREATE TABLE keys (
+<div class="highlighter-rouge"><pre class="highlight"><code>CREATE TABLE keys (
    keyid varchar(16) PRIMARY KEY,
    pub bytea,
    priv bytea
@@ -327,6 +335,7 @@ article I’m going to do so (only for decrypt data in the SELECT query).</p>
 
 INSERT INTO keys VALUES ( pgp_key_id(lo_get(33583)) ,lo_get(33584), lo_get(33583));
 </code></pre>
+</div>
 
 <h2 id="splitting-data-to-fts-encrypt-and-push-into-rds">Splitting data to FTS, encrypt and push into RDS</h2>
 
@@ -334,9 +343,9 @@ INSERT INTO keys VALUES ( pgp_key_id(lo_get(33583)) ,lo_get(33584), lo_get(33583
 
 <ul>
   <li>We are going to simulate <em>routing</em> using inheritance on the FTS records. That will allow us to split data as we want and, replicate using Logical Decoding feature between the nodes. I won’t include this on the current article just to avoid it to be extense.</li>
-  <li>We are going to encrypt using the key that we select on the insert query. If you want a key <em>per table basis</em>, you will find easier to hardcode the key id on the <code>_func_get_FTS_encrypt_and_push_to_RDS</code>.</li>
+  <li>We are going to encrypt using the key that we select on the insert query. If you want a key <em>per table basis</em>, you will find easier to hardcode the key id on the <code class="highlighter-rouge">_func_get_FTS_encrypt_and_push_to_RDS</code>.</li>
   <li>Once the records are encrypted, the function will insert those records to the foreign table (RDS).</li>
-  <li>When querying the FTS table, we will be able to determine the source (something like the <code>routing</code> technique, you will find this familiar if you played with ElasticSearch). That allow us to make the FTS search transparent to the application, pointing always to the parent table. :dogewow:</li>
+  <li>When querying the FTS table, we will be able to determine the source (something like the <code class="highlighter-rouge">routing</code> technique, you will find this familiar if you played with ElasticSearch). That allow us to make the FTS search transparent to the application, pointing always to the parent table. :dogewow:</li>
 </ul>
 
 <blockquote>
@@ -345,7 +354,7 @@ INSERT INTO keys VALUES ( pgp_key_id(lo_get(33583)) ,lo_get(33584), lo_get(33583
 
 <h3 id="fts-table-structures">FTS table structures</h3>
 
-<pre><code>-- Parent table
+<div class="highlighter-rouge"><pre class="highlight"><code>-- Parent table
 CREATE TABLE local_search (
   id bigint PRIMARY KEY,
   _FTS tsvector
@@ -357,13 +366,14 @@ CREATE INDEX fts_index ON local_search USING GIST(_FTS);
 CREATE TABLE local_search_host1 () INHERITS (local_search);
 CREATE INDEX fts_index_host1 ON local_search_host1 USING GIST(_FTS);
 </code></pre>
-<p>Doing this, you avoid to have a column with a constant value in the table, consuming unnecessary space. You can have with this method, different names and tables accross the cluster, but always using the same query against <code>local_search</code>. You can map/reduce the data if you want to across the nodes, with the very same query.</p>
+</div>
+<p>Doing this, you avoid to have a column with a constant value in the table, consuming unnecessary space. You can have with this method, different names and tables accross the cluster, but always using the same query against <code class="highlighter-rouge">local_search</code>. You can map/reduce the data if you want to across the nodes, with the very same query.</p>
 
 <p>Is not necessary to only have 1 source or route per node. The only requirement for this is to have different routes per node (combining source and route could increase complexity, however is possible).</p>
 
 <h2 id="main-code">Main code</h2>
 
-<pre><code>CREATE SEQUENCE global_seq INCREMENT BY 1 MINVALUE 1 NO MAXVALUE;
+<div class="highlighter-rouge"><pre class="highlight"><code>CREATE SEQUENCE global_seq INCREMENT BY 1 MINVALUE 1 NO MAXVALUE;
 
 
 CREATE TABLE __person__pgp_map
@@ -420,27 +430,29 @@ BEFORE INSERT ON __person__pgp_map
 FOR EACH ROW
 EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 </code></pre>
+</div>
 
 <p>This functions does everything. It inserts the data on RDS and split the data on the corresponding FTS child table. For performance purposes, I didn’t want to catch exceptions at insert time (if the child table does not exists, i.e.), but you can also add this feature with an exception block as follows:</p>
 
-<pre><code>   BEGIN
+<div class="highlighter-rouge"><pre class="highlight"><code>   BEGIN
     EXECUTE 'INSERT INTO local_search_' || NEW.source || ' SELECT (' ||  quote_literal(FTS_MAP) || '::local_search).* ';
    EXCEPTION WHEN undefined_table THEN
      EXECUTE 'CREATE TABLE local_search_' || NEW.source || '() INHERITS local_search';
    END;
 </code></pre>
+</div>
 
-<p>The same can be done over the foreign table. More info in “Class HV — Foreign Data Wrapper Error (SQL/MED)” (HV00R -<code>fdw_table_not_found</code>).</p>
+<p>The same can be done over the foreign table. More info in “Class HV — Foreign Data Wrapper Error (SQL/MED)” (HV00R -<code class="highlighter-rouge">fdw_table_not_found</code>).</p>
 
 <p>Check “Appendix A. PostgreSQL Error Codes” on the official manual for references about error codes.</p>
 
 <h3 id="inserting-data">Inserting data</h3>
 
-<p>At insertion time, we are going to push data through a mapping table. The reason for this is that all the encrypted data is stored in <code>bytea</code> datatype, and we want to have clear queries instead.</p>
+<p>At insertion time, we are going to push data through a mapping table. The reason for this is that all the encrypted data is stored in <code class="highlighter-rouge">bytea</code> datatype, and we want to have clear queries instead.</p>
 
 <p>A random data query will look as:</p>
 
-<pre><code>INSERT INTO __person__pgp_map
+<div class="highlighter-rouge"><pre class="highlight"><code>INSERT INTO __person__pgp_map
   SELECT
       'host1',  -- source: host1
                 -- You can do this better by grabbing this data from a persistent
@@ -454,8 +466,9 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
       ('{Anotia,Appendicitis,Apraxia,Argyria,Arthritis,Asthma,Astigmatism,Atherosclerosis,Athetosis,Atrophy,Abscess,Influenza,Melanoma}'::text[])[round(random()*12+1)]
       FROM generate_series(1,50) ;
 </code></pre>
+</div>
 
-<p>Did you see the inner comment? Well, probably you want to split by <code>customer</code> or any other alias. I’m using this ugly harcoded text just to avoid a long article.</p>
+<p>Did you see the inner comment? Well, probably you want to split by <code class="highlighter-rouge">customer</code> or any other alias. I’m using this ugly harcoded text just to avoid a long article.</p>
 
 <p>Also, if you want to avoid harcoding as much as posible, you can consider to use a function that returns the host name or routing tag.</p>
 
@@ -465,7 +478,7 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 
 <p>Limiting the matches:</p>
 
-<pre><code># SELECT convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name)
+<div class="highlighter-rouge"><pre class="highlight"><code># SELECT convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name)
 # FROM __person__pgp_rds as rds JOIN
 #       keys ks USING (keyid)
 # WHERE rds.id IN (
@@ -480,10 +493,11 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 (1 row)               
 
 </code></pre>
+</div>
 
 <p>All the matches and double check from were the data came from:</p>
 
-<pre><code># SELECT ls.tableoid::regclass, rds.source,
+<div class="highlighter-rouge"><pre class="highlight"><code># SELECT ls.tableoid::regclass, rds.source,
 #        convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name)
 # FROM local_search ls JOIN
 #     __person__pgp_rds as rds USING (id),
@@ -495,11 +509,12 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 local_search_host1 | host1  | 563588056
 (1 row)
 </code></pre>
+</div>
 
 <p>And, we can’t finish the article without showing how to use the ranking (did you see those setweight
 functions used in the function? You got it!):</p>
 
-<pre><code>#  SELECT rds.id,
+<div class="highlighter-rouge"><pre class="highlight"><code>#  SELECT rds.id,
 #  convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
 #  convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
 #  ts_rank( ls._FTS, query ) as rank
@@ -518,6 +533,7 @@ functions used in the function? You got it!):</p>
  66 | Horacio      | Casas        | 0.303964
 (3 rows)
 </code></pre>
+</div>
 
 <p>Remember, think that this query is doing FTS, decryption and ranking in just one query, over a local and
 a remote server. You can’t say that PostgreSQL isn’t hipster enough!</p>
@@ -525,7 +541,7 @@ a remote server. You can’t say that PostgreSQL isn’t hipster enough!</p>
 <p>I can’t continue the article without showing the query plan executed by the local host (using buffers,
   analyze and verbose options).</p>
 
-<pre><code>EXPLAIN (buffers,verbose,analyze) SELECT rds.id,
+<div class="highlighter-rouge"><pre class="highlight"><code>EXPLAIN (buffers,verbose,analyze) SELECT rds.id,
  convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
  convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
  ts_rank( ls._FTS, query ) as rank
@@ -550,6 +566,7 @@ a remote server. You can’t say that PostgreSQL isn’t hipster enough!</p>
 (45 rows)
 
 </code></pre>
+</div>
 
 <p>From the above <em>Query Plan</em> extract, we can see that the partitioning at RDS is transparent for the query.
 The execution node in charge of extracting data from the RDS is the <em>Foreign Scan</em>, which also
@@ -559,7 +576,7 @@ provides the query executed remotely.</p>
 <em>id</em>! There is a reason for that, and its related on how postgres gather the foreign table statistics.
 If I use the <em>remote estimations</em> we can see how the remote SQL changes in the Query Plan:</p>
 
-<pre><code> EXPLAIN (ANALYZE, VERBOSE, BUFFERS) SELECT rds.id,
+<div class="highlighter-rouge"><pre class="highlight"><code> EXPLAIN (ANALYZE, VERBOSE, BUFFERS) SELECT rds.id,
       convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
       convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
       ts_rank( ls._FTS, query ) as rank
@@ -573,22 +590,24 @@ If I use the <em>remote estimations</em> we can see how the remote SQL changes i
             ls._FTS  @@ query
         ORDER BY rank DESC;
 </code></pre>
+</div>
 
 <p>Query Plan (Foreign Scan execution node):</p>
 
-<pre><code>...
+<div class="highlighter-rouge"><pre class="highlight"><code>...
 -&gt;  Foreign Scan on public.__person__pgp_rds_ure rds  (cost=100.01..108.21 rows=2 width=1018) (actual time=250.334..250.336 rows=1 loops=31)
       Output: rds.id, rds.source, rds.partial_ssn, rds.ssn, rds.keyid, rds.fname, rds.lname, rds.description, rds.auth_drugs, rds.patology
       Remote SQL: SELECT id, keyid, fname, lname FROM enc_schema.__person__pgp WHERE ((source = 'host1'::text)) AND (($1::bigint = id))
 ...
 </code></pre>
+</div>
 
 <p>Foreign tables also need the local statistics to be updated. In the next examples
-there are 3 queries: using the <code>use_remote_estimate</code>, without previous ANALYZE and
-without <code>use_remote_estimate</code> and a query using the local estimations (<code>__person_pgp_rds</code>)
+there are 3 queries: using the <code class="highlighter-rouge">use_remote_estimate</code>, without previous ANALYZE and
+without <code class="highlighter-rouge">use_remote_estimate</code> and a query using the local estimations (<code class="highlighter-rouge">__person_pgp_rds</code>)
 after issuing ANALYZE and without <em>URE</em>.</p>
 
-<pre><code>fts_proxy=# \o /dev/null
+<div class="highlighter-rouge"><pre class="highlight"><code>fts_proxy=# \o /dev/null
 fts_proxy=#  SELECT rds.id,
       convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
       convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
@@ -624,6 +643,7 @@ Time: 20249,719 ms
 Time: 1656,912 ms
 
 </code></pre>
+</div>
 
 <p>After analyzing both foreign tables , the execution time difference was calculated
 at 11% in favor of using local estimations.</p>
@@ -635,11 +655,11 @@ decrypt , modify and re-encrypt the data.</p>
 
 <h3 id="jsonjsonb-datatype-is-here-to-help">Json/jsonb datatype is here to help</h3>
 
-<p>You can collapse all the data and use <code>json</code> datatype on the mapping and foreign table, allowing you to avoid the pain of pointing and decrypting data per column basis.</p>
+<p>You can collapse all the data and use <code class="highlighter-rouge">json</code> datatype on the mapping and foreign table, allowing you to avoid the pain of pointing and decrypting data per column basis.</p>
 
-<p>Put all the encrypted columns in a <code>bytea</code> column on RDS. The mapping table will look as follows:</p>
+<p>Put all the encrypted columns in a <code class="highlighter-rouge">bytea</code> column on RDS. The mapping table will look as follows:</p>
 
-<pre><code>CREATE TABLE __person__pgp_map
+<div class="highlighter-rouge"><pre class="highlight"><code>CREATE TABLE __person__pgp_map
      (
       keyid varchar(16),
       source varchar(8),
@@ -647,16 +667,17 @@ decrypt , modify and re-encrypt the data.</p>
       data jsonb
     );
 </code></pre>
+</div>
 
 <p>At insert time, just use a json column instead per column basis. Keep in mind that you will need to deal within the json contents.
-I found using this easier for insert, but the FTS needs some clean up to avoid insert column names in the <code>_fts</code> field at <code>local_search</code> tables.
+I found using this easier for insert, but the FTS needs some clean up to avoid insert column names in the <code class="highlighter-rouge">_fts</code> field at <code class="highlighter-rouge">local_search</code> tables.
 Also, for updates, the jsonb datatype will need extra work when extracting attributes.</p>
 
 <h2 id="additional-functions-used-here">Additional functions used here</h2>
 
 <p>In the insert statement above, you will see a user defined function that gets a random length vector of drugs. It is implemented using the following code:</p>
 
-<pre><code>CREATE TABLE drugsList ( id serial PRIMARY KEY, drugName text);
+<div class="highlighter-rouge"><pre class="highlight"><code>CREATE TABLE drugsList ( id serial PRIMARY KEY, drugName text);
 
 INSERT INTO drugsList(drugName) SELECT p.nameD FROM regexp_split_to_table(
 'Acetaminophen
@@ -710,6 +731,7 @@ CREATE OR REPLACE FUNCTION get_drugs_random(int)
 $BODY$
 LANGUAGE 'sql' VOLATILE;
 </code></pre>
+</div>
 
 <h2 id="references">References</h2>
 

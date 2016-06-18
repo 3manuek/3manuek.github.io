@@ -7,7 +7,7 @@ title: The Front Page
 
 ## Who am I?
 
-![alt text](https://github.com/3manuek/3manuek.github.io/blob/master/_posts/images/whoami.gif "Who am I? Zoolander")
+![alt text](assets/whoami.gif "Who am I? Zoolander")
 
 
 Hi there! I'm Emanuel Calvo, a Database Consultant and Data Engineer _currently_ located in
@@ -23,7 +23,8 @@ against an unfair, outdated and counterproductive law for citizens, which are fo
 to illegality thanks for corrupted politics, modern slavery and _black market "lobby"_.
 
 
-*Disclaimer*
+_Disclaimer_
+
 > This is a personal site. All opinions expressed here, do not represent those of my employer.
 
 

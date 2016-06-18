@@ -3,7 +3,7 @@ layout: post
 title:  "Ser anónimo, el derecho del futuro."
 date:   2015-04-03
 description: Por qué es necesario aprender el usufructo del anonimato.
-tags : [anonimato, general]
+tags : [Anonimato, General]
 categories:
 - General
 permalink: anonimato
