@@ -3,17 +3,17 @@
 permalink: /:categories/:year/:month/:day/:title
 
 exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md"]
-# highlighter: pygments
+highlighter: pygments
 
 markdown:    kramdown
 # This is how you put pygments config in jekyll 2.0 instead of pygments: true
-highlighter: rouge
+# highlighter: rouge
 
 
 # Themes are encouraged to use these universal variables
 # so be sure to set them if your theme uses them.
 #
-title : 3manuek's site
+title : 3manuek's Hub
 tagline: Data Engineering and Open Source Database Consultant
 author :
   name : Emanuel Calvo
