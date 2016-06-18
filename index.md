@@ -7,7 +7,7 @@ title: The Front Page
 
 ## Who am I?
 
-![alt text]({{ site.url }}/assets/whoami.gif "Who am I? Zoolander")
+![alt text](assets/whoami.gif "Who am I? Zoolander")
 
 
 Hi there! I'm Emanuel Calvo, a Database Consultant and Data Engineer _currently_ located in
