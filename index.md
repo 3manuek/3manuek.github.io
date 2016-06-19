@@ -1,7 +1,7 @@
 ---
 layout: page
 title: The Front Page
-# tagline: Data Engineering & others
+tagline: {{ page.tagline }}
 ---
 {% include JB/setup %}
 
