@@ -1,8 +1,9 @@
 ---
 layout: page
-title : Resume -- Emanuel Calvo
+title : Resume
 header : About 3manuek
 group: navigation
+tagline: Emanuel Calvo
 ---
 {% include JB/setup %}
 
@@ -32,6 +33,7 @@ July 2nd, 2013: [AWS - Postgres in AWS](http://media.amazonwebservices.com/AWS_R
 ## Certifications
 
 [PostgreSQL 9.4 Associate Certification](http://www.enterprisedb.com/store/products/dba-training/01t50000001Nyi7AAC), `EDB33986`.
+
 
 DataScience Specialization, Coursera (80% completed):
 
@@ -131,24 +133,21 @@ Open Source Source Undergraduate Degree Associate Professor, PostgreSQL Database
 > Buenos Aires, Argentina
 > February 2009 -  July 2009
 
-SysAdmin Unix at EA (Electronic Arts) Hydra - GOP project.
-Maintained platform consisted in Oracle database 10, Apaches and Tomcats (VAP, VCM) Clustered, with several stages of deploy.
-Mainly tasks are related to deploys, environment configuration, VMWare Infraestructure Client maintenance and monitoring.
-I did Mysql DBA tasks on Prod, Pre-Production and Development Servers for a Forums project. Fixing some character set problems and DDL, backups, restores, check, performance and others.
-Basic knowledge on deployment / process with Maven - Ant - Hudson.
-Assigned 50% to another project to provide Engineering Support at EA over Python scripting.
+- SysAdmin Unix at EA (Electronic Arts) Hydra - GOP project.
+- Maintained platform consisted in Oracle database 10, Apaches and Tomcats (VAP, VCM) Clustered, with several stages of deploy.
+- Main tasks were relate to deploys, environment configuration, VMWare Infraestructure Client maintenance and monitoring.
+- I did Mysql DBA tasks on Prod, Pre-Production and Development Servers for a Forums project. Fixing some character set problems and DDL, backups, restores, check, performance and others.
+- Basic knowledge on deployment / process with Maven - Ant - Hudson.
+- Assigned 50% to another project to provide Engineering Support at EA over Python scripting.
 
 ### Correo Argentino - SysAdmin senior Linux and PostgreSQL
 > Monte Grande, Argentina
 > August 2008  -  February 2009
 
-I managed production platform at Correo Argentino (over 400 terms with local databases and Linux enviroment).
-
-Some machines was enlaced with a AD throw WinBind.
-
-I deployed distribution scripts, db recoverys, control and monitoring, etc.
-
-Also managed servers over Centos 5 for the support area's knowledge-base application  (7 DB MySQL 5.1)
+- I managed production platform at Correo Argentino (over 400 terms with local databases and Linux enviroment).
+- Some machines was enlaced with a AD throw WinBind.
+- Created an improved deploy tool for scripts, database recovery, control and monitoring, etc.
+- Also managed servers over Centos 5 for the support area's knowledge-base application  (7 DB MySQL 5.1)
 
 ### Siemens - PHP developer
 > Monte Grande, Argentina
@@ -161,15 +160,11 @@ Some of the 'extra' task was made some Perl scripts for support area.
 > Monte Grande , Argentina
 > October 2007 - January 2008
 
-Terminal administration in W/NT and 2K remote servers. Configuration, control, monitoring. Attend Remedy tickets for fix problems and others.
-
-The application was in Paradox and Oracle databases, in which my tasks consisted in repair tables, fix some wrong data and others.
-
-Other task  I perform in the area was detecting and report application bugs.
-
-Other platform was MOSAIC. One of the most depth task was the application debug and error detection.
-
-I've been working for Huenei to Siemens and Correo Argentino.
+- Terminal administration in W/NT and 2K remote servers. Configuration, control, monitoring. Attend Remedy tickets for fix problems and others.
+- The application was in Paradox and Oracle databases, in which my tasks consisted in repair tables, fix some wrong data and others.
+- Bug reporting and detection.
+- MOSAIC debugging and support.
+- Customer Correo Argentino / Siemens.
 
 ----
 

@@ -1,8 +1,8 @@
 ---
 layout: page
 title: The Front Page
-tagline: {{ page.tagline }}
 ---
+
 {% include JB/setup %}
 
 ## Who am I?
