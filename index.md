@@ -1,7 +1,7 @@
 ---
 layout: page
 title: The Front Page
-# tagline: Data Engineering & others
+tagline: {{ page.tagline }}
 ---
 {% include JB/setup %}
 
@@ -27,6 +27,7 @@ _Disclaimer_
 
 > This is a personal site. All opinions expressed here, do not represent those of my employer.
 
+-----
 
 ## Current Posts
 
@@ -37,6 +38,6 @@ _Disclaimer_
 </ul>
 
 
---
+-----
 
 This theme is still unfinished. If you'd like to be added as a contributor, [please fork](http://github.com/plusjade/jekyll-bootstrap)! :.
