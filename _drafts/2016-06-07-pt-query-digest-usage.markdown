@@ -49,8 +49,19 @@ Using others will lead to non-complete profiling when processing. However, there
 
 You will collect the whole set of queries. You are not hunting _slow queries_ but also  _very frequent queries_. I did have cases where the issue was not regarding any slow query, but an application bug doing 2x the same query.
 
+### Other Percona enhancements
+
+[Slow log extended](https://www.percona.com/doc/percona-server/5.7/diagnostics/slow_extended.html) options willadd extra verbosity to the slow log. 
 
 ## [pt-query-digest](https://www.percona.com/doc/percona-toolkit/2.2/pt-query-digest.html#cmdoption-pt-query-digest--review) is your friend
+
+`pt-query-digest` can be used with an impressive set of options. Before you use it, I encourage the reader to do a quick read over its documentation.
+
+For example, you can gather not only the report but also the explains of the queries safely (that is, if a query has a subquery, it won't execute the query on the master).
+
+```
+pt-query-digest --type=slowlog --report-all --explain h=172.17.0.2 --user=root --password=mysql /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data/cb740be0743c-slow.log > /tmp/report.txt
+```
 
 
 ## Examining the query results
@@ -98,53 +109,21 @@ Finally, once changes have been made (any change)
 - Same `long_query_time`.
 
 
-## References
+complete
 
-I used to MySQL Sandbox for testing, but this time I ran into issues with the last Percona 5.7.12 version when starting the instance. So, I used the Docker version. 
+3laptop ~ # pt-query-digest --type=slowlog --report-all --explain h=172.17.0.2 --user=root --password=mysql /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data/cb740be0743c-slow.log > /tmp/report.txt
 
-Here is the all what you need to do:
 
-```bash
-docker run --name percona57 -e MYSQL_ROOT_PASSWORD=mysql  -d percona:5.7 --general-log=1 --slow-query-log=1 --long-query-time=0 
-```
-
---log-driver=syslog --log-opt syslog-address=/var/lib/mysql/4f1e1ad06dac-slow.log
-
-docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysql  -d percona:5.7 --general-log=1 --slow-query-log=1 --long-query-time=0 
 
 ```
-3laptop ~ # ls /var/lib/docker/volumes/21038cd30471474ece3e10b25293491d0acfd990c23d825711378c7ac0d4c311/_data
-35334e3ece57.log       auto.cnf    ca.pem           client-key.pem  ibdata1      ib_logfile1  mysql               private_key.pem  server-cert.pem  sys
-35334e3ece57-slow.log  ca-key.pem  client-cert.pem  ib_buffer_pool  ib_logfile0  ibtmp1       performance_schema  public_key.pem   server-key.pem   xb_doublewrite
-3laptop ~ # docker ps
-CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES
-35334e3ece57        percona:5.7         "docker-entrypoint.sh"   About a minute ago   Up About a minute   3306/tcp            percona57
-```
-
-Get mounts:
+➜  ~ sysbench --num-threads=4 --max-time=20 --test=oltp --mysql-user='root' --mysql-password='mysql' --oltp-table-size=100000 --mysql-host=172.17.0.2 --mysql-port=3306 prepare
 
 ```
-3laptop ~ # docker inspect percona57 | jq .[].Mounts
-[
-  {
-    "Propagation": "",
-    "RW": true,
-    "Mode": "",
-    "Driver": "local",
-    "Destination": "/var/lib/mysql",
-    "Source": "/var/lib/docker/volumes/21038cd30471474ece3e10b25293491d0acfd990c23d825711378c7ac0d4c311/_data",
-    "Name": "21038cd30471474ece3e10b25293491d0acfd990c23d825711378c7ac0d4c311"
-  },
-  {
-    "Propagation": "rprivate",
-    "RW": true,
-    "Mode": "",
-    "Destination": "/var/log/mysql",
-    "Source": "/var/log/mysql"
-  }
-]
 
-```
+3laptop ~ # pt-query-digest --type=slowlog --limit=100%  /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data/cb740be0743c-slow.log > /tmp/report.txt
+
+
+
 
 
 More information [here](https://hub.docker.com/_/percona/).
@@ -183,4 +162,11 @@ Logs:
 root@4f1e1ad06dac:/# ls /var/lib/mysql/4f1e1ad06dac*
 /var/lib/mysql/4f1e1ad06dac-slow.log  /var/lib/mysql/4f1e1ad06dac.log
 ```
+
+## Monitoring
+
+https://hub.docker.com/r/logzio/mysqlmonitor/
+
+
+
 
