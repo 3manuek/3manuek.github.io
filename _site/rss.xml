@@ -5,10 +5,110 @@
         <description>3manuek&#39;s Site - Emanuel Calvo</description>
         <link>https://github.com/3manuek/3manuek.github.io.git</link>
         <atom:link href="https://github.com/3manuek/3manuek.github.io.git/rss.xml" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Thu, 30 Jun 2016 23:06:51 -0300</lastBuildDate>
-        <pubDate>Thu, 30 Jun 2016 23:06:51 -0300</pubDate>
+        <lastBuildDate>Sat, 02 Jul 2016 21:16:26 -0300</lastBuildDate>
+        <pubDate>Sat, 02 Jul 2016 21:16:26 -0300</pubDate>
         <ttl>60</ttl>
 
+
+        <item>
+                <title>Percona Server docker HOWTO</title>
+                <description>&lt;h2 id=&quot;before-starting-the-container&quot;&gt;Before starting the container&lt;/h2&gt;
+
+&lt;p&gt;This article is not an introductory explanation of docker,however it’s scope if for docker’s beginners. You can consider it as an extension of the well documented &lt;a href=&quot;https://hub.docker.com/_/percona/&quot;&gt;Percona docker hub doc&lt;/a&gt;. For the source code of the image, the repository is at &lt;a href=&quot;https://github.com/dockerfile/percona&quot;&gt;github&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Here is the all what you need to do for start:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run --name percona57 -e &lt;span class=&quot;nv&quot;&gt;MYSQL_ROOT_PASSWORD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;a_password&amp;gt;  -d percona:5.7
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;For checking the container status log, you can execute &lt;code class=&quot;highlighter-rouge&quot;&gt;docker logs percona57&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;additional-mysql-logs&quot;&gt;Additional MySQL logs&lt;/h2&gt;
+
+&lt;p&gt;To start the container is pretty easy, but if you are not very used to Docker, you will find a bit lost if you want to enable logging or other features.&lt;/p&gt;
+
+&lt;p&gt;For example, a full logging container will be started with this:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysql  -d percona:5.7 --general-log=1 --slow-query-log=1 --long-query-time=0  --log_slow_verbosity=&#39;full, profiling, profiling_use_getrusage&#39;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Note that the &lt;code class=&quot;highlighter-rouge&quot;&gt;log_slow_verbosity&lt;/code&gt; is only applicable for the Percona release, and adds extra output that turns very useful when doing complex query reviews. As you can appreciate, all the options are passed after the image name (percona:5.7).&lt;/p&gt;
+
+&lt;p&gt;Now, the question is: where are the logs? Generally, you can access the container using &lt;code class=&quot;highlighter-rouge&quot;&gt;docker exec -it percona57 bash&lt;/code&gt; and view the logs inside it, although this is not the most comfortable way to do this.&lt;/p&gt;
+
+&lt;p&gt;In the example bellow, we’ll use &lt;code class=&quot;highlighter-rouge&quot;&gt;jq&lt;/code&gt; (a very handy json parser).&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ &lt;span class=&quot;c&quot;&gt;# docker ps&lt;/span&gt;
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+cb740be0743c        percona:5.7         &lt;span class=&quot;s2&quot;&gt;&quot;docker-entrypoint.sh&quot;&lt;/span&gt;   35 minutes ago      Up 35 minutes       3306/tcp            percona57
+
+3laptop ~ &lt;span class=&quot;c&quot;&gt;# docker inspect percona57 | jq .[].Mounts&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;s2&quot;&gt;&quot;Propagation&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;rprivate&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;RW&quot;&lt;/span&gt;: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Mode&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Destination&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;/var/log/mysql&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Source&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;/var/log/mysql&quot;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;,
+  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;s2&quot;&gt;&quot;Propagation&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;RW&quot;&lt;/span&gt;: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Mode&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Driver&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;local&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Destination&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;/var/lib/mysql&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Source&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;/var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Name&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154&quot;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
+
+3laptop ~ &lt;span class=&quot;c&quot;&gt;# ls -l /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data&lt;/span&gt;
+...
+-rw-r----- 1 maxscale docker  26886023 Jul  2 19:10 cb740be0743c.log
+-rw-r----- 1 maxscale docker 268834670 Jul  2 19:10 cb740be0743c-slow.log
+...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The logs (general and slow) are using the &lt;code class=&quot;highlighter-rouge&quot;&gt;container id&lt;/code&gt; in the file name, which can be appreciated when executing &lt;code class=&quot;highlighter-rouge&quot;&gt;docker ps&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;access-through-network&quot;&gt;Access through network&lt;/h2&gt;
+
+&lt;p&gt;Obviously, when using docker in production, you don’t want to access it locally.  For getting the host of our container (and all the running containers), we can do the following commands:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ # docker network ls
+NETWORK ID          NAME                DRIVER
+5fddd2e1a80a        bridge              bridge              
+e4e0c655e1aa        host                host                
+565f4a23d95a        none                null  
+
+3laptop ~ # docker network inspect 5fddd2e1a80a | jq .[].Containers
+{
+  &quot;cb740be0743cd662c700f73586fe481dc25e4eb27ef94e075c4668a5421eca13&quot;: {
+    &quot;IPv6Address&quot;: &quot;&quot;,
+    &quot;IPv4Address&quot;: &quot;172.17.0.2/16&quot;,
+    &quot;MacAddress&quot;: &quot;02:42:ac:11:00:02&quot;,
+    &quot;EndpointID&quot;: &quot;6dbd28900efe2c6f6edffcbbec0ac7d6446b4336e6e31f018f18d00f1005a812&quot;,
+    &quot;Name&quot;: &quot;percona57&quot;
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;We can see that our container &lt;code class=&quot;highlighter-rouge&quot;&gt;percona57&lt;/code&gt; is running over &lt;code class=&quot;highlighter-rouge&quot;&gt;172.17.0.2&lt;/code&gt; IP address. To access it, you only need to do as usual:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ # mysql -h 172.17.0.2 -p
+....
+mysql&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+</description>
+                <link>https://github.com/3manuek/3manuek.github.io.git/perconaserverbasichowto</link>
+                <guid>https://github.com/3manuek/3manuek.github.io.git/percona-docker</guid>
+                <pubDate>Sat, 02 Jul 2016 00:00:00 -0300</pubDate>
+        </item>
 
         <item>
                 <title>MySQL 5.7 InnoDB&#39;s Full Text Search overview.</title>

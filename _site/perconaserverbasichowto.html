@@ -1,0 +1,283 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Percona Server docker HOWTO</title>
+    <meta name="description" content="Starting Percona 5.7 docker container and other tricks.">
+    <meta name="author" content="Emanuel Calvo">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/css/1.4.0/bootstrap.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="/">3manuek's Site</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/resume">Resume</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="content">
+        
+
+<div class="page-header">
+  <h1>Percona Server docker HOWTO <small>Supporting tagline</small></h1>
+</div>
+
+<div class="row">
+  <div class="span10">
+    <h2 id="before-starting-the-container">Before starting the container</h2>
+
+<p>This article is not an introductory explanation of docker,however it’s scope if for docker’s beginners. You can consider it as an extension of the well documented <a href="https://hub.docker.com/_/percona/">Percona docker hub doc</a>. For the source code of the image, the repository is at <a href="https://github.com/dockerfile/percona">github</a></p>
+
+<p>Here is the all what you need to do for start:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code>docker run --name percona57 -e <span class="nv">MYSQL_ROOT_PASSWORD</span><span class="o">=</span>&lt;a_password&gt;  -d percona:5.7
+</code></pre>
+</div>
+
+<p>For checking the container status log, you can execute <code class="highlighter-rouge">docker logs percona57</code>.</p>
+
+<h2 id="additional-mysql-logs">Additional MySQL logs</h2>
+
+<p>To start the container is pretty easy, but if you are not very used to Docker, you will find a bit lost if you want to enable logging or other features.</p>
+
+<p>For example, a full logging container will be started with this:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysql  -d percona:5.7 --general-log=1 --slow-query-log=1 --long-query-time=0  --log_slow_verbosity='full, profiling, profiling_use_getrusage'
+</code></pre>
+</div>
+
+<p>Note that the <code class="highlighter-rouge">log_slow_verbosity</code> is only applicable for the Percona release, and adds extra output that turns very useful when doing complex query reviews. As you can appreciate, all the options are passed after the image name (percona:5.7).</p>
+
+<p>Now, the question is: where are the logs? Generally, you can access the container using <code class="highlighter-rouge">docker exec -it percona57 bash</code> and view the logs inside it, although this is not the most comfortable way to do this.</p>
+
+<p>In the example bellow, we’ll use <code class="highlighter-rouge">jq</code> (a very handy json parser).</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code>3laptop ~ <span class="c"># docker ps</span>
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+cb740be0743c        percona:5.7         <span class="s2">"docker-entrypoint.sh"</span>   35 minutes ago      Up 35 minutes       3306/tcp            percona57
+
+3laptop ~ <span class="c"># docker inspect percona57 | jq .[].Mounts</span>
+<span class="o">[</span>
+  <span class="o">{</span>
+    <span class="s2">"Propagation"</span>: <span class="s2">"rprivate"</span>,
+    <span class="s2">"RW"</span>: <span class="nb">true</span>,
+    <span class="s2">"Mode"</span>: <span class="s2">""</span>,
+    <span class="s2">"Destination"</span>: <span class="s2">"/var/log/mysql"</span>,
+    <span class="s2">"Source"</span>: <span class="s2">"/var/log/mysql"</span>
+  <span class="o">}</span>,
+  <span class="o">{</span>
+    <span class="s2">"Propagation"</span>: <span class="s2">""</span>,
+    <span class="s2">"RW"</span>: <span class="nb">true</span>,
+    <span class="s2">"Mode"</span>: <span class="s2">""</span>,
+    <span class="s2">"Driver"</span>: <span class="s2">"local"</span>,
+    <span class="s2">"Destination"</span>: <span class="s2">"/var/lib/mysql"</span>,
+    <span class="s2">"Source"</span>: <span class="s2">"/var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data"</span>,
+    <span class="s2">"Name"</span>: <span class="s2">"ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154"</span>
+  <span class="o">}</span>
+<span class="o">]</span>
+
+3laptop ~ <span class="c"># ls -l /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data</span>
+...
+-rw-r----- 1 maxscale docker  26886023 Jul  2 19:10 cb740be0743c.log
+-rw-r----- 1 maxscale docker 268834670 Jul  2 19:10 cb740be0743c-slow.log
+...
+</code></pre>
+</div>
+
+<p>The logs (general and slow) are using the <code class="highlighter-rouge">container id</code> in the file name, which can be appreciated when executing <code class="highlighter-rouge">docker ps</code>.</p>
+
+<h2 id="access-through-network">Access through network</h2>
+
+<p>Obviously, when using docker in production, you don’t want to access it locally.  For getting the host of our container (and all the running containers), we can do the following commands:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>3laptop ~ # docker network ls
+NETWORK ID          NAME                DRIVER
+5fddd2e1a80a        bridge              bridge              
+e4e0c655e1aa        host                host                
+565f4a23d95a        none                null  
+
+3laptop ~ # docker network inspect 5fddd2e1a80a | jq .[].Containers
+{
+  "cb740be0743cd662c700f73586fe481dc25e4eb27ef94e075c4668a5421eca13": {
+    "IPv6Address": "",
+    "IPv4Address": "172.17.0.2/16",
+    "MacAddress": "02:42:ac:11:00:02",
+    "EndpointID": "6dbd28900efe2c6f6edffcbbec0ac7d6446b4336e6e31f018f18d00f1005a812",
+    "Name": "percona57"
+  }
+}
+</code></pre>
+</div>
+
+<p>We can see that our container <code class="highlighter-rouge">percona57</code> is running over <code class="highlighter-rouge">172.17.0.2</code> IP address. To access it, you only need to do as usual:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>3laptop ~ # mysql -h 172.17.0.2 -p
+....
+mysql&gt;
+</code></pre>
+</div>
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/fts-innodb" title="MySQL 5.7 InnoDB's Full Text Search overview.">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next disabled"><a>Next &rarr;</a>
+      
+      </ul>
+    </div>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    
+    var disqus_developer = 1;
+    var disqus_shortname = 'jekyllbootstrap'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+  
+  <div class="span4">
+    <h4>Published</h4>
+    <div class="date"><span>02 July 2016</span></div>
+
+  
+    <h4>Tags</h4>
+    <ul class="tag_box">
+    
+    
+
+
+  
+     
+    	<li><a href="/tags.html#MySQL-ref">MySQL <span>2</span></a></li>
+     
+    	<li><a href="/tags.html#docker-ref">docker <span>1</span></a></li>
+    
+  
+
+
+
+    </ul>
+    
+  </div>
+</div>
+
+
+      </div>
+
+      <footer>
+        <p>&copy; Emanuel Calvo 2012 
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    
+
+
+
+  </body>
+</html>
+

@@ -1,11 +1,12 @@
 ---
 layout: post
-title:  "Percona Server docker HOWTO"
+title:  "HOWTO Percona Server with docker"
 date:   2016-07-2
 description: Starting Percona 5.7 docker container and other tricks.
 tags : [MySQL, docker]
 categories:
 - MySQL
+tagline: A simple addition to current docs.
 permalink: perconaserverbasichowto
 ---
 
