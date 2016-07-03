@@ -4,7 +4,7 @@
  <title>3manuek&#39;s Site</title>
  <link href="https://github.com/3manuek/3manuek.github.io.git/atom.xml" rel="self"/>
  <link href="https://github.com/3manuek/3manuek.github.io.git"/>
- <updated>2016-07-02T21:16:26-03:00</updated>
+ <updated>2016-07-02T21:21:44-03:00</updated>
  <id>https://github.com/3manuek/3manuek.github.io.git</id>
  <author>
    <name>Emanuel Calvo</name>
@@ -13,7 +13,7 @@
 
  
  <entry>
-   <title>Percona Server docker HOWTO</title>
+   <title>HOWTO Percona Server with docker</title>
    <link href="https://github.com/3manuek/3manuek.github.io.git/perconaserverbasichowto"/>
    <updated>2016-07-02T00:00:00-03:00</updated>
    <id>https://github.com/3manuek/3manuek.github.io.git/percona-docker</id>

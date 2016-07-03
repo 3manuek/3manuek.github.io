@@ -5,13 +5,13 @@
         <description>3manuek&#39;s Site - Emanuel Calvo</description>
         <link>https://github.com/3manuek/3manuek.github.io.git</link>
         <atom:link href="https://github.com/3manuek/3manuek.github.io.git/rss.xml" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Sat, 02 Jul 2016 21:16:26 -0300</lastBuildDate>
-        <pubDate>Sat, 02 Jul 2016 21:16:26 -0300</pubDate>
+        <lastBuildDate>Sat, 02 Jul 2016 21:21:44 -0300</lastBuildDate>
+        <pubDate>Sat, 02 Jul 2016 21:21:44 -0300</pubDate>
         <ttl>60</ttl>
 
 
         <item>
-                <title>Percona Server docker HOWTO</title>
+                <title>HOWTO Percona Server with docker</title>
                 <description>&lt;h2 id=&quot;before-starting-the-container&quot;&gt;Before starting the container&lt;/h2&gt;
 
 &lt;p&gt;This article is not an introductory explanation of docker,however it’s scope if for docker’s beginners. You can consider it as an extension of the well documented &lt;a href=&quot;https://hub.docker.com/_/percona/&quot;&gt;Percona docker hub doc&lt;/a&gt;. For the source code of the image, the repository is at &lt;a href=&quot;https://github.com/dockerfile/percona&quot;&gt;github&lt;/a&gt;&lt;/p&gt;
