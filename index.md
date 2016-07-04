@@ -7,10 +7,7 @@ title: The Front Page
 
 ## Who am I?
 
-![alt text](assets/whoami.gif "Who am I? Zoolander")
-
-
-Hi there! I'm Emanuel Calvo, a Database Consultant and Data Engineer _currently_ located in
+Hi there! I'm Emanuel Calvo, a Datanerd and Consultant _currently_ located in
 Buenos Aires, Argentina.
 
 Working in the Open Source community, as a way to enhance society and promote
@@ -18,9 +15,7 @@ free and open knowledge. If there is something that made humans as they are toda
 is _intelligence_. Been said, contributing to Open Knowledge is the way that
 humanity can evolve into a more respectful environment within earth and other beings.
 
-Also, I'm a responsible Cannabis growing supporter, as part of the exercise of freedom,
-against an unfair, outdated and counterproductive law for citizens, which are forced
-to illegality thanks for corrupted politics, modern slavery and _black market "lobby"_.
+I'm a Net Party pair member (_par del Partido de la Red_). Check the [platform](https://docs.partidodelared.org).
 
 
 _Disclaimer_
@@ -39,4 +34,8 @@ _Disclaimer_
 
 --
 
-This theme is still unfinished. If you'd like to be added as a contributor, [please fork](http://github.com/plusjade/jekyll-bootstrap)! :.
+
+![alt text](assets/whoami.gif "Who am I? Zoolander")
+
+
+This theme is still unfinished. If you'd like to be added as a contributor, [please fork](http://github.com/plusjade/jekyll-bootstrap)! .•.

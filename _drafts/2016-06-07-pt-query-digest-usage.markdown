@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  "MySQL Slow query analysis tools and sources"
+title:  "How you can start MySQL Slow query analysis."
 date:   2016-06-22
-description: Additional usage and recommendations for pt-query-digest.
+description: Tools and resources.
 tags : [MySQL, SQL, tuning]
 categories:
 - MySQL
@@ -32,7 +32,9 @@ Generally, queries can be slow due to:
 - Bad cardinality and not useful filters
 - Inner joins with outer order using different keys
 - File sorting  
-- Bad writing queries (large subqueries, large IN clauses, i.e.)
+- Bad writing queries (large subqueries, large IN clauses, non targeted bugs, i.e.)
+
+Check the latest [bugs reported](https://bugs.mysql.com/search.php?cmd=display&status=Active&severity=-5&search_for=query&os=0&bug_age=0&order_by=bug_type&direction=ASC&limit=10&mine=0&reorder_by=bug_type).
 
 ## How much do you need to collect?
 
@@ -120,8 +122,9 @@ complete
 
 ```
 
+```
 3laptop ~ # pt-query-digest --type=slowlog --limit=100%  /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data/cb740be0743c-slow.log > /tmp/report.txt
-
+```
 
 
 
