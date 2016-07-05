@@ -17,6 +17,10 @@ Query analysis is pretty much valuated for consultants, as a good query analysis
 
 And -the most important- is not only about performance. A good query profiling can be a good diagnostic of the entire software architecture. Sometimes RDBMS are used for stuff that are not the best fit or, even NoSQLs were used when MySQL/Postgres can be a better fit.
 
+Also, this article is not focus on SQL tricks or neither how to understand MySQL
+explain, which I assume you already have some knowledge to continue the reading. A
+very nice library to enjoy can be found at [Use the index, Luke!](http://use-the-index-luke.com/).
+
 
 ## The approach
 
@@ -46,7 +50,9 @@ For a query analysis you want to collect _as much as you can_:
 
 Using others will lead to non-complete profiling when processing. However, there are cases where is not possible to have the `long_query_time = 0` due to the high amount of TPS (_Transactions Per Second_). You can set it to `0.5` or higher. The closer to 0, the better.
 
-You will collect the whole set of queries. You are not hunting _slow queries_ but also _very frequent queries_. I did have cases where the issue was not regarding any slow query, but an application bug doing 2x the same query.
+You will collect the whole set of queries. You are not hunting _slow queries_ but also _very frequent queries_. I did have cases where the issue was not regarding any slow query, but an application bug doing 2x the same query. Also you will be probably hunting buggy queries, with unnecessary large result sets, suspicious orders, bad FTS usage, slow procedures, etc.
+
+Generally, when analyzing BI or reporting servers, it is accepted to have a large `long_query_time`, as you will probably focusing on slow queries.
 
 ### Percona enhancements to be aware of
 
@@ -72,16 +78,6 @@ pt-query-digest --type=slowlog --report-all --explain h=172.17.0.2 --user=root -
 - Does the application uses the full set of rows? Limit the number of rows as much as possible
 
 
-## Rewriting a query
-
-
-
-How to execute the SHOWS in the `pt-query-digest`:
-
-```bash
-egrep "SHOW.[TABLE|CREATE].*" /tmp/report.txt | sed 's/^#\s*//' | sed 's/\\/\\\\/g' | sort | uniq | sed "s/'/\\\'/g" | xargs -i mysql --user=mysql --password=SHADOW -e {} > /tmp/SHOW.txt
-```
-
 
 ## Other complementary tools
 
@@ -99,73 +95,44 @@ The idea is to do a _top style_ metrics of the  streamed transactions from the r
 > Note: Is still in development.
 
 
+## The main parts of the `pt-query-digest`
+
+- Overall stats (useful for general comparisons)
+- Profile: Query by ranking in terms of execution time.
+- Queries: Each query with execution details.
+
+### Where do I start analyzing?
+
+The general rule of the thumb is start by the heaviest down to the others. I would
+say that it depends on how much time you want to waste and the complexity of the queries.
+
+My recommendation is to do the queries that consume more than 40-50% of accumulated execution time on BI servers
+and 50-70% when it is an OLTP workload.
+
+Once you do a first query review, the subsequent analysis will not be very useful if no
+changes are applied on the queries.  
+
+
+## Rewriting a query
+
+How to execute the SHOWS in the `pt-query-digest`:
+
+```bash
+egrep "SHOW.[TABLE|CREATE].*" /tmp/report.txt | sed 's/^#\s*//' | sed 's/\\/\\\\/g' | sort | uniq | sed "s/'/\\\'/g" | xargs -i mysql --user=mysql --password=SHADOW -e {} > /tmp/SHOW.txt
+```
+
+As a rule, the rewritten query should return the same amount of records and order, unless
+your recommendation specifies that the current result set size or order are not
+convenient. i.e. very large result sets with a lot of discarded rows from the application,
+a query that is returning an incorrect order, etc.
+
 
 ## Comparing the before and after
 
 Finally, once changes have been made (any change)
 
-- Same interval of time and day. --since and --until options will help you to speficy this. --review option will help you to do incremental analysis.
-- TPS
-- Execution time
-- Same `long_query_time`.
-
-
-complete
-
-```
-3laptop ~ # pt-query-digest --type=slowlog --report-all --explain h=172.17.0.2 --user=root --password=mysql /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data/cb740be0743c-slow.log > /tmp/report.txt
-```
-
-
-```
-➜  ~ sysbench --num-threads=4 --max-time=20 --test=oltp --mysql-user='root' --mysql-password='mysql' --oltp-table-size=100000 --mysql-host=172.17.0.2 --mysql-port=3306 prepare
-
-```
-
-```
-3laptop ~ # pt-query-digest --type=slowlog --limit=100%  /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data/cb740be0743c-slow.log > /tmp/report.txt
-```
-
-
-
-
-More information [here](https://hub.docker.com/_/percona/).
-
-```bash
-3laptop ~ # docker network ls
-NETWORK ID          NAME                DRIVER
-5fddd2e1a80a        bridge              bridge              
-e4e0c655e1aa        host                host                
-565f4a23d95a        none                null    
-
-3laptop ~ # docker network inspect 5fddd2e1a80a
-[
-    {
-        "Name": "bridge",
-...
-        "Containers": {
-            "118b5dc41e7e693c65b407e0c2636e5024859ec28c96f165673d3e7bffe8475d": {
-                "Name": "percona57",
-                "EndpointID": "cf09eb5ee7edf298813729cd5323b84eb5c307a6feae67a51d260ae5d6c9366a",
-                "MacAddress": "02:42:ac:11:00:02",
-                "IPv4Address": "172.17.0.2/16",
-                "IPv6Address": ""
-            }
-
-
-3laptop ~ # mysql -h 172.17.0.2 -p
-....
-mysql>
-
-```
-
-Logs:
-
-```
-root@4f1e1ad06dac:/# ls /var/lib/mysql/4f1e1ad06dac*
-/var/lib/mysql/4f1e1ad06dac-slow.log  /var/lib/mysql/4f1e1ad06dac.log
-```
-
-## Monitoring
-
-https://hub.docker.com/r/logzio/mysqlmonitor/
+- Same interval of time and day use ( `--since` and `--until` options ).
+- `--review` option will help you to do incremental analysis.
+- TPS before and after.
+- Overall Execution time make easier the job of comparing the effectiveness of the changes.
+- Use always the same `long_query_time` on both.
