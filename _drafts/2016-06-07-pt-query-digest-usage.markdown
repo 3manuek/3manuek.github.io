@@ -26,7 +26,7 @@ very nice library to enjoy can be found at [Use the index, Luke!](http://use-the
 
 First of all you need to know what the customer is literally doing in the server, which information and type of server they have online. This may be something pretty much _obvious_, but believe me, it is not trivial to repeat this.
 
-A server could: be part of a sharded cluster, be a report server, be a BI server, be a web OLTP server, test server, and so on. Market impose those infinite combinations, however there are a few rules for good practice when writing queries. And those good practices will depend on the RDBMS you are working on (in this particular case, we will focus on MySQL).
+A server could be part of a sharded cluster, a report server, a BI server, a web OLTP server, test server, and so on. Market impose those infinite combinations, however there are a few rules for good practice when writing queries. And those good practices will depend on the RDBMS you are working on (in this particular case, we will focus on MySQL).
 
 Now, you know what you need to get and how think your analysis. Beyond query complexity, sometimes you need to know which solution can be applied or not when you rewrite the query or provide suggestions.
 
@@ -112,8 +112,7 @@ and 50-70% when it is an OLTP workload.
 Once you do a first query review, the subsequent analysis will not be very useful if no
 changes are applied on the queries.  
 
-
-## Rewriting a query
+### Get the table details
 
 How to execute the SHOWS in the `pt-query-digest`:
 
