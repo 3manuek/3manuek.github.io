@@ -11,7 +11,7 @@ permalink: keeppersistentconnections
 
 
 It sounds like a bad idea, I won't disagree,  however there is certainly usual that
-some applications use persistent connections, withouth handling the `keepalive`.
+some applications use persistent connections, without handling the `keepalive`.
 Before to spit out the _partial workaround_ (assuming that you don't have any firewall
 or network setup), you should read this [article](http://hans.io/blog/2014/02/19/postgresql_connection/) which actually shows how bad is
 the idea of keeping connections open in certain scenarios.
