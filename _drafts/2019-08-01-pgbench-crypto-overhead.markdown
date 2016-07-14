@@ -9,7 +9,7 @@ categories:
 permalink: pgcryptoppgbench
 ---
 
-Hey there again! This post will be covering simple benchmarks for PgCrypto under
+Hey there again! This post will be covering simple benchmarks for [PgCrypto](https://www.postgresql.org/docs/9.5/static/pgcrypto.html) under
 Postgres 9.5.2. As a side note, here there are a few details about the test:
 
 - I'm using [Docker image](https://github.com/docker-library/postgres/blob/master/9.5/Dockerfile).
