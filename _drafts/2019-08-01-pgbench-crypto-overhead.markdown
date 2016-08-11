@@ -12,7 +12,7 @@ permalink: pgcryptoppgbench
 Hey there again! This post will be covering simple benchmarks for [PgCrypto](https://www.postgresql.org/docs/9.5/static/pgcrypto.html) under
 Postgres 9.5.2. As a side note, here there are a few details about the test:
 
-- I'm using [Docker image](https://github.com/docker-library/postgres/blob/master/9.5/Dockerfile).
+- I'm using [Docker image](https://hub.docker.com/_/postgres/) -- [Code](https://github.com/docker-library/postgres/blob/master/9.5/Dockerfile).
 - All the tests are in a local machine, and I'll be focusing in the performance difference
    between algorithms.
 - The test is intended to calculate before hand, the encryption overhead inside
@@ -42,8 +42,12 @@ incurring in the `pgbench` usage. This is easier as no previous data is required
 run it. [pgCryptoBench](https://github.com/3manuek/pgCryptoBench).
 
 This test runs a process per core and times the execution, no disk activity, only
-in-memory processing. Although it is not realistic
+in-memory processing.
 
+
+```
+docker run -P postgres
+```
 
 ```
 |sync;

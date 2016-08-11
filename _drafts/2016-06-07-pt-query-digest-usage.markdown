@@ -11,11 +11,15 @@ permalink: querydigestcomplements
 
 ## Objective of the article
 
-This is not intended to be the ultimate guide for query analysis, it is just a simple starting guide for people that want to do so. If you want to start from something, I recommend you to start with [Effective MySQL: optimizing SQL Statements by Ronald Bradford](https://www.amazon.es/Effective-MySQL-Optimizing-Statements-Oracle/dp/0071782796).
+This is not intended to be the ultimate guide for query analysis, it is just a simple starting guide for people that want to do so.
+If you want to start from something, I strongly recommend you to start with [Effective MySQL: optimizing SQL Statements by Ronald Bradford](https://www.amazon.es/Effective-MySQL-Optimizing-Statements-Oracle/dp/0071782796).
 
-Query analysis is pretty much valuated for consultants, as a good query analysis and application can _save money_. I saw customers buying new hardware just because _the MySQL was too slow_.
+Query Analysis is pretty much valuated for consultants, as a good query analysis
+and query rewriting can _save money_. I saw customers buying new hardware just because _the MySQL was too slow_.
 
-And -the most important- is not only about performance. A good query profiling can be a good diagnostic of the entire software architecture. Sometimes RDBMS are used for stuff that are not the best fit or, even NoSQLs were used when MySQL/Postgres can be a better fit.
+And -the most important- is not only about performance. A good query profiling can be a good
+diagnostic of the entire software and data architecture. Sometimes, RDBMS are used for stuff
+that are not the best fit for or, even NoSQLs were used when MySQL/Postgres can be a better fit.
 
 Also, this article is not focus on SQL tricks or neither how to understand MySQL
 explain, which I assume you already have some knowledge to continue the reading. A
@@ -24,11 +28,18 @@ very nice library to enjoy can be found at [Use the index, Luke!](http://use-the
 
 ## The approach
 
-First of all you need to know what the customer is literally doing in the server, which information and type of server they have online. This may be something pretty much _obvious_, but believe me, it is not trivial to repeat this.
+First of all you need to know what the customer is literally doing in the server,
+which information and type of server they have online. This may be something pretty
+much _obvious_, but believe me, it is not trivial to repeat this.
 
-A server could be part of a sharded cluster, a report server, a BI server, a web OLTP server, test server, and so on. Market impose those infinite combinations, however there are a few rules for good practice when writing queries. And those good practices will depend on the RDBMS you are working on (in this particular case, we will focus on MySQL).
+A server could be part of a sharded cluster, a report server, a BI server, a web
+*OLTP* server, test server, and so on. Market impose those infinite combinations,
+however there are a few rules for good practice when writing queries. And those
+good practices will depend on the RDBMS you are working on (in this particular case,
+  we will focus on MySQL).
 
-Now, you know what you need to get and how think your analysis. Beyond query complexity, sometimes you need to know which solution can be applied or not when you rewrite the query or provide suggestions.
+Now, you know what you need to get and how to start the analysis. Beyond query complexity,
+sometimes you need to know which solution can be applied or not when you rewrite the query or provide suggestions.
 
 Generally, queries can be slow due to:
 
