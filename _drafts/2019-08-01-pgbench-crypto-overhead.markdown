@@ -35,6 +35,13 @@ Postgres 9.5.2. As a side note, here there are a few details about the test:
 > Note 4:
 > Sar graphs done with ksar.
 
+## Supported algorithms
+
+[AES]()
+[Blowfish]()
+[3DES]()
+
+
 ## CPU basic benchmark
 
 There is a way to do a quick benchmark using only encrypt/decrypt functions, without

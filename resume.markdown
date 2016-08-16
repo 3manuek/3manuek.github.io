@@ -1,7 +1,7 @@
 ---
 layout: page
 title : Resume
-header : About 3manuek
+header : About Emanuel
 group: navigation
 tagline: Emanuel Calvo
 ---
@@ -10,17 +10,20 @@ tagline: Emanuel Calvo
 For professional contact, you can send a contact request or message through my
 [LinkedIn Profile](https://www.linkedin.com/in/ecbcbcb).
 
+
+
 ## Summary
 
 - Since 2006, I've worked with a very heterogeneous set of technologies  and companies, from boutique services to large consulting firms, telecommunications companies for training and consulting.
-- Mostly focused on data and its process, from pipelines, workers, queues and databases/datastores.
+- Mostly focused on data and its process, from pipelines, workers, queues to databases/datastores.
 - Code fixing in several languages is something that I do on a daily basis (Python, Perl, Go, R, Bash and other shells).
-- Although I've played with Windows in the past, I consider that at least 98% of the servers run Linux, Unix BSD or Solaris.
+- Although I've played with Windows in the past, I consider that at least 98% of the servers that I have played with, run Linux, Unix BSD or Solaris.
 - Postgres and MySQL/MariaDB are my most known database systems. However, I've hands on others DB/DS experience in Oracle, Vertica, MongoDB, Redis, Greenplum, among others.
 - Good AWS experience.
-- I also have some experience on elasticsearch, sphinx, rabbitmq, zeromq, ansible, hdfs/hadoop, cassandra and others.
+- I also have some experience on Elasticsearch, Docker, Sphinx, Rabbitmq, Zeromq, Ansible, HDFS/hadoop, Cassandra and others.
 
-As a previous and totally unrelated experience, I worked at Federal Penitenciary Argentinian Force,
+
+As a previous and totally unrelated experience, I worked at Federal Penitentiary Argentinian Force,
 as officer in several institutions, from medium to high security.
 
 ## External publications
@@ -55,7 +58,12 @@ DataScience Specialization, Coursera (80% completed):
 
 ## Current position
 
--- Soon it will be updated :)
+### Percona -  Senior Technical Services Engineer _[main position]_
+> Buenos Aires, Argentina
+> August 2016 - Current
+
+Full description of the role [here](https://www.percona.com/about-percona/careers/senior-technical-services-engineer).
+
 
 ### 8kData - Data External Advisor
 > Madrid, Spain
@@ -85,6 +93,7 @@ Open Source Source Undergraduate Degree Associate Professor, PostgreSQL Database
 - Other Technologies: MySQL/MariaDB, xtraDB, Galera, Docker, Ansible, MongoDB, PostgreSQL, Vertica, Oracle.
 - Part of the Advance Consulting Team for Postgres implementations, solutions and architecture.
 - Lead Database Consultant T73
+
 
 ### 2ndQuadrant - PostgreSQL consultant
 > Buenos Aires, Argentina
