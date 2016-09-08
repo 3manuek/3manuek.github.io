@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Verificando descargas a traves de hashes y firmas</title>
+    <meta name="description" content="Caso ejemplo, Bitcoin Core.">
+    <meta name="author" content="Emanuel Calvo">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/css/1.4.0/bootstrap.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="/">emanuelHub</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/refund_policy">Refund Policy</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/resume">Resume</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="content">
+        
+
+<div class="page-header">
+  <h1>Verificando descargas a traves de hashes y firmas <small></small></h1>
+</div>
+
+<div class="row">
+  <div class="span10">
+    <h2 id="la-razn">La razón</h2>
+
+<p>Bitcoin es en mi opinión, la más reciente y revolucionaria tecnología, que permite
+monetizar la capacidad de computo. No voy a entrar en detalles con respecto a
+como funciona o como se utiliza, ya que estimo que si llegaste a esta página, es
+porque te has topado con <a href="https://bitcoin.org/en/alert/2016-08-17-binary-safety">algo como esto</a>.</p>
+
+<p>El <em>hasheo</em> de binarios y las firmas digitales han estado dando vuelta desde hace
+años. Sin embargo, es sorprendente la cantidad de personas que aún no lo toman en serio.</p>
+
+<p>La única herramienta que tenemos como ciudadanos contra la vigilancia de estado
+y el ciberterrorismo, es nuestro propio conocimiento. Ya que los estados no pueden
+garantizar la protección de datos de sus ciudadanos debido a la constante mejora
+de los sistemas de espionaje y avances en materia de ciberataques.</p>
+
+<p>Hay un muy buen tutorial <em>exclusivo para el Bitcoin Core</em> en <a href="https://www.reddit.com/r/Bitcoin/wiki/verifying_bitcoin_core">reddit</a>,
+pero está en inglés.</p>
+
+<p>Más allá de Bitcoin, tené en cuenta que la firma de binarios es algo más que rutinario y por consecuencia, recomendable verificar antes de poner código
+en producción.</p>
+
+<h2 id="obteniendo-los-hashes">Obteniendo los <em>hashes</em></h2>
+
+<p>Cada proyecto tiene sus formas, pero vamos a seguir las del Bitcoin Core. Al
+ir a la página de los <a href="https://bitcoin.org/en/download"><em>downloads</em></a>, vamos a ver
+un link a <a href="https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc">Verify release signatures</a>, que contiene un archivo con un mensaje en texto claro y una firma codificada. La parte codificada, contiene el texto claro codificado con la firma que descargaremos/importaremos más adelante:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="c"># Descargo:</span>
+curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc &gt; SHA256SUMS.asc
+
+
+<span class="gp">$ </span>curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+abf0e7336621250702d7a55487c85b8de33c07a30fbc3ecf7f56c97007fcb4ce  bitcoin-0.12.1-linux32.tar.gz
+54aca14b7512801ab78cc93f8576e1b66364a890e8017e8a187e4bf0209fd28c  bitcoin-0.12.1-linux64.tar.gz
+91d14dcb9b88ca845df450ceb94250bb5c9a0d514d8ca0c55eb480d0ac77ef32  bitcoin-0.12.1-osx64.tar.gz
+e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
+08fc3b6c05c39fb975bba1f6dd49992df46511790ce8dc67398208af9565e199  bitcoin-0.12.1.tar.gz
+fba73e4825a6421ce6cc1e48b67ff5f2847ae1b520d26272e69f7f25de4f36d1  bitcoin-0.12.1-win32-setup.exe
+148fb438a32f1706a366a7825bbc5e770e5f9a20e5694f724a443275976a0791  bitcoin-0.12.1-win32.zip
+c6e06f90e41c36c9a447f065952869e2d7d571ab34b86d061ae19ec25b2799d4  bitcoin-0.12.1-win64-setup.exe
+d8e1ab9ff65b79c130ec6af8e36626310ffdaf6aacb7a40cfb76e7a63bdfcfd5  bitcoin-0.12.1-win64.zip
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 <span class="o">(</span>GNU/Linux<span class="o">)</span>
+
+iQIcBAEBCAAGBQJXEIwgAAoJEJDIAZ42wulkXNcP/Re0iawPi8muiq6J36ZUZKws
+KL2nwjCImj91on8wGoTUir1IytuIafA4JMHslos2Ak3za2UKAEZrEfx0dXm/FVql
+AgRneYLYedMQ8127UkSho4rxuwjB3h2gR/FGPpPT0PmbNTWOFsKtV1V9zwsCeA9Q
+br/ly2BfZHWsS1tpSK5ukP5W0q+Ii2fO4pcfaAsS2y/gc5kyj5hTiKQivwBVXoVA
+cyH1splq1foM5BYwOuT/cUKGrpA8fWo7+xOaEhhFBlW0oJaSXcNSK9mVTSI/dQ/2
+lINXcWBtotnH6/evS35pAIOe4PHg/URhXNT/Sdfwts4YL5nMtF+SPBrJWadPvx3C
+qdSDZKMuM0cDjVg1F4rjoWAxyshWNKKU2J+qkNUBZ1LbpVyDR3Gl4LFwRjaw0wyZ
+n6zHonPCtp33ErhsaY0GryHV1pKvL1h6uyDNWHbYpKny4F+TvbyQ6XNVHrx1IAn5
++9UMPB3Q962/8hrRqK95Cs6AJ/D1Wdw9rwEqOC48waDzttYCVknn4L6rGECDdRM4
+6pbWNTf3m9lzThWjiuEdNnPoNuKoBD9/UHWW/WRHjT6tbcGqstoyRKTsi8jjmwnC
+9g4xWRsTdqYIAL4PBv32T+QYW/YcyRNTT97t/M0aukXxxxjCObehWVmBXVeNn0/9
+lvvCgGgSJXtJHxzqcJ2I
+<span class="o">=</span>a2/6
+-----END PGP SIGNATURE-----
+</code></pre>
+</div>
+
+<p>Podemos observar que el hash es un algoritmo de SHA256 (justo debajo del <em>BEGIN PGP SIGNED MESSAGE</em>). En Linux tenemos el comando <code class="highlighter-rouge">sha256sum</code>,
+pero en Mac vamos a usar (no hay mucha diferencia en el proceso) <code class="highlighter-rouge">shasum</code>. Lo que vamos a hacer es
+hashear los binarios que descargamos y compararlos con la tabla anterior:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ grep $(shasum -a 256 bitcoin-0.12.1-osx.dmg) SHA256SUMS.asc
+SHA256SUMS.asc:e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
+</code></pre>
+</div>
+
+<p>Hay varios algoritmos de hashing, por lo que dependiendo el proyecto o binarios
+que necesites verificar, deberás utilizar uno u otro. Por ejemplo, <code class="highlighter-rouge">md5sum</code> o <code class="highlighter-rouge">md5</code> (Mac) son las
+herramientas para otro algoritmo llamado <em>Message-Digest Algorithm 5</em>.</p>
+
+<p>¡Joya! Ahora vamos a verificar la firma.</p>
+
+<h2 id="la-firma">La <em>firma</em></h2>
+
+<p>Para la versión que yo tenía bajada, la firma es la key <code class="highlighter-rouge">36C2E964</code>. En la página
+de las descargas, podrás ver las firmas para cada versión. En este caso, la firma
+es la de <a href="https://bitcoin.org/laanwj.asc">Wladimir</a>.</p>
+
+<p>Importo:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ gpg --import Downloads/laanwj-releases.asc
+gpg: key 36C2E964: public key "Wladimir J. van der Laan (Bitcoin Core binary release signing key) &lt;laanwj@gmail.com&gt;" imported
+gpg: Total number processed: 1
+gpg:               imported: 1  (RSA: 1)
+gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
+gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u
+</code></pre>
+</div>
+
+<p>Verifico el fingerprint (podrás ver el fingerprint en el <a href="https://bitcoin.org/en/alert/2016-08-17-binary-safety">anuncio</a> o cuando decodifiques el mensaje):</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ gpg --fingerprint 01EA5486DE18A882D4C2684590C8019E36C2E964
+pub   4096R/36C2E964 2015-06-24 [expires: 2017-02-13]
+      Key fingerprint = 01EA 5486 DE18 A882 D4C2  6845 90C8 019E 36C2 E964
+uid                  Wladimir J. van der Laan (Bitcoin Core binary release signing key) &lt;laanwj@gmail.com&gt;
+</code></pre>
+</div>
+
+<p>Con esto sabemos que la firma es válida. Lo que no sabemos es si el mensaje fue
+firmado con esta firma. Por suerte esto es más que sencillo, solo necesitamos
+ver que podemos decodificar el mensaje utilizando la firma que importamos:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>Emanuels-iMac:~ emanuel$ gpg --output mensaje  -d Downloads/SHA256SUMS.asc
+gpg: Signature made Fri Apr 15 03:37:20 2016 ART using RSA key ID 36C2E964
+gpg: Good signature from "Wladimir J. van der Laan (Bitcoin Core binary release signing key) &lt;laanwj@gmail.com&gt;"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 01EA 5486 DE18 A882 D4C2  6845 90C8 019E 36C2 E964
+</code></pre>
+</div>
+
+<p>Podemos ver que el fingerprint concuerda con el del anuncio. Eso es una buena señal.</p>
+
+<p>Contenido del mensaje decodificado éxitosamente:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>$ cat mensaje
+abf0e7336621250702d7a55487c85b8de33c07a30fbc3ecf7f56c97007fcb4ce  bitcoin-0.12.1-linux32.tar.gz
+54aca14b7512801ab78cc93f8576e1b66364a890e8017e8a187e4bf0209fd28c  bitcoin-0.12.1-linux64.tar.gz
+91d14dcb9b88ca845df450ceb94250bb5c9a0d514d8ca0c55eb480d0ac77ef32  bitcoin-0.12.1-osx64.tar.gz
+e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
+08fc3b6c05c39fb975bba1f6dd49992df46511790ce8dc67398208af9565e199  bitcoin-0.12.1.tar.gz
+fba73e4825a6421ce6cc1e48b67ff5f2847ae1b520d26272e69f7f25de4f36d1  bitcoin-0.12.1-win32-setup.exe
+148fb438a32f1706a366a7825bbc5e770e5f9a20e5694f724a443275976a0791  bitcoin-0.12.1-win32.zip
+c6e06f90e41c36c9a447f065952869e2d7d571ab34b86d061ae19ec25b2799d4  bitcoin-0.12.1-win64-setup.exe
+d8e1ab9ff65b79c130ec6af8e36626310ffdaf6aacb7a40cfb76e7a63bdfcfd5  bitcoin-0.12.1-win64.zip
+</code></pre>
+</div>
+
+<h3 id="para-los-oneliners">Para los <em>oneLiners</em></h3>
+
+<p>Siempre hay algun <em>freak</em> que quiere cosas como estas (está para Mac, usar <code class="highlighter-rouge">wget</code> y <code class="highlighter-rouge">sha256sum</code> para Linux):</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span><span class="o">(</span> curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc  | gpg -d ; <span class="o">)</span> 2&gt; /dev/null  | grep <span class="k">$(</span>shasum -a 256 bitcoin-0.12.1-osx.dmg | cut -f1 -d<span class="s1">' '</span>  <span class="k">)</span>
+e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
+</code></pre>
+</div>
+
+<h2 id="unas-ltimas-sugerencias">Unas últimas sugerencias</h2>
+
+<p>‘ta jodida la mano, así que mejor arremangarse y empezar a corroborar toda
+esas cosas que descargamos, en especial aquellas que están en la mira.</p>
+
+<p>Listo el pollo. ¡Espero que te haya servido!</p>
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/perconaserverbasichowto" title="HOWTO Percona Server with docker">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next disabled"><a>Next &rarr;</a>
+      
+      </ul>
+    </div>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    
+    var disqus_developer = 1;
+    var disqus_shortname = 'jekyllbootstrap'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+  
+  <div class="span4">
+    <h4>Published</h4>
+    <div class="date"><span>18 August 2016</span></div>
+
+  
+    <h4>Tags</h4>
+    <ul class="tag_box">
+    
+    
+
+
+  
+     
+    	<li><a href="/tags.html#PGP-ref">PGP <span>1</span></a></li>
+     
+    	<li><a href="/tags.html#SHA-ref">SHA <span>1</span></a></li>
+     
+    	<li><a href="/tags.html#Bitcoin-ref">Bitcoin <span>1</span></a></li>
+    
+  
+
+
+
+    </ul>
+    
+  </div>
+</div>
+
+
+      </div>
+
+      <footer>
+        <p>&copy; Emanuel Calvo 2012 
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    
+
+
+
+  </body>
+</html>
+

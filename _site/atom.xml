@@ -1,16 +1,174 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
  
- <title>3manuek_hub</title>
+ <title>emanuelHub</title>
  <link href="https://github.com/3manuek/3manuek.github.io.git/atom.xml" rel="self"/>
  <link href="https://github.com/3manuek/3manuek.github.io.git"/>
- <updated>2016-07-03T14:37:32-03:00</updated>
+ <updated>2016-09-08T12:47:34-03:00</updated>
  <id>https://github.com/3manuek/3manuek.github.io.git</id>
  <author>
    <name>Emanuel Calvo</name>
    <email>3manuek@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Verificando descargas a traves de hashes y firmas</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/pgp-bitcoint-sha"/>
+   <updated>2016-08-18T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/verificar-hashes-y-firmas-en-binarios</id>
+   <content type="html">&lt;h2 id=&quot;la-razn&quot;&gt;La razón&lt;/h2&gt;
+
+&lt;p&gt;Bitcoin es en mi opinión, la más reciente y revolucionaria tecnología, que permite
+monetizar la capacidad de computo. No voy a entrar en detalles con respecto a
+como funciona o como se utiliza, ya que estimo que si llegaste a esta página, es
+porque te has topado con &lt;a href=&quot;https://bitcoin.org/en/alert/2016-08-17-binary-safety&quot;&gt;algo como esto&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;El &lt;em&gt;hasheo&lt;/em&gt; de binarios y las firmas digitales han estado dando vuelta desde hace
+años. Sin embargo, es sorprendente la cantidad de personas que aún no lo toman en serio.&lt;/p&gt;
+
+&lt;p&gt;La única herramienta que tenemos como ciudadanos contra la vigilancia de estado
+y el ciberterrorismo, es nuestro propio conocimiento. Ya que los estados no pueden
+garantizar la protección de datos de sus ciudadanos debido a la constante mejora
+de los sistemas de espionaje y avances en materia de ciberataques.&lt;/p&gt;
+
+&lt;p&gt;Hay un muy buen tutorial &lt;em&gt;exclusivo para el Bitcoin Core&lt;/em&gt; en &lt;a href=&quot;https://www.reddit.com/r/Bitcoin/wiki/verifying_bitcoin_core&quot;&gt;reddit&lt;/a&gt;,
+pero está en inglés.&lt;/p&gt;
+
+&lt;p&gt;Más allá de Bitcoin, tené en cuenta que la firma de binarios es algo más que rutinario y por consecuencia, recomendable verificar antes de poner código
+en producción.&lt;/p&gt;
+
+&lt;h2 id=&quot;obteniendo-los-hashes&quot;&gt;Obteniendo los &lt;em&gt;hashes&lt;/em&gt;&lt;/h2&gt;
+
+&lt;p&gt;Cada proyecto tiene sus formas, pero vamos a seguir las del Bitcoin Core. Al
+ir a la página de los &lt;a href=&quot;https://bitcoin.org/en/download&quot;&gt;&lt;em&gt;downloads&lt;/em&gt;&lt;/a&gt;, vamos a ver
+un link a &lt;a href=&quot;https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc&quot;&gt;Verify release signatures&lt;/a&gt;, que contiene un archivo con un mensaje en texto claro y una firma codificada. La parte codificada, contiene el texto claro codificado con la firma que descargaremos/importaremos más adelante:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Descargo:&lt;/span&gt;
+curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc &amp;gt; SHA256SUMS.asc
+
+
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+abf0e7336621250702d7a55487c85b8de33c07a30fbc3ecf7f56c97007fcb4ce  bitcoin-0.12.1-linux32.tar.gz
+54aca14b7512801ab78cc93f8576e1b66364a890e8017e8a187e4bf0209fd28c  bitcoin-0.12.1-linux64.tar.gz
+91d14dcb9b88ca845df450ceb94250bb5c9a0d514d8ca0c55eb480d0ac77ef32  bitcoin-0.12.1-osx64.tar.gz
+e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
+08fc3b6c05c39fb975bba1f6dd49992df46511790ce8dc67398208af9565e199  bitcoin-0.12.1.tar.gz
+fba73e4825a6421ce6cc1e48b67ff5f2847ae1b520d26272e69f7f25de4f36d1  bitcoin-0.12.1-win32-setup.exe
+148fb438a32f1706a366a7825bbc5e770e5f9a20e5694f724a443275976a0791  bitcoin-0.12.1-win32.zip
+c6e06f90e41c36c9a447f065952869e2d7d571ab34b86d061ae19ec25b2799d4  bitcoin-0.12.1-win64-setup.exe
+d8e1ab9ff65b79c130ec6af8e36626310ffdaf6aacb7a40cfb76e7a63bdfcfd5  bitcoin-0.12.1-win64.zip
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;GNU/Linux&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+iQIcBAEBCAAGBQJXEIwgAAoJEJDIAZ42wulkXNcP/Re0iawPi8muiq6J36ZUZKws
+KL2nwjCImj91on8wGoTUir1IytuIafA4JMHslos2Ak3za2UKAEZrEfx0dXm/FVql
+AgRneYLYedMQ8127UkSho4rxuwjB3h2gR/FGPpPT0PmbNTWOFsKtV1V9zwsCeA9Q
+br/ly2BfZHWsS1tpSK5ukP5W0q+Ii2fO4pcfaAsS2y/gc5kyj5hTiKQivwBVXoVA
+cyH1splq1foM5BYwOuT/cUKGrpA8fWo7+xOaEhhFBlW0oJaSXcNSK9mVTSI/dQ/2
+lINXcWBtotnH6/evS35pAIOe4PHg/URhXNT/Sdfwts4YL5nMtF+SPBrJWadPvx3C
+qdSDZKMuM0cDjVg1F4rjoWAxyshWNKKU2J+qkNUBZ1LbpVyDR3Gl4LFwRjaw0wyZ
+n6zHonPCtp33ErhsaY0GryHV1pKvL1h6uyDNWHbYpKny4F+TvbyQ6XNVHrx1IAn5
++9UMPB3Q962/8hrRqK95Cs6AJ/D1Wdw9rwEqOC48waDzttYCVknn4L6rGECDdRM4
+6pbWNTf3m9lzThWjiuEdNnPoNuKoBD9/UHWW/WRHjT6tbcGqstoyRKTsi8jjmwnC
+9g4xWRsTdqYIAL4PBv32T+QYW/YcyRNTT97t/M0aukXxxxjCObehWVmBXVeNn0/9
+lvvCgGgSJXtJHxzqcJ2I
+&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;a2/6
+-----END PGP SIGNATURE-----
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Podemos observar que el hash es un algoritmo de SHA256 (justo debajo del &lt;em&gt;BEGIN PGP SIGNED MESSAGE&lt;/em&gt;). En Linux tenemos el comando &lt;code class=&quot;highlighter-rouge&quot;&gt;sha256sum&lt;/code&gt;,
+pero en Mac vamos a usar (no hay mucha diferencia en el proceso) &lt;code class=&quot;highlighter-rouge&quot;&gt;shasum&lt;/code&gt;. Lo que vamos a hacer es
+hashear los binarios que descargamos y compararlos con la tabla anterior:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ grep $(shasum -a 256 bitcoin-0.12.1-osx.dmg) SHA256SUMS.asc
+SHA256SUMS.asc:e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Hay varios algoritmos de hashing, por lo que dependiendo el proyecto o binarios
+que necesites verificar, deberás utilizar uno u otro. Por ejemplo, &lt;code class=&quot;highlighter-rouge&quot;&gt;md5sum&lt;/code&gt; o &lt;code class=&quot;highlighter-rouge&quot;&gt;md5&lt;/code&gt; (Mac) son las
+herramientas para otro algoritmo llamado &lt;em&gt;Message-Digest Algorithm 5&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;¡Joya! Ahora vamos a verificar la firma.&lt;/p&gt;
+
+&lt;h2 id=&quot;la-firma&quot;&gt;La &lt;em&gt;firma&lt;/em&gt;&lt;/h2&gt;
+
+&lt;p&gt;Para la versión que yo tenía bajada, la firma es la key &lt;code class=&quot;highlighter-rouge&quot;&gt;36C2E964&lt;/code&gt;. En la página
+de las descargas, podrás ver las firmas para cada versión. En este caso, la firma
+es la de &lt;a href=&quot;https://bitcoin.org/laanwj.asc&quot;&gt;Wladimir&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Importo:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ gpg --import Downloads/laanwj-releases.asc
+gpg: key 36C2E964: public key &quot;Wladimir J. van der Laan (Bitcoin Core binary release signing key) &amp;lt;laanwj@gmail.com&amp;gt;&quot; imported
+gpg: Total number processed: 1
+gpg:               imported: 1  (RSA: 1)
+gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
+gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Verifico el fingerprint (podrás ver el fingerprint en el &lt;a href=&quot;https://bitcoin.org/en/alert/2016-08-17-binary-safety&quot;&gt;anuncio&lt;/a&gt; o cuando decodifiques el mensaje):&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ gpg --fingerprint 01EA5486DE18A882D4C2684590C8019E36C2E964
+pub   4096R/36C2E964 2015-06-24 [expires: 2017-02-13]
+      Key fingerprint = 01EA 5486 DE18 A882 D4C2  6845 90C8 019E 36C2 E964
+uid                  Wladimir J. van der Laan (Bitcoin Core binary release signing key) &amp;lt;laanwj@gmail.com&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Con esto sabemos que la firma es válida. Lo que no sabemos es si el mensaje fue
+firmado con esta firma. Por suerte esto es más que sencillo, solo necesitamos
+ver que podemos decodificar el mensaje utilizando la firma que importamos:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Emanuels-iMac:~ emanuel$ gpg --output mensaje  -d Downloads/SHA256SUMS.asc
+gpg: Signature made Fri Apr 15 03:37:20 2016 ART using RSA key ID 36C2E964
+gpg: Good signature from &quot;Wladimir J. van der Laan (Bitcoin Core binary release signing key) &amp;lt;laanwj@gmail.com&amp;gt;&quot;
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 01EA 5486 DE18 A882 D4C2  6845 90C8 019E 36C2 E964
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Podemos ver que el fingerprint concuerda con el del anuncio. Eso es una buena señal.&lt;/p&gt;
+
+&lt;p&gt;Contenido del mensaje decodificado éxitosamente:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cat mensaje
+abf0e7336621250702d7a55487c85b8de33c07a30fbc3ecf7f56c97007fcb4ce  bitcoin-0.12.1-linux32.tar.gz
+54aca14b7512801ab78cc93f8576e1b66364a890e8017e8a187e4bf0209fd28c  bitcoin-0.12.1-linux64.tar.gz
+91d14dcb9b88ca845df450ceb94250bb5c9a0d514d8ca0c55eb480d0ac77ef32  bitcoin-0.12.1-osx64.tar.gz
+e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
+08fc3b6c05c39fb975bba1f6dd49992df46511790ce8dc67398208af9565e199  bitcoin-0.12.1.tar.gz
+fba73e4825a6421ce6cc1e48b67ff5f2847ae1b520d26272e69f7f25de4f36d1  bitcoin-0.12.1-win32-setup.exe
+148fb438a32f1706a366a7825bbc5e770e5f9a20e5694f724a443275976a0791  bitcoin-0.12.1-win32.zip
+c6e06f90e41c36c9a447f065952869e2d7d571ab34b86d061ae19ec25b2799d4  bitcoin-0.12.1-win64-setup.exe
+d8e1ab9ff65b79c130ec6af8e36626310ffdaf6aacb7a40cfb76e7a63bdfcfd5  bitcoin-0.12.1-win64.zip
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;para-los-oneliners&quot;&gt;Para los &lt;em&gt;oneLiners&lt;/em&gt;&lt;/h3&gt;
+
+&lt;p&gt;Siempre hay algun &lt;em&gt;freak&lt;/em&gt; que quiere cosas como estas (está para Mac, usar &lt;code class=&quot;highlighter-rouge&quot;&gt;wget&lt;/code&gt; y &lt;code class=&quot;highlighter-rouge&quot;&gt;sha256sum&lt;/code&gt; para Linux):&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc  | gpg -d ; &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 2&amp;gt; /dev/null  | grep &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;shasum -a 256 bitcoin-0.12.1-osx.dmg | cut -f1 -d&lt;span class=&quot;s1&quot;&gt;' '&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
+e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;unas-ltimas-sugerencias&quot;&gt;Unas últimas sugerencias&lt;/h2&gt;
+
+&lt;p&gt;‘ta jodida la mano, así que mejor arremangarse y empezar a corroborar toda
+esas cosas que descargamos, en especial aquellas que están en la mira.&lt;/p&gt;
+
+&lt;p&gt;Listo el pollo. ¡Espero que te haya servido!&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>HOWTO Percona Server with docker</title>
@@ -35,7 +193,7 @@
 
 &lt;p&gt;For example, a full logging container will be started with this:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysql  -d percona:5.7 --general-log=1 --slow-query-log=1 --long-query-time=0  --log_slow_verbosity=&#39;full, profiling, profiling_use_getrusage&#39;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysql  -d percona:5.7 --general-log=1 --slow-query-log=1 --long-query-time=0  --log_slow_verbosity='full, profiling, profiling_use_getrusage'
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
@@ -113,7 +271,7 @@ mysql&amp;gt;
  </entry>
  
  <entry>
-   <title>MySQL 5.7 InnoDB&#39;s Full Text Search overview.</title>
+   <title>MySQL 5.7 InnoDB's Full Text Search overview.</title>
    <link href="https://github.com/3manuek/3manuek.github.io.git/fts-innodb"/>
    <updated>2016-04-20T00:00:00-03:00</updated>
    <id>https://github.com/3manuek/3manuek.github.io.git/FTS-in-MySQL-5-7-with-InnoDB</id>
@@ -180,7 +338,7 @@ the exact match has been found.&lt;/p&gt;
 &lt;p&gt;In the &lt;code class=&quot;highlighter-rouge&quot;&gt;SELECT&lt;/code&gt; clause you’ll see both FTS expressions using &lt;code class=&quot;highlighter-rouge&quot;&gt;NATURAL LANGUAGE&lt;/code&gt;
 with query expansion and &lt;code class=&quot;highlighter-rouge&quot;&gt;BOOLEAN&lt;/code&gt;modes respectively.&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;set&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;global&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;innodb_ft_aux_table&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;ftslab/bookContentByLine&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;set&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;global&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;innodb_ft_aux_table&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'ftslab/bookContentByLine'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 
 &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bookid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;group_concat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;POSITION&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pos&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
         &lt;span class=&quot;n&quot;&gt;round&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;MATCH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AGAINST&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;&quot;country&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NATURAL&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;LANGUAGE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;MODE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;EXPANSION&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;QERank&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
@@ -188,7 +346,7 @@ with query expansion and &lt;code class=&quot;highlighter-rouge&quot;&gt;BOOLEAN
       &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bookContentByLine&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bl&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;information_schema&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;INNODB_FT_INDEX_TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;
           &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FTS_DOC_ID&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DOC_ID&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;  
       &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;MATCH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AGAINST&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;&quot;country&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NATURAL&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;LANGUAGE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;MODE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;EXPANSION&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-          &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;WORD&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;country&#39;&lt;/span&gt;
+          &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;WORD&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'country'&lt;/span&gt;
      &lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;FTS_DOC_ID&lt;/span&gt;
      &lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DESC&lt;/span&gt;
      &lt;span class=&quot;k&quot;&gt;LIMIT&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
@@ -237,7 +395,7 @@ BoolRank: 14
 storing by paragraph. The boolean rank shows some of the entries way above others, however the query extension
 locates at the top records that not necessarily has a lot of exact matches.&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SET&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;GLOBAL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;innodb_ft_aux_table&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;ftslab/bookContent&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SET&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;GLOBAL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;innodb_ft_aux_table&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'ftslab/bookContent'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 
 &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bookid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;FTS_DOC_ID&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
                 &lt;span class=&quot;n&quot;&gt;group_concat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;POSITION&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;positions&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
@@ -246,7 +404,7 @@ locates at the top records that not necessarily has a lot of exact matches.&lt;/
                 &lt;span class=&quot;k&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;len&lt;/span&gt;
           &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bookContent&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bl&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;information_schema&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;INNODB_FT_INDEX_TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FTS_DOC_ID&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DOC_ID&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;  
           &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;MATCH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AGAINST&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;&quot;country&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NATURAL&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;LANGUAGE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;MODE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;EXPANSION&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-              &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;WORD&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;country&#39;&lt;/span&gt;
+              &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;WORD&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'country'&lt;/span&gt;
           &lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;FTS_DOC_ID&lt;/span&gt;
           &lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;QERank&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DESC&lt;/span&gt;
           &lt;span class=&quot;k&quot;&gt;LIMIT&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
@@ -282,7 +440,7 @@ is &lt;code class=&quot;highlighter-rouge&quot;&gt;r rs$len&lt;/code&gt; charact
 &lt;h2 id=&quot;the-innodbftindextable&quot;&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;INNODB_FT_INDEX_TABLE&lt;/code&gt;&lt;/h2&gt;
 
 &lt;p&gt;There is a way to play with the contents of the FTS indexes. As you may noticed
-in the previous examples, I used the &lt;code class=&quot;highlighter-rouge&quot;&gt;set global innodb_ft_aux_table = &#39;ftslab/bookContent&#39;;&lt;/code&gt;
+in the previous examples, I used the &lt;code class=&quot;highlighter-rouge&quot;&gt;set global innodb_ft_aux_table = 'ftslab/bookContent';&lt;/code&gt;
 statement, which loads the index content to memory for an easy querying.&lt;/p&gt;
 
 &lt;p&gt;If you use RDS, the option &lt;code class=&quot;highlighter-rouge&quot;&gt;innodb_ft_aux_table&lt;/code&gt; is not available as it is GLOBAL
@@ -354,7 +512,7 @@ alphabetical order:&lt;/p&gt;
 &lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;value&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ASC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 
 &lt;span class=&quot;k&quot;&gt;DROP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ftscontent&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bookContentByLine&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;SET&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;GLOBAL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;innodb_ft_server_stopword_table&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;ftslab/bookContentByLine_stopwords&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;SET&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;GLOBAL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;innodb_ft_server_stopword_table&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'ftslab/bookContentByLine_stopwords'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;FULLTEXT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ftscontent&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bookContentByLine&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 
 &lt;/code&gt;&lt;/pre&gt;
@@ -364,7 +522,7 @@ alphabetical order:&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(ftslab) &amp;gt; select *
           from information_schema.INNODB_FT_INDEX_TABLE
-          WHERE lower(WORD) like &#39;%country%&#39;;
+          WHERE lower(WORD) like '%country%';
 +------------------+--------------+-------------+-----------+--------+----------+
 | WORD             | FIRST_DOC_ID | LAST_DOC_ID | DOC_COUNT | DOC_ID | POSITION |
 +------------------+--------------+-------------+-----------+--------+----------+
@@ -377,7 +535,7 @@ alphabetical order:&lt;/p&gt;
 
 (ftslab) &amp;gt; select *
           from information_schema.INNODB_FT_INDEX_TABLE
-          WHERE DOC_ID = 155 AND lower(WORD) like &#39;%country%&#39;;
+          WHERE DOC_ID = 155 AND lower(WORD) like '%country%';
 +---------+--------------+-------------+-----------+--------+----------+
 | WORD    | FIRST_DOC_ID | LAST_DOC_ID | DOC_COUNT | DOC_ID | POSITION |
 +---------+--------------+-------------+-----------+--------+----------+
@@ -398,7 +556,7 @@ The idea there is to show that QUERY EXPANSION can have non desire results in so
 
 &lt;h3 id=&quot;going-ahead-on-choosing-stop-words&quot;&gt;Going ahead on choosing stop words&lt;/h3&gt;
 
-&lt;p&gt;The full &lt;a href=&quot;https://en.wikipedia.org/wiki/Zipf&#39;s_law&quot;&gt;article&lt;/a&gt; is amazingly interesting. In a brief, it says that
+&lt;p&gt;The full &lt;a href=&quot;https://en.wikipedia.org/wiki/Zipf's_law&quot;&gt;article&lt;/a&gt; is amazingly interesting. In a brief, it says that
 the most frequent word will occur approximately twice as often as the second most frequent word, three times as
 often as the third most frequent word, and so on (rank-frequency distribution is an inverse relation).&lt;/p&gt;
 
@@ -591,9 +749,9 @@ you can run the following query inside &lt;code class=&quot;highlighter-rouge&qu
 &lt;span class=&quot;err&quot;&gt;\&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;timing&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;convert_from&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
           &lt;span class=&quot;n&quot;&gt;pgp_sym_decrypt_bytea&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
-              &lt;span class=&quot;n&quot;&gt;pgp_sym_encrypt_bytea&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;Text to be encrypted using pgp_sym_decrypt_bytea&#39;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gen_random_uuid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bytea&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;key&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;compress-algo=2&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
-          &lt;span class=&quot;s1&quot;&gt;&#39;key&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
-        &lt;span class=&quot;s1&quot;&gt;&#39;SQL-ASCII&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+              &lt;span class=&quot;n&quot;&gt;pgp_sym_encrypt_bytea&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Text to be encrypted using pgp_sym_decrypt_bytea'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gen_random_uuid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bytea&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'compress-algo=2'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+          &lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+        &lt;span class=&quot;s1&quot;&gt;'SQL-ASCII'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;generate_series&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
@@ -633,7 +791,7 @@ its trigger:&lt;/p&gt;
 
 SET search_path TO enc_schema;
 
--- Encrpting locally, that&#39;s why we don&#39;t need to reference the key here.
+-- Encrpting locally, that's why we don't need to reference the key here.
 create table enc_schema.__person__pgp
      (
       id bigint,
@@ -655,12 +813,12 @@ CREATE INDEX ON enc_schema.__person__pgp (partial_ssn);
 CREATE OR REPLACE FUNCTION basic_ins_trig() RETURNS trigger LANGUAGE plpgsql AS $basic_ins_trig$
 DECLARE
   compTable text :=  TG_RELID::regclass::text ;
-  childTable text := compTable || &#39;_&#39; || NEW.source ;
-  statement text :=  &#39;INSERT INTO &#39; || childTable || &#39; SELECT (&#39; || QUOTE_LITERAL(NEW) || &#39;::&#39;  || compTable ||  &#39;).*&#39; ;
-  createStmt text := &#39;CREATE TABLE &#39; || childTable  ||
-    &#39;(CHECK (source =&#39; || quote_literal(NEW.source) || &#39;)) INHERITS (&#39; || compTable || &#39;)&#39;;
-  indexAdd1 text := &#39;CREATE INDEX ON &#39; || childTable || &#39;(source,id)&#39; ;
-  indexAdd2 text := &#39;CREATE INDEX ON &#39; || childTable || &#39;(source,ssn)&#39; ;
+  childTable text := compTable || '_' || NEW.source ;
+  statement text :=  'INSERT INTO ' || childTable || ' SELECT (' || QUOTE_LITERAL(NEW) || '::'  || compTable ||  ').*' ;
+  createStmt text := 'CREATE TABLE ' || childTable  ||
+    '(CHECK (source =' || quote_literal(NEW.source) || ')) INHERITS (' || compTable || ')';
+  indexAdd1 text := 'CREATE INDEX ON ' || childTable || '(source,id)' ;
+  indexAdd2 text := 'CREATE INDEX ON ' || childTable || '(source,ssn)' ;
 BEGIN
   BEGIN
     EXECUTE statement;
@@ -710,11 +868,11 @@ CREATE EXTENSION pgcrypto;
 
 CREATE SERVER RDS_server
         FOREIGN DATA WRAPPER postgres_fdw
-        OPTIONS (host &#39;dbtest1.chuxsnuhtvgl.us-east-1.rds.amazonaws.com&#39;, port &#39;5432&#39;, dbname &#39;dbtest&#39;);
+        OPTIONS (host 'dbtest1.chuxsnuhtvgl.us-east-1.rds.amazonaws.com', port '5432', dbname 'dbtest');
 
 CREATE USER MAPPING FOR postgres
         SERVER RDS_server
-        OPTIONS (user &#39;dbtestuser&#39;, password &#39;&amp;lt;shadowed&amp;gt;&#39;);
+        OPTIONS (user 'dbtestuser', password '&amp;lt;shadowed&amp;gt;');
 
 CREATE FOREIGN TABLE __person__pgp_RDS
 (
@@ -730,14 +888,14 @@ CREATE FOREIGN TABLE __person__pgp_RDS
        patology bytea
 )
 SERVER RDS_server
-OPTIONS (schema_name &#39;enc_schema&#39;, table_name &#39;__person__pgp&#39;);
+OPTIONS (schema_name 'enc_schema', table_name '__person__pgp');
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
 &lt;p&gt;Same table. Everytime we want to deal with the RDS table, we are going to do so using the &lt;code class=&quot;highlighter-rouge&quot;&gt;__person__pgp_RDS&lt;/code&gt; table, which is just a mapping table. We can query this table as any other usual table.&lt;/p&gt;
 
 &lt;p&gt;For testing purposes, I also created a table with the same structure as the above with
-&lt;code class=&quot;highlighter-rouge&quot;&gt;__person_rds_RDS_URE&lt;/code&gt; table name and added the &lt;code class=&quot;highlighter-rouge&quot;&gt;use_remote_estimate &#39;true&#39;&lt;/code&gt; option.
+&lt;code class=&quot;highlighter-rouge&quot;&gt;__person_rds_RDS_URE&lt;/code&gt; table name and added the &lt;code class=&quot;highlighter-rouge&quot;&gt;use_remote_estimate 'true'&lt;/code&gt; option.
 When enabled, postgres_fdw obtains the row count and estimates from the remote server.&lt;/p&gt;
 
 &lt;h2 id=&quot;inserting-keys-locally&quot;&gt;Inserting keys locally&lt;/h2&gt;
@@ -840,21 +998,21 @@ BEGIN
     RDS_MAP.patology := pgp_pub_encrypt(NEW.patology, secret);
     RDS_MAP.ssn := pgp_pub_encrypt(NEW.ssn::text, secret);
     RDS_MAP.partial_ssn := right( (NEW.ssn)::text,4);
-    RDS_MAP.id := nextval(&#39;global_seq&#39;::regclass);
+    RDS_MAP.id := nextval('global_seq'::regclass);
 
     RDS_MAP.keyid := NEW.keyid;
 
     FTS_MAP.id   := RDS_MAP.id;
-    FTS_MAP._FTS := (setweight(to_tsvector(NEW.fname) , &#39;B&#39; ) ||
-                   setweight(to_tsvector(NEW.lname), &#39;A&#39;) ||
-                   setweight(to_tsvector(NEW.description), &#39;C&#39;) ||
-                   setweight(to_tsvector(NEW.auth_drugs::text), &#39;C&#39;) ||
-                   setweight(to_tsvector(NEW.patology), &#39;D&#39;)
+    FTS_MAP._FTS := (setweight(to_tsvector(NEW.fname) , 'B' ) ||
+                   setweight(to_tsvector(NEW.lname), 'A') ||
+                   setweight(to_tsvector(NEW.description), 'C') ||
+                   setweight(to_tsvector(NEW.auth_drugs::text), 'C') ||
+                   setweight(to_tsvector(NEW.patology), 'D')
                     ) ;
 
     -- Both tables contain same id,source
     INSERT INTO __person__pgp_RDS SELECT (RDS_MAP.*);
-    EXECUTE &#39;INSERT INTO local_search_&#39; || NEW.source || &#39; SELECT (&#39; ||  quote_literal(FTS_MAP) || &#39;::local_search).* &#39;;
+    EXECUTE 'INSERT INTO local_search_' || NEW.source || ' SELECT (' ||  quote_literal(FTS_MAP) || '::local_search).* ';
    RETURN NULL;
 END;
 $$
@@ -870,9 +1028,9 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 &lt;p&gt;This functions does everything. It inserts the data on RDS and split the data on the corresponding FTS child table. For performance purposes, I didn’t want to catch exceptions at insert time (if the child table does not exists, i.e.), but you can also add this feature with an exception block as follows:&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;   BEGIN
-    EXECUTE &#39;INSERT INTO local_search_&#39; || NEW.source || &#39; SELECT (&#39; ||  quote_literal(FTS_MAP) || &#39;::local_search).* &#39;;
+    EXECUTE 'INSERT INTO local_search_' || NEW.source || ' SELECT (' ||  quote_literal(FTS_MAP) || '::local_search).* ';
    EXCEPTION WHEN undefined_table THEN
-     EXECUTE &#39;CREATE TABLE local_search_&#39; || NEW.source || &#39;() INHERITS local_search&#39;;
+     EXECUTE 'CREATE TABLE local_search_' || NEW.source || '() INHERITS local_search';
    END;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
@@ -889,16 +1047,16 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;INSERT INTO __person__pgp_map
   SELECT
-      &#39;host1&#39;,  -- source: host1
+      'host1',  -- source: host1
                 -- You can do this better by grabbing this data from a persistent
                 -- location
-      &#39;76CDA76B5C1EA9AB&#39;,
+      '76CDA76B5C1EA9AB',
        round(random()*1000000000),
-      (&#39;{Romulo,Ricardo,Romina,Fabricio,Francisca,Noa,Laura,Priscila,Tiziana,Ana,Horacio,Tim,Mario}&#39;::text[])[round(random()*12+1)],
-      (&#39;{Perez,Ortigoza,Tucci,Smith,Fernandez,Samuel,Veloso,Guevara,Calvo,Cantina,Casas,Korn,Rodriguez,Ike,Baldo,Vespi}&#39;::text[])[round(random()*15+1)],
-      (&#39;{some,random,text,goes,here}&#39;::text[])[round(random()*5+1)] ,
+      ('{Romulo,Ricardo,Romina,Fabricio,Francisca,Noa,Laura,Priscila,Tiziana,Ana,Horacio,Tim,Mario}'::text[])[round(random()*12+1)],
+      ('{Perez,Ortigoza,Tucci,Smith,Fernandez,Samuel,Veloso,Guevara,Calvo,Cantina,Casas,Korn,Rodriguez,Ike,Baldo,Vespi}'::text[])[round(random()*15+1)],
+      ('{some,random,text,goes,here}'::text[])[round(random()*5+1)] ,
       get_drugs_random(round(random()*10)::int),
-      (&#39;{Anotia,Appendicitis,Apraxia,Argyria,Arthritis,Asthma,Astigmatism,Atherosclerosis,Athetosis,Atrophy,Abscess,Influenza,Melanoma}&#39;::text[])[round(random()*12+1)]
+      ('{Anotia,Appendicitis,Apraxia,Argyria,Arthritis,Asthma,Astigmatism,Atherosclerosis,Athetosis,Atrophy,Abscess,Influenza,Melanoma}'::text[])[round(random()*12+1)]
       FROM generate_series(1,50) ;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
@@ -913,14 +1071,14 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 
 &lt;p&gt;Limiting the matches:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# SELECT convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name)
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# SELECT convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name)
 # FROM __person__pgp_rds as rds JOIN
 #       keys ks USING (keyid)
 # WHERE rds.id IN (
 #                select id
 #                from local_search
-#                where to_tsquery(&#39;Asthma | Athetosis&#39;) @@ _fts LIMIT 5)
-#   AND rds.source = &#39;host1&#39;;
+#                where to_tsquery('Asthma | Athetosis') @@ _fts LIMIT 5)
+#   AND rds.source = 'host1';
 
  source | convert_from
 --------+--------------
@@ -933,11 +1091,11 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 &lt;p&gt;All the matches and double check from were the data came from:&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# SELECT ls.tableoid::regclass, rds.source,
-#        convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name)
+#        convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name)
 # FROM local_search ls JOIN
 #     __person__pgp_rds as rds USING (id),
 #     keys ks
-# WHERE to_tsquery(&#39;Asthma | Athetosis&#39;) @@ ls._fts;
+# WHERE to_tsquery('Asthma | Athetosis') @@ ls._fts;
 
      tableoid      | source | convert_from
 -------------------+--------+--------------
@@ -950,13 +1108,13 @@ local_search_host1 | host1  | 563588056
 functions used in the function? You got it!):&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#  SELECT rds.id,
-#  convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
-#  convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
+#  convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
+#  convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
 #  ts_rank( ls._FTS, query ) as rank
 #    FROM local_search ls JOIN
-#         __person__pgp_rds as rds ON (rds.id = ls.id AND rds.source = &#39;host1&#39;) JOIN
+#         __person__pgp_rds as rds ON (rds.id = ls.id AND rds.source = 'host1') JOIN
 #         keys ks USING (keyid),
-#         to_tsquery(&#39;Mario | Casas | (Casas:*A &amp;amp; Mario:*B) &#39;) query
+#         to_tsquery('Mario | Casas | (Casas:*A &amp;amp; Mario:*B) ') query
 #    WHERE
 #        ls._FTS  @@ query
 #    ORDER BY rank DESC;
@@ -977,13 +1135,13 @@ a remote server. You can’t say that PostgreSQL isn’t hipster enough!&lt;/p&g
   analyze and verbose options).&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;EXPLAIN (buffers,verbose,analyze) SELECT rds.id,
- convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
- convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
+ convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
+ convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
  ts_rank( ls._FTS, query ) as rank
    FROM local_search ls JOIN
-        __person__pgp_rds as rds ON (rds.id = ls.id AND rds.source = &#39;host1&#39;) JOIN
+        __person__pgp_rds as rds ON (rds.id = ls.id AND rds.source = 'host1') JOIN
         keys ks USING (keyid),
-        to_tsquery(&#39;Mario | Casas | (Casas:*A &amp;amp; Mario:*B) &#39;) query
+        to_tsquery('Mario | Casas | (Casas:*A &amp;amp; Mario:*B) ') query
    WHERE
        ls._FTS  @@ query
    ORDER BY rank DESC;
@@ -994,7 +1152,7 @@ a remote server. You can’t say that PostgreSQL isn’t hipster enough!&lt;/p&g
                      Output: rds.id, rds.fname, rds.lname, rds.keyid
                      -&amp;gt;  Foreign Scan on public.__person__pgp_rds rds  (cost=100.00..117.07 rows=3 width=122) (actual time=566.495..566.520 rows=50 loops=1)
                            Output: rds.id, rds.fname, rds.lname, rds.keyid
-                           Remote SQL: SELECT id, keyid, fname, lname FROM enc_schema.__person__pgp WHERE ((source = &#39;host1&#39;::text))
+                           Remote SQL: SELECT id, keyid, fname, lname FROM enc_schema.__person__pgp WHERE ((source = 'host1'::text))
 ...
  Planning time: 4.931 ms
  Execution time: 2115.919 ms
@@ -1012,15 +1170,15 @@ provides the query executed remotely.&lt;/p&gt;
 If I use the &lt;em&gt;remote estimations&lt;/em&gt; we can see how the remote SQL changes in the Query Plan:&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; EXPLAIN (ANALYZE, VERBOSE, BUFFERS) SELECT rds.id,
-      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
-      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
+      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
+      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
       ts_rank( ls._FTS, query ) as rank
         FROM local_search ls,  __person__pgp_rds_URE  rds  JOIN
              keys ks USING (keyid),
-             to_tsquery(&#39;Mario | Casas | (Casas:*A &amp;amp; Mario:*B) &#39;) query
+             to_tsquery('Mario | Casas | (Casas:*A &amp;amp; Mario:*B) ') query
         WHERE                                                      
             rds.id = ls.id
-              AND rds.source = &#39;host1&#39;
+              AND rds.source = 'host1'
             AND
             ls._FTS  @@ query
         ORDER BY rank DESC;
@@ -1032,7 +1190,7 @@ If I use the &lt;em&gt;remote estimations&lt;/em&gt; we can see how the remote S
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;...
 -&amp;gt;  Foreign Scan on public.__person__pgp_rds_ure rds  (cost=100.01..108.21 rows=2 width=1018) (actual time=250.334..250.336 rows=1 loops=31)
       Output: rds.id, rds.source, rds.partial_ssn, rds.ssn, rds.keyid, rds.fname, rds.lname, rds.description, rds.auth_drugs, rds.patology
-      Remote SQL: SELECT id, keyid, fname, lname FROM enc_schema.__person__pgp WHERE ((source = &#39;host1&#39;::text)) AND (($1::bigint = id))
+      Remote SQL: SELECT id, keyid, fname, lname FROM enc_schema.__person__pgp WHERE ((source = 'host1'::text)) AND (($1::bigint = id))
 ...
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
@@ -1044,30 +1202,30 @@ after issuing ANALYZE and without &lt;em&gt;URE&lt;/em&gt;.&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;fts_proxy=# \o /dev/null
 fts_proxy=#  SELECT rds.id,
-      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
-      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
+      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
+      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
       ts_rank( ls._FTS, query ) as rank
         FROM local_search ls,  __person__pgp_rds_URE  rds  JOIN
              keys ks USING (keyid),
-             to_tsquery(&#39;Mario | Casas | (Casas:*A &amp;amp; Mario:*B) &#39;) query
+             to_tsquery('Mario | Casas | (Casas:*A &amp;amp; Mario:*B) ') query
         WHERE
             rds.id = ls.id
-              AND rds.source = &#39;host1&#39;
+              AND rds.source = 'host1'
             AND
             ls._FTS  @@ query
         ORDER BY rank DESC;
 Time: 12299,691 ms
 
 fts_proxy=#  SELECT rds.id,
-      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
-      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,&#39;&#39;::text)::bytea,&#39;SQL_ASCII&#39;::name),
+      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
+      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
       ts_rank( ls._FTS, query ) as rank
         FROM local_search ls,  __person__pgp_rds  rds  JOIN
              keys ks USING (keyid),
-             to_tsquery(&#39;Mario | Casas | (Casas:*A &amp;amp; Mario:*B) &#39;) query
+             to_tsquery('Mario | Casas | (Casas:*A &amp;amp; Mario:*B) ') query
         WHERE
             rds.id = ls.id
-              AND rds.source = &#39;host1&#39;
+              AND rds.source = 'host1'
             AND
             ls._FTS  @@ query
         ORDER BY rank DESC;
@@ -1115,7 +1273,7 @@ Also, for updates, the jsonb datatype will need extra work when extracting attri
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE TABLE drugsList ( id serial PRIMARY KEY, drugName text);
 
 INSERT INTO drugsList(drugName) SELECT p.nameD FROM regexp_split_to_table(
-&#39;Acetaminophen
+'Acetaminophen
 Adderall
 Alprazolam
 Amitriptyline
@@ -1154,7 +1312,7 @@ Trazodone
 Viagra
 Wellbutrin
 Xanax
-Zoloft&#39;, &#39;\n&#39;) p(nameD);
+Zoloft', '\n') p(nameD);
 
 CREATE OR REPLACE FUNCTION get_drugs_random(int)
        RETURNS text[] AS
@@ -1164,7 +1322,7 @@ CREATE OR REPLACE FUNCTION get_drugs_random(int)
       )
       SELECT array_agg(dname) FROM rdrugs ;
 $BODY$
-LANGUAGE &#39;sql&#39; VOLATILE;
+LANGUAGE 'sql' VOLATILE;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
