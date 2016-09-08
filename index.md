@@ -38,12 +38,13 @@ Suelo tener contactos de tanto en tanto, respecto a consultas relativas de como
 es trabajar en empresas extranjeras, haciendo WFH (_work from home_).
 
 Yo creo que existen dos bases para emprender en el rubro: la comunicación
-y _hacer_. La comunicación es no solo como te expresas sino también, ser
-legible. Tenés que aprender no solo el lenguaje, sino también muchos de aspectos culturales
+y _hacer_. La comunicación es no solo se limita al como uno se expresa, sino también ser
+legible. Tenés que aprender no solo el lenguaje, sino también mucho de aspectos culturales
 <sup>[1]</sup>.
 
 Hacer. Esto afecta más al WFH, ya que te permite mantenerte ocupado en la franja
-más continua posible. Evitar breaks largos, para tener una jornada corta.
+más continua posible. Evitar breaks largos, para tener una jornada corta. El primer
+paso es lograr quedar libre en horario, el segundo es marcarse actividades.
 
 Si es posible, trabaja primero _en oficinas_ y practica cara a cara. Trabajar remoto
 y no tener buena comunicación, harán que tu jornada laboral se extienda, por tener
