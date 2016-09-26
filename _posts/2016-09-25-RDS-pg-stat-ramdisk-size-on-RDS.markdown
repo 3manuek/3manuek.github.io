@@ -46,6 +46,8 @@ First of all, as it'll explained later, not all the tables, indexes and function
 
 A `select count(*) * 164 "size in bytes" from pg_classs where relkind ('r','i','S')` will give you the estimate for the tables if all of them were flushed on the file. Also, you need to do the same within `pg_proc`, but instead the factor will be 28 bytes.
 
+This database statfile is one _per database_. 
+
 > PgStat_StatDBEntry = 180 bytes
 >
 > PgStat_GlobalStats = 92 bytes
