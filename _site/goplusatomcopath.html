@@ -138,9 +138,9 @@
 
 <p>That’s easy. An <code class="highlighter-rouge">atom &amp;</code> from terminal should fix this by loading the environment variables. However, keep in mind that GOBIN needs to be on the path! You may need to create a bin folder in your <em>go workspace</em>. Also, don’t forget to add those variables into your shell <em>.*rc</em> file (.bashrc, .zshrc, .profile).</p>
 
-<p>i.e.
-<code class="highlighter-rouge">
-mkdir -p ~/go/bin
+<p>i.e.</p>
+
+<p><code class="highlighter-rouge">mkdir -p ~/go/bin
 export GOPATH=$HOME/go
 export GOBIN=$HOME/go/bin
 nohup atom &amp;

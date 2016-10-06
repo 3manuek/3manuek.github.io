@@ -37,8 +37,8 @@ The solution for the GOPATH is simple. There is a _warning_ when this happens bu
 That's easy. An `atom &` from terminal should fix this by loading the environment variables. However, keep in mind that GOBIN needs to be on the path! You may need to create a bin folder in your _go workspace_. Also, don't forget to add those variables into your shell _.*rc_ file (.bashrc, .zshrc, .profile).
 
 i.e.
-```
-mkdir -p ~/go/bin
+
+```mkdir -p ~/go/bin
 export GOPATH=$HOME/go
 export GOBIN=$HOME/go/bin
 nohup atom &

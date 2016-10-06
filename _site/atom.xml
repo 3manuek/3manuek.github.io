@@ -4,7 +4,7 @@
  <title>emanuelHub</title>
  <link href="https://github.com/3manuek/3manuek.github.io.git/atom.xml" rel="self"/>
  <link href="https://github.com/3manuek/3manuek.github.io.git"/>
- <updated>2016-10-06T00:00:23-03:00</updated>
+ <updated>2016-10-06T00:01:45-03:00</updated>
  <id>https://github.com/3manuek/3manuek.github.io.git</id>
  <author>
    <name>Emanuel Calvo</name>
@@ -41,9 +41,9 @@
 
 &lt;p&gt;That’s easy. An &lt;code class=&quot;highlighter-rouge&quot;&gt;atom &amp;amp;&lt;/code&gt; from terminal should fix this by loading the environment variables. However, keep in mind that GOBIN needs to be on the path! You may need to create a bin folder in your &lt;em&gt;go workspace&lt;/em&gt;. Also, don’t forget to add those variables into your shell &lt;em&gt;.*rc&lt;/em&gt; file (.bashrc, .zshrc, .profile).&lt;/p&gt;
 
-&lt;p&gt;i.e.
-&lt;code class=&quot;highlighter-rouge&quot;&gt;
-mkdir -p ~/go/bin
+&lt;p&gt;i.e.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;mkdir -p ~/go/bin
 export GOPATH=$HOME/go
 export GOBIN=$HOME/go/bin
 nohup atom &amp;amp;
