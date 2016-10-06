@@ -40,10 +40,9 @@ i.e.
 
 ```
 mkdir -p ~/go/bin
-
 export GOPATH=$HOME/go
-
 export GOBIN=$HOME/go/bin
-
 nohup atom &
 ```
+
+Hope it fixes your day!

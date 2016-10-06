@@ -4,7 +4,7 @@
  <title>emanuelHub</title>
  <link href="https://github.com/3manuek/3manuek.github.io.git/atom.xml" rel="self"/>
  <link href="https://github.com/3manuek/3manuek.github.io.git"/>
- <updated>2016-10-06T00:02:43-03:00</updated>
+ <updated>2016-10-06T00:04:38-03:00</updated>
  <id>https://github.com/3manuek/3manuek.github.io.git</id>
  <author>
    <name>Emanuel Calvo</name>
@@ -44,14 +44,13 @@
 &lt;p&gt;i.e.&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mkdir -p ~/go/bin
-
 export GOPATH=$HOME/go
-
 export GOBIN=$HOME/go/bin
-
 nohup atom &amp;amp;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
+
+&lt;p&gt;Hope it fixes your day!&lt;/p&gt;
 </content>
  </entry>
  
