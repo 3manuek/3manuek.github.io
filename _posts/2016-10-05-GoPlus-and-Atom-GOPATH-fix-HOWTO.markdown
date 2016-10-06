@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Go-Plus and Atom GOPATH fix"
-date:   2016-09-
+date:   2016-10-05
 description: A fix for the unloaded GOPATH.
 tags : [Golang, Go, Atom]
 categories:

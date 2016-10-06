@@ -5,10 +5,256 @@
         <description>emanuelHub - Emanuel Calvo</description>
         <link>https://github.com/3manuek/3manuek.github.io.git</link>
         <atom:link href="https://github.com/3manuek/3manuek.github.io.git/rss.xml" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Thu, 08 Sep 2016 13:09:19 -0300</lastBuildDate>
-        <pubDate>Thu, 08 Sep 2016 13:09:19 -0300</pubDate>
+        <lastBuildDate>Thu, 06 Oct 2016 00:00:23 -0300</lastBuildDate>
+        <pubDate>Thu, 06 Oct 2016 00:00:23 -0300</pubDate>
         <ttl>60</ttl>
 
+
+        <item>
+                <title>Go-Plus and Atom GOPATH fix</title>
+                <description>&lt;h2 id=&quot;the-background&quot;&gt;The background&lt;/h2&gt;
+
+&lt;p&gt;Golang is an awesome language, but I found it pretty unstable within the environment variables (at least in macOS Sierra/El Capitan). &lt;code class=&quot;highlighter-rouge&quot;&gt;gvm&lt;/code&gt; is your friend btw, and it helped me to fix some of the issues by installing the latest release candidate of the 1.7.1 series.&lt;/p&gt;
+
+&lt;p&gt;Keep in mind that if you want to upgrade your macOS to Sierra, you’ll  need to backup all of your environment variables and reinstall &lt;code class=&quot;highlighter-rouge&quot;&gt;gvm&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Atom has a plugin for Golang, which is &lt;code class=&quot;highlighter-rouge&quot;&gt;go-plus&lt;/code&gt;, and if you are reading this is because the documentation around isn’t very helpful.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-problem&quot;&gt;The problem&lt;/h2&gt;
+
+&lt;p&gt;GOPATH is not been loaded! Also you may see several errors when Atom is trying to get packages using &lt;code class=&quot;highlighter-rouge&quot;&gt;go-get&lt;/code&gt;. Nor neither GOBIN environment variable.&lt;/p&gt;
+
+&lt;p&gt;Also, I’ve been having issues with the following (gocode is one of the packages for the Atom’s plugin, but it does happen with any package):&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;go install github.com/nsf/gocode: open /bin/gocode: operation not permitted
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;the-solution&quot;&gt;The solution&lt;/h2&gt;
+
+&lt;p&gt;The solution for the GOPATH is simple. There is a &lt;em&gt;warning&lt;/em&gt; when this happens but it’s been added recently, with the HINT to start from the command line for fixing this.&lt;/p&gt;
+
+&lt;p&gt;That’s easy. An &lt;code class=&quot;highlighter-rouge&quot;&gt;atom &amp;amp;&lt;/code&gt; from terminal should fix this by loading the environment variables. However, keep in mind that GOBIN needs to be on the path! You may need to create a bin folder in your &lt;em&gt;go workspace&lt;/em&gt;. Also, don’t forget to add those variables into your shell &lt;em&gt;.*rc&lt;/em&gt; file (.bashrc, .zshrc, .profile).&lt;/p&gt;
+
+&lt;p&gt;i.e.
+&lt;code class=&quot;highlighter-rouge&quot;&gt;
+mkdir -p ~/go/bin
+export GOPATH=$HOME/go
+export GOBIN=$HOME/go/bin
+nohup atom &amp;amp;
+&lt;/code&gt;&lt;/p&gt;
+</description>
+                <link>https://github.com/3manuek/3manuek.github.io.git/goplusatomcopath</link>
+                <guid>https://github.com/3manuek/3manuek.github.io.git/GoPlus-and-Atom-GOPATH-fix-HOWTO</guid>
+                <pubDate>Wed, 05 Oct 2016 00:00:00 -0300</pubDate>
+        </item>
+
+        <item>
+                <title>PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</title>
+                <description>&lt;h2 id=&quot;what-does-it-change-and-why-is-so-important&quot;&gt;What does it change and why is so important?&lt;/h2&gt;
+
+&lt;p&gt;Tracking databases and &lt;em&gt;not just tables&lt;/em&gt; counters in Postgres isn’t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by &lt;code class=&quot;highlighter-rouge&quot;&gt;stat_temp_directory&lt;/code&gt; GUC variable. That directory places a &lt;code class=&quot;highlighter-rouge&quot;&gt;global.stat&lt;/code&gt; and a per-database stat files called like &lt;code class=&quot;highlighter-rouge&quot;&gt;db_&amp;lt;oidOfDB&amp;gt;.stat&lt;/code&gt;. Although the mechanism for writing into these files avoids extra or unnecessary flushes, it is very write intensive.&lt;/p&gt;
+
+&lt;p&gt;This change does not require any downtime (in standalone installations), as a simple reload will force the Stat Collector to rewrite the files on the folder. There is a pretty much clear blog on &lt;a href=&quot;http://hacksoclock.blogspot.com.ar/2014/04/putting-statstempdirectory-on-ramdisk.html&quot;&gt;putting stat_temp_directory on a ramdisk&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The problem relies on the RDS lack of privileges to manipulate file or directory contents, which does not allow you to check the current size and set a proper value. Although, you may probably want to know that there is a limit of &lt;em&gt;1 GB&lt;/em&gt; for this setting in RDS.&lt;/p&gt;
+
+&lt;p&gt;If you don’t want any further details and you want to relief your storage, set it to 256 MB and continue with your life. Even though is a large setting (next paragraph explain why), you don’t want to fall short on it.&lt;/p&gt;
+
+&lt;p&gt;After you apply the change over &lt;code class=&quot;highlighter-rouge&quot;&gt;pg_stat_ramdisk_size&lt;/code&gt;, you will see the location in the RDS have changed:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;show stats_temp_directory;
+   stats_temp_directory    
+---------------------------
+ /rdsdbramdisk/pg_stat_tmp
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;tldr-whats-the-expected-size-of-the-stattempdirectory&quot;&gt;TL;DR &lt;em&gt;What’s the expected size of the stat_temp_directory&lt;/em&gt;?&lt;/h2&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Structure/Constant&lt;/th&gt;
+      &lt;th&gt;Size&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PGSTAT_FILE_FORMAT_ID&lt;/td&gt;
+      &lt;td&gt;1 byte&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_StatTabEntry&lt;/td&gt;
+      &lt;td&gt;164 bytes&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_StatFuncEntry&lt;/td&gt;
+      &lt;td&gt;28 bytes&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;closingChar&lt;/td&gt;
+      &lt;td&gt;‘E’&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;describers&lt;/td&gt;
+      &lt;td&gt;char (T or F in this case)&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;First of all, as it’ll explained later, not all the tables, indexes and functions are written on the &lt;em&gt;db statsfile&lt;/em&gt;. Basically, a basic formula will be &lt;em&gt;SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) + closingChar&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Query 1) will give you the estimate for the tables &lt;em&gt;if all of them were flushed on the file&lt;/em&gt;. Also, you need to do the same within &lt;code class=&quot;highlighter-rouge&quot;&gt;pg_proc&lt;/code&gt;, but instead the factor will be 28 bytes. You’ll need to run this on every database, and sum them all.&lt;/p&gt;
+
+&lt;p&gt;Query 1)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;select count(*) * 164 &quot;size in bytes&quot; from pg_class where relkind ('r','i','S')
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;This database statfile is one &lt;em&gt;per database&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;global-stats&quot;&gt;Global Stats&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Structure&lt;/th&gt;
+      &lt;th&gt;Size&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_StatDBEntry&lt;/td&gt;
+      &lt;td&gt;180 bytes&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_GlobalStats&lt;/td&gt;
+      &lt;td&gt;92 bytes&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_ArchiverStats&lt;/td&gt;
+      &lt;td&gt;114 bytes&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;describer&lt;/td&gt;
+      &lt;td&gt;char (‘D’)&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to &lt;em&gt;PGSTAT_FILE_FORMAT_ID +describer + PgStat_GlobalStats + PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;So, as you can see, the limitation imposed by AWS in regarding is way above the amount of data held on this directory in most of the databases that can run inside RDS expectations.&lt;/p&gt;
+
+&lt;h2 id=&quot;why-it-affects-rds&quot;&gt;Why it affects RDS?&lt;/h2&gt;
+
+&lt;p&gt;Prior to this feature been added, the &lt;code class=&quot;highlighter-rouge&quot;&gt;stat_temp_directory&lt;/code&gt; had a place into the persistent storage layer. This was the same as any other Postgres installation by default, however due to the storage characteristics of RDS the impact could be considered higher than a standalone setup.&lt;/p&gt;
+
+&lt;p&gt;If your application is write intensive, you will see the impact on the Write latency and operations.&lt;/p&gt;
+
+&lt;h2 id=&quot;a-deeper-look&quot;&gt;A deeper look&lt;/h2&gt;
+
+&lt;p&gt;So the &lt;a href=&quot;http://dba.stackexchange.com/questions/150474/how-to-determine-optimal-value-for-pg-stat-ramdisk-size-on-amazon-rds/150579#150579&quot;&gt;question&lt;/a&gt; didn’t took much time to appear in the network and, I wasn’t the exception. Is there a way to pre calculate the contents of the directory?&lt;/p&gt;
+
+&lt;p&gt;I couldn’t end up with an exact number however, you may know that the size of the files are more related to the number of tables, indexes, functions and databases. The following structure is the core of this implementation. It is so important that it actually has a defined &lt;code class=&quot;highlighter-rouge&quot;&gt;PGSTAT_FILE_FORMAT_ID&lt;/code&gt; that it is written also in the stat files.&lt;/p&gt;
+
+&lt;p&gt;All the structures for these file contents are placed in the &lt;code class=&quot;highlighter-rouge&quot;&gt;include/pgstat.h&lt;/code&gt; header and its implementation is done in &lt;code class=&quot;highlighter-rouge&quot;&gt;postmaster/pgstat.c&lt;/code&gt; (as it is a startup worker). Every field that is used for counters use &lt;code class=&quot;highlighter-rouge&quot;&gt;int64&lt;/code&gt; and there are some &lt;code class=&quot;highlighter-rouge&quot;&gt;timestampz&lt;/code&gt; (64 bits too) with Oid as an exception, which is represented by 32 bits (unsigned int).&lt;/p&gt;
+
+&lt;p&gt;Backends communicate to the collector through &lt;code class=&quot;highlighter-rouge&quot;&gt;StatMsgType&lt;/code&gt; struct, when is different from a zeroed struct &lt;code class=&quot;highlighter-rouge&quot;&gt;PgStat_TableCounts&lt;/code&gt;. Structures kept in backend local memory while accumulating counts. So, that means that not all the tables, indexes and functions will have an entry.&lt;/p&gt;
+
+&lt;p&gt;Which backends can request a file write? All the backends, the archiver, the bgwriter. All of them use the same structure for passing the changes (PgStat_Msg).&lt;/p&gt;
+
+&lt;p&gt;There are 2 functions for write (pgstat_write_db_statsfile, pgstat_write_statsfiles) and 2 for read (pgstat_read_db_statsfile,pgstat_read_statsfiles) each of those controlling either the &lt;code class=&quot;highlighter-rouge&quot;&gt;db_&amp;lt;oid&amp;gt;.stat&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;global.stat&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;references&quot;&gt;References&lt;/h2&gt;
+
+&lt;h3 id=&quot;pgstatstatdbentry&quot;&gt;PgStat_StatDBEntry&lt;/h3&gt;
+
+&lt;p&gt;The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don’t care about the size of this maps as it won’t be written to the stats file anyway. The whole database entry is 22 * 64 bit values + 1 * 32 bits, per database (180 bytes).&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#define PGSTAT_FILE_FORMAT_ID   0x01A5BC9D
+typedef struct PgStat_StatDBEntry
+{
+        /*
+        NOTE:
+        The oid type is currently implemented as an unsigned four-byte integer.
+            typedef unsigned int Oid;
+        */
+        Oid                     databaseid;
+        PgStat_Counter n_xact_commit;
+        PgStat_Counter n_xact_rollback;
+        PgStat_Counter n_blocks_fetched;
+        PgStat_Counter n_blocks_hit;
+        PgStat_Counter n_tuples_returned;
+        PgStat_Counter n_tuples_fetched;
+        PgStat_Counter n_tuples_inserted;
+        PgStat_Counter n_tuples_updated;
+        PgStat_Counter n_tuples_deleted;
+        TimestampTz last_autovac_time;
+        PgStat_Counter n_conflict_tablespace;
+        PgStat_Counter n_conflict_lock;
+        PgStat_Counter n_conflict_snapshot;
+        PgStat_Counter n_conflict_bufferpin;
+        PgStat_Counter n_conflict_startup_deadlock;
+        PgStat_Counter n_temp_files;
+        PgStat_Counter n_temp_bytes;
+        PgStat_Counter n_deadlocks;
+        PgStat_Counter n_block_read_time;       /* times in microseconds */
+        PgStat_Counter n_block_write_time;
+
+        TimestampTz stat_reset_timestamp;
+        TimestampTz stats_timestamp;    /* time of db stats file update */
+
+        /*
+         * tables and functions must be last in the struct, because we don't write
+         * the pointers out to the stats file.
+         */
+        HTAB       *tables;             // defined in utils/hsearch.h
+        HTAB       *functions;
+} PgStat_StatDBEntry;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;structures&quot;&gt;Structures&lt;/h3&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Structure&lt;/th&gt;
+      &lt;th&gt;Detail&lt;/th&gt;
+      &lt;th&gt;Total&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_StatTabEntry&lt;/td&gt;
+      &lt;td&gt;20 * 64 bits and 1 * 32 Oid&lt;/td&gt;
+      &lt;td&gt;(164 bytes)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_StatFuncEntry&lt;/td&gt;
+      &lt;td&gt;3 * 64 bits and 1 * 32 Oid&lt;/td&gt;
+      &lt;td&gt;(28 bytes)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_GlobalStats&lt;/td&gt;
+      &lt;td&gt;11 * 64 bits, 8 bytes + 1 * 32 bit, 4 bytes&lt;/td&gt;
+      &lt;td&gt;(92 bytes)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;PgStat_ArchiverStats&lt;/td&gt;
+      &lt;td&gt;4 *  8bytes, 2 char 41 bytes.&lt;/td&gt;
+      &lt;td&gt;(114 bytes)&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+</description>
+                <link>https://github.com/3manuek/3manuek.github.io.git/pgstatramdisksize</link>
+                <guid>https://github.com/3manuek/3manuek.github.io.git/RDS-pg-stat-ramdisk-size-on-RDS</guid>
+                <pubDate>Sun, 25 Sep 2016 00:00:00 -0300</pubDate>
+        </item>
 
         <item>
                 <title>Verificando descargas a traves de hashes y firmas</title>

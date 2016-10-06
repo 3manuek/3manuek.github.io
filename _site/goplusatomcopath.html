@@ -1,0 +1,232 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Go-Plus and Atom GOPATH fix</title>
+    <meta name="description" content="A fix for the unloaded GOPATH.">
+    <meta name="author" content="Emanuel Calvo">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/css/1.4.0/bootstrap.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="/">emanuelHub</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/refund_policy">Refund Policy</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/resume">Resume</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="content">
+        
+
+<div class="page-header">
+  <h1>Go-Plus and Atom GOPATH fix <small>A fix for the unloaded GOPATH.</small></h1>
+</div>
+
+<div class="row">
+  <div class="span10">
+    <h2 id="the-background">The background</h2>
+
+<p>Golang is an awesome language, but I found it pretty unstable within the environment variables (at least in macOS Sierra/El Capitan). <code class="highlighter-rouge">gvm</code> is your friend btw, and it helped me to fix some of the issues by installing the latest release candidate of the 1.7.1 series.</p>
+
+<p>Keep in mind that if you want to upgrade your macOS to Sierra, you’ll  need to backup all of your environment variables and reinstall <code class="highlighter-rouge">gvm</code>.</p>
+
+<p>Atom has a plugin for Golang, which is <code class="highlighter-rouge">go-plus</code>, and if you are reading this is because the documentation around isn’t very helpful.</p>
+
+<h2 id="the-problem">The problem</h2>
+
+<p>GOPATH is not been loaded! Also you may see several errors when Atom is trying to get packages using <code class="highlighter-rouge">go-get</code>. Nor neither GOBIN environment variable.</p>
+
+<p>Also, I’ve been having issues with the following (gocode is one of the packages for the Atom’s plugin, but it does happen with any package):</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>go install github.com/nsf/gocode: open /bin/gocode: operation not permitted
+</code></pre>
+</div>
+
+<h2 id="the-solution">The solution</h2>
+
+<p>The solution for the GOPATH is simple. There is a <em>warning</em> when this happens but it’s been added recently, with the HINT to start from the command line for fixing this.</p>
+
+<p>That’s easy. An <code class="highlighter-rouge">atom &amp;</code> from terminal should fix this by loading the environment variables. However, keep in mind that GOBIN needs to be on the path! You may need to create a bin folder in your <em>go workspace</em>. Also, don’t forget to add those variables into your shell <em>.*rc</em> file (.bashrc, .zshrc, .profile).</p>
+
+<p>i.e.
+<code class="highlighter-rouge">
+mkdir -p ~/go/bin
+export GOPATH=$HOME/go
+export GOBIN=$HOME/go/bin
+nohup atom &amp;
+</code></p>
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/pgstatramdisksize" title="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next disabled"><a>Next &rarr;</a>
+      
+      </ul>
+    </div>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    
+    var disqus_developer = 1;
+    var disqus_shortname = 'jekyllbootstrap'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+  
+  <div class="span4">
+    <h4>Published</h4>
+    <div class="date"><span>05 October 2016</span></div>
+
+  
+    <h4>Tags</h4>
+    <ul class="tag_box">
+    
+    
+
+
+  
+     
+    	<li><a href="/tags.html#Golang-ref">Golang <span>1</span></a></li>
+     
+    	<li><a href="/tags.html#Go-ref">Go <span>1</span></a></li>
+     
+    	<li><a href="/tags.html#Atom-ref">Atom <span>1</span></a></li>
+    
+  
+
+
+
+    </ul>
+    
+  </div>
+</div>
+
+
+      </div>
+
+      <footer>
+        <p>&copy; Emanuel Calvo 2012 
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    
+
+
+
+  </body>
+</html>
+

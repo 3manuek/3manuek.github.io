@@ -1,0 +1,398 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</title>
+    <meta name="description" content="If you are using RDS, you want to read this.">
+    <meta name="author" content="Emanuel Calvo">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/css/1.4.0/bootstrap.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="/">emanuelHub</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/refund_policy">Refund Policy</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/resume">Resume</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="content">
+        
+
+<div class="page-header">
+  <h1>PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations <small>If you are using RDS, you want to read this.</small></h1>
+</div>
+
+<div class="row">
+  <div class="span10">
+    <h2 id="what-does-it-change-and-why-is-so-important">What does it change and why is so important?</h2>
+
+<p>Tracking databases and <em>not just tables</em> counters in Postgres isn’t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by <code class="highlighter-rouge">stat_temp_directory</code> GUC variable. That directory places a <code class="highlighter-rouge">global.stat</code> and a per-database stat files called like <code class="highlighter-rouge">db_&lt;oidOfDB&gt;.stat</code>. Although the mechanism for writing into these files avoids extra or unnecessary flushes, it is very write intensive.</p>
+
+<p>This change does not require any downtime (in standalone installations), as a simple reload will force the Stat Collector to rewrite the files on the folder. There is a pretty much clear blog on <a href="http://hacksoclock.blogspot.com.ar/2014/04/putting-statstempdirectory-on-ramdisk.html">putting stat_temp_directory on a ramdisk</a>.</p>
+
+<p>The problem relies on the RDS lack of privileges to manipulate file or directory contents, which does not allow you to check the current size and set a proper value. Although, you may probably want to know that there is a limit of <em>1 GB</em> for this setting in RDS.</p>
+
+<p>If you don’t want any further details and you want to relief your storage, set it to 256 MB and continue with your life. Even though is a large setting (next paragraph explain why), you don’t want to fall short on it.</p>
+
+<p>After you apply the change over <code class="highlighter-rouge">pg_stat_ramdisk_size</code>, you will see the location in the RDS have changed:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>show stats_temp_directory;
+   stats_temp_directory    
+---------------------------
+ /rdsdbramdisk/pg_stat_tmp
+</code></pre>
+</div>
+
+<h2 id="tldr-whats-the-expected-size-of-the-stattempdirectory">TL;DR <em>What’s the expected size of the stat_temp_directory</em>?</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Structure/Constant</th>
+      <th>Size</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>PGSTAT_FILE_FORMAT_ID</td>
+      <td>1 byte</td>
+    </tr>
+    <tr>
+      <td>PgStat_StatTabEntry</td>
+      <td>164 bytes</td>
+    </tr>
+    <tr>
+      <td>PgStat_StatFuncEntry</td>
+      <td>28 bytes</td>
+    </tr>
+    <tr>
+      <td>closingChar</td>
+      <td>‘E’</td>
+    </tr>
+    <tr>
+      <td>describers</td>
+      <td>char (T or F in this case)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>First of all, as it’ll explained later, not all the tables, indexes and functions are written on the <em>db statsfile</em>. Basically, a basic formula will be <em>SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) + closingChar</em>.</p>
+
+<p>Query 1) will give you the estimate for the tables <em>if all of them were flushed on the file</em>. Also, you need to do the same within <code class="highlighter-rouge">pg_proc</code>, but instead the factor will be 28 bytes. You’ll need to run this on every database, and sum them all.</p>
+
+<p>Query 1)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>select count(*) * 164 "size in bytes" from pg_class where relkind ('r','i','S')
+</code></pre>
+</div>
+
+<p>This database statfile is one <em>per database</em>.</p>
+
+<h3 id="global-stats">Global Stats</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Structure</th>
+      <th>Size</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>PgStat_StatDBEntry</td>
+      <td>180 bytes</td>
+    </tr>
+    <tr>
+      <td>PgStat_GlobalStats</td>
+      <td>92 bytes</td>
+    </tr>
+    <tr>
+      <td>PgStat_ArchiverStats</td>
+      <td>114 bytes</td>
+    </tr>
+    <tr>
+      <td>describer</td>
+      <td>char (‘D’)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to <em>PGSTAT_FILE_FORMAT_ID +describer + PgStat_GlobalStats + PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases</em>.</p>
+
+<p>So, as you can see, the limitation imposed by AWS in regarding is way above the amount of data held on this directory in most of the databases that can run inside RDS expectations.</p>
+
+<h2 id="why-it-affects-rds">Why it affects RDS?</h2>
+
+<p>Prior to this feature been added, the <code class="highlighter-rouge">stat_temp_directory</code> had a place into the persistent storage layer. This was the same as any other Postgres installation by default, however due to the storage characteristics of RDS the impact could be considered higher than a standalone setup.</p>
+
+<p>If your application is write intensive, you will see the impact on the Write latency and operations.</p>
+
+<h2 id="a-deeper-look">A deeper look</h2>
+
+<p>So the <a href="http://dba.stackexchange.com/questions/150474/how-to-determine-optimal-value-for-pg-stat-ramdisk-size-on-amazon-rds/150579#150579">question</a> didn’t took much time to appear in the network and, I wasn’t the exception. Is there a way to pre calculate the contents of the directory?</p>
+
+<p>I couldn’t end up with an exact number however, you may know that the size of the files are more related to the number of tables, indexes, functions and databases. The following structure is the core of this implementation. It is so important that it actually has a defined <code class="highlighter-rouge">PGSTAT_FILE_FORMAT_ID</code> that it is written also in the stat files.</p>
+
+<p>All the structures for these file contents are placed in the <code class="highlighter-rouge">include/pgstat.h</code> header and its implementation is done in <code class="highlighter-rouge">postmaster/pgstat.c</code> (as it is a startup worker). Every field that is used for counters use <code class="highlighter-rouge">int64</code> and there are some <code class="highlighter-rouge">timestampz</code> (64 bits too) with Oid as an exception, which is represented by 32 bits (unsigned int).</p>
+
+<p>Backends communicate to the collector through <code class="highlighter-rouge">StatMsgType</code> struct, when is different from a zeroed struct <code class="highlighter-rouge">PgStat_TableCounts</code>. Structures kept in backend local memory while accumulating counts. So, that means that not all the tables, indexes and functions will have an entry.</p>
+
+<p>Which backends can request a file write? All the backends, the archiver, the bgwriter. All of them use the same structure for passing the changes (PgStat_Msg).</p>
+
+<p>There are 2 functions for write (pgstat_write_db_statsfile, pgstat_write_statsfiles) and 2 for read (pgstat_read_db_statsfile,pgstat_read_statsfiles) each of those controlling either the <code class="highlighter-rouge">db_&lt;oid&gt;.stat</code> and <code class="highlighter-rouge">global.stat</code>.</p>
+
+<h2 id="references">References</h2>
+
+<h3 id="pgstatstatdbentry">PgStat_StatDBEntry</h3>
+
+<p>The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don’t care about the size of this maps as it won’t be written to the stats file anyway. The whole database entry is 22 * 64 bit values + 1 * 32 bits, per database (180 bytes).</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>#define PGSTAT_FILE_FORMAT_ID   0x01A5BC9D
+typedef struct PgStat_StatDBEntry
+{
+        /*
+        NOTE:
+        The oid type is currently implemented as an unsigned four-byte integer.
+            typedef unsigned int Oid;
+        */
+        Oid                     databaseid;
+        PgStat_Counter n_xact_commit;
+        PgStat_Counter n_xact_rollback;
+        PgStat_Counter n_blocks_fetched;
+        PgStat_Counter n_blocks_hit;
+        PgStat_Counter n_tuples_returned;
+        PgStat_Counter n_tuples_fetched;
+        PgStat_Counter n_tuples_inserted;
+        PgStat_Counter n_tuples_updated;
+        PgStat_Counter n_tuples_deleted;
+        TimestampTz last_autovac_time;
+        PgStat_Counter n_conflict_tablespace;
+        PgStat_Counter n_conflict_lock;
+        PgStat_Counter n_conflict_snapshot;
+        PgStat_Counter n_conflict_bufferpin;
+        PgStat_Counter n_conflict_startup_deadlock;
+        PgStat_Counter n_temp_files;
+        PgStat_Counter n_temp_bytes;
+        PgStat_Counter n_deadlocks;
+        PgStat_Counter n_block_read_time;       /* times in microseconds */
+        PgStat_Counter n_block_write_time;
+
+        TimestampTz stat_reset_timestamp;
+        TimestampTz stats_timestamp;    /* time of db stats file update */
+
+        /*
+         * tables and functions must be last in the struct, because we don't write
+         * the pointers out to the stats file.
+         */
+        HTAB       *tables;             // defined in utils/hsearch.h
+        HTAB       *functions;
+} PgStat_StatDBEntry;
+</code></pre>
+</div>
+
+<h3 id="structures">Structures</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Structure</th>
+      <th>Detail</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>PgStat_StatTabEntry</td>
+      <td>20 * 64 bits and 1 * 32 Oid</td>
+      <td>(164 bytes)</td>
+    </tr>
+    <tr>
+      <td>PgStat_StatFuncEntry</td>
+      <td>3 * 64 bits and 1 * 32 Oid</td>
+      <td>(28 bytes)</td>
+    </tr>
+    <tr>
+      <td>PgStat_GlobalStats</td>
+      <td>11 * 64 bits, 8 bytes + 1 * 32 bit, 4 bytes</td>
+      <td>(92 bytes)</td>
+    </tr>
+    <tr>
+      <td>PgStat_ArchiverStats</td>
+      <td>4 *  8bytes, 2 char 41 bytes.</td>
+      <td>(114 bytes)</td>
+    </tr>
+  </tbody>
+</table>
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/pgp-bitcoint-sha" title="Verificando descargas a traves de hashes y firmas">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next"><a href="/goplusatomcopath" title="Go-Plus and Atom GOPATH fix">Next &rarr;</a></li>
+      
+      </ul>
+    </div>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    
+    var disqus_developer = 1;
+    var disqus_shortname = 'jekyllbootstrap'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+  
+  <div class="span4">
+    <h4>Published</h4>
+    <div class="date"><span>25 September 2016</span></div>
+
+  
+    <h4>Tags</h4>
+    <ul class="tag_box">
+    
+    
+
+
+  
+     
+    	<li><a href="/tags.html#PostgreSQL-ref">PostgreSQL <span>2</span></a></li>
+     
+    	<li><a href="/tags.html#RDS-ref">RDS <span>2</span></a></li>
+    
+  
+
+
+
+    </ul>
+    
+  </div>
+</div>
+
+
+      </div>
+
+      <footer>
+        <p>&copy; Emanuel Calvo 2012 
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    
+
+
+
+  </body>
+</html>
+
