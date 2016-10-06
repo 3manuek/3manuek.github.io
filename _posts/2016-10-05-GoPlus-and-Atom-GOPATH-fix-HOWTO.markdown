@@ -38,8 +38,12 @@ That's easy. An `atom &` from terminal should fix this by loading the environmen
 
 i.e.
 
-```mkdir -p ~/go/bin
+```
+mkdir -p ~/go/bin
+
 export GOPATH=$HOME/go
+
 export GOBIN=$HOME/go/bin
+
 nohup atom &
 ```
