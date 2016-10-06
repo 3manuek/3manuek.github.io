@@ -13,7 +13,7 @@ permalink: pgstatramdisksize
 
 ## What does it change and why is so important?
 
-Tracking databases and _not just tables_ counters in Postgres isn't cheap, but since some time ago there were workarounds by setting up a ramdisk to place the directory pointed by `stat_temp_directory` GUC variable. That directory places a `global.stat` file and a per-database stat file called like `db_<oidOfDB>.stat`. Although the mechanism for writing into these files avoids extra or unnecessary flushes, it is very write intensive.
+Tracking databases and _not just tables_ counters in Postgres isn't cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by `stat_temp_directory` GUC variable. That directory places a `global.stat` and a per-database stat files called like `db_<oidOfDB>.stat`. Although the mechanism for writing into these files avoids extra or unnecessary flushes, it is very write intensive.
 
 This change does not require any downtime (in standalone installations), as a simple reload will force the Stat Collector to rewrite the files on the folder. There is a pretty much clear blog on [putting stat_temp_directory on a ramdisk](http://hacksoclock.blogspot.com.ar/2014/04/putting-statstempdirectory-on-ramdisk.html).
 
@@ -30,31 +30,36 @@ show stats_temp_directory;
  /rdsdbramdisk/pg_stat_tmp
 ```
 
-## TL;DR What's the expected size?
+## TL;DR *What's the expected size of the stat_temp_directory*?
 
-> PGSTAT_FILE_FORMAT_ID 1 byte
->
-> PgStat_StatTabEntry  = 164 bytes
->
-> PgStat_StatFuncEntry = 28 bytes
->
-> closingChar = 'E'
->
-> describers is a char (T or F in this case)
+| Structure/Constant          | Size
+|-----|----
+| PGSTAT_FILE_FORMAT_ID  | 1 byte
+| PgStat_StatTabEntry  | 164 bytes
+| PgStat_StatFuncEntry | 28 bytes
+| closingChar | 'E'
+| describers  | char (T or F in this case)
 
 First of all, as it'll explained later, not all the tables, indexes and functions are written on the _db statsfile_. Basically, a basic formula will be _SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) + closingChar_.
 
-A `select count(*) * 164 "size in bytes" from pg_classs where relkind ('r','i','S')` will give you the estimate for the tables if all of them were flushed on the file. Also, you need to do the same within `pg_proc`, but instead the factor will be 28 bytes.
+Query 1) will give you the estimate for the tables _if all of them were flushed on the file_. Also, you need to do the same within `pg_proc`, but instead the factor will be 28 bytes. You'll need to run this on every database, and sum them all.
+
+Query 1)
+
+```
+select count(*) * 164 "size in bytes" from pg_class where relkind ('r','i','S')
+```
 
 This database statfile is one _per database_.
 
-> PgStat_StatDBEntry = 180 bytes
->
-> PgStat_GlobalStats = 92 bytes
->
-> PgStat_ArchiverStats = 114 bytes
->
-> describer is a char (D)
+### Global Stats
+
+| Structure          | Size
+|-----|----
+| PgStat_StatDBEntry | 180 bytes
+| PgStat_GlobalStats | 92 bytes
+| PgStat_ArchiverStats | 114 bytes
+| describer            | char ('D')
 
 The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to _PGSTAT_FILE_FORMAT_ID +describer + PgStat_GlobalStats + PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases_.
 
@@ -92,6 +97,11 @@ The HTAB structure is opaque, and it holds a hash map of tables and functions to
 #define PGSTAT_FILE_FORMAT_ID   0x01A5BC9D
 typedef struct PgStat_StatDBEntry
 {
+        /*
+        NOTE:
+        The oid type is currently implemented as an unsigned four-byte integer.
+            typedef unsigned int Oid;
+        */
         Oid                     databaseid;
         PgStat_Counter n_xact_commit;
         PgStat_Counter n_xact_rollback;
@@ -126,10 +136,6 @@ typedef struct PgStat_StatDBEntry
 } PgStat_StatDBEntry;
 ```
 
-```
-typedef unsigned int Oid;
-  // The oid type is currently implemented as an unsigned four-byte integer.
-```
 
 
 ### Structures
