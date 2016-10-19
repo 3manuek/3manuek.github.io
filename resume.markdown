@@ -177,10 +177,14 @@ Some of the 'extra' task was made some Perl scripts for support area.
 
 ----
 
-## Other customers
+## Customers History
 
-As consultant I provided also independent work at the following companies:
+As a consultant, I provided independent database consulting services for the following companies (in non-particular order):
 
+- Autofarma (Arg)
+- VSTour (Arg)
+- Jampp (Arg/USA)
+- Cyclelogic (Arg)
 - Avalon Informática (Madrid)
 - Init (País Vasco)
 - Scienza (Argentina)
@@ -192,6 +196,8 @@ As consultant I provided also independent work at the following companies:
 - BTS (Usa - Zaragoza)
 - LCRCOM.net (Madrid)
 - Pampa Business Solutions (Argentina)
-
-Past customers:
-Autofarma, VsTour, CycleLogic, and others
+- Eloquentix (USA)
+- iMedicare (USA)
+- Ericsson/EDB ( USA)
+- Sindicato de Pasteleros y afines (Arg)
+- 8kdata (Spain, Madrid)
