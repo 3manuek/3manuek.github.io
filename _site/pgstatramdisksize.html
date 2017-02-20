@@ -95,6 +95,10 @@
       
     
   
+    
+  
+    
+  
 
 
 
@@ -133,7 +137,7 @@
 </code></pre>
 </div>
 
-<h2 id="tldr-whats-the-expected-size-of-the-stattempdirectory">TL;DR <em>What’s the expected size of the stat_temp_directory</em>?</h2>
+<h2 id="tldr-whats-the-expected-size-of-the-stat_temp_directory">TL;DR <em>What’s the expected size of the stat_temp_directory</em>?</h2>
 
 <table>
   <thead>
@@ -233,7 +237,7 @@
 
 <h2 id="references">References</h2>
 
-<h3 id="pgstatstatdbentry">PgStat_StatDBEntry</h3>
+<h3 id="pgstat_statdbentry">PgStat_StatDBEntry</h3>
 
 <p>The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don’t care about the size of this maps as it won’t be written to the stats file anyway. The whole database entry is 22 * 64 bit values + 1 * 32 bits, per database (180 bytes).</p>
 
@@ -318,7 +322,7 @@ typedef struct PgStat_StatDBEntry
     <div class="pagination">
       <ul>
       
-        <li class="prev"><a href="/pgp-bitcoint-sha" title="Verificando descargas a traves de hashes y firmas">&larr; Previous</a></li>
+        <li class="prev"><a href="/postgresdocker" title="Setting up PostgreSQL with Docker official image.">&larr; Previous</a></li>
       
         <li><a href="/archive.html">Archive</a></li>
       
@@ -364,7 +368,7 @@ typedef struct PgStat_StatDBEntry
 
   
      
-    	<li><a href="/tags.html#PostgreSQL-ref">PostgreSQL <span>2</span></a></li>
+    	<li><a href="/tags.html#PostgreSQL-ref">PostgreSQL <span>8</span></a></li>
      
     	<li><a href="/tags.html#RDS-ref">RDS <span>2</span></a></li>
     

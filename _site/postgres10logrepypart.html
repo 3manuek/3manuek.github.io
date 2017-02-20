@@ -1,0 +1,377 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title>
+    <meta name="description" content="And playing with retention policies.">
+    <meta name="author" content="Emanuel Calvo">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/css/1.4.0/bootstrap.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="/">emanuelHub</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/refund_policy">Refund Policy</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/resume">Resume</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+    
+  
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="content">
+        
+
+<div class="page-header">
+  <h1>Highlighting Postgres 10 new features: Logical Replication and Partitioning. <small></small></h1>
+</div>
+
+<div class="row">
+  <div class="span10">
+    <p>Heya! I this article we are going to explore two of the major features commited in 
+the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to 
+say that these features aren’t yet available in the stable release, so they are prune
+to change or extended.</p>
+
+<h2 id="logical-replication">Logical Replication</h2>
+
+<p>The current logical replication mechanism is a row based decoding, which defers on
+those techniques based on <em>statement</em> in which no matter how many rows are involved
+on the source query, they will be shipped as individual rows into the slaves.</p>
+
+<p>This is something you may want to have in consideration when doing bulk loads, as there
+are other tools which can be a better fit than streaming everything from the master.</p>
+
+<p>Generally speaking, it consist in three <em>visible</em> elements:</p>
+
+<ul>
+  <li>a Publication  (source)</li>
+  <li>a Subscription (consumer)</li>
+  <li>and a Logical Replication Slot</li>
+</ul>
+
+<p>The most important and yet probably the more complex is the Logical Replication Slot. 
+The magic is done through the <code class="highlighter-rouge">pgoutput</code> plugin, which is the piece of code in charge
+of translate the WAL records (<code class="highlighter-rouge">pg_wal</code>) into  entries in the <em>logical log</em> (<code class="highlighter-rouge">pg_logical</code>).</p>
+
+<p>Is simple: Consumers subscribe to a Publisher using a slot, which contains the snapshot of the
+database (the given <em>point in time</em> of the cluster).</p>
+
+<p>The full feature is not entirely commited and is expected to count with a <code class="highlighter-rouge">WITH COPY DATA</code>
+option at subscription event creation in order to synchronize data from source. Currently,
+the patch has some bugs and is in process of review ^<a href="https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl">1</a>.</p>
+
+<p>Although the whole topic is interesting, everything related to Logical Decoding will be ommited
+on this article.</p>
+
+<h2 id="partitioning">Partitioning</h2>
+
+<p>In the past versions, it was possible to reach a very flexible partitioning approach by combining
+inheritance and multi-language based triggers. The current implementation does not allow to mix 
+inheritance and partitioning but still has some flexibility for detaching and attaching partitions.</p>
+
+<p>In the current example, we are going to create three partitions with no data, just for keep focus
+only on the <em>POC</em>.</p>
+
+<h2 id="poc">POC</h2>
+
+<p>The concept works around on having slaves with a different retention policy of each partitioning by
+replicating each on different destinations. As an addition, we are able to create a dummy structure,
+to point to each external partitioning for reporting or querying historic data.</p>
+
+<p>The concept has three types of nodes/databases:</p>
+
+<ul>
+  <li>A proxy (holding only Foreign Data Wrappers pointing to child tables in inheritance of a dummy table)</li>
+  <li>A master (Containing all the partitions)</li>
+  <li>Shard databases (Only holding the corresponding shard information)</li>
+</ul>
+
+<h3 id="partitioning-on-the-master-database">Partitioning on the master database</h3>
+
+<p>The master database will hold the definitions and the most recent data. The current concept, feeds 
+from a Apache Kafka broker’s topic which is partitioned in three. We are going to feed this table
+with streams using COPY command.</p>
+
+<p>The current master DDL is:</p>
+
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">main</span> <span class="p">(</span><span class="n">group_id</span> <span class="n">char</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">stamp</span> <span class="k">timestamp</span> <span class="k">without</span> <span class="n">time</span> <span class="k">zone</span> <span class="k">DEFAULT</span> <span class="n">now</span><span class="p">(),</span> <span class="n">payload</span> <span class="n">jsonb</span><span class="p">)</span> <span class="n">PARTITION</span> <span class="k">BY</span> <span class="n">LIST</span><span class="p">(</span><span class="n">group_id</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">main_shard0</span> <span class="n">PARTITION</span> <span class="k">OF</span> <span class="n">main</span> 
+  <span class="k">FOR</span> <span class="k">VALUES</span> <span class="k">IN</span> <span class="p">(</span><span class="s1">'P0'</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">main_shard1</span> <span class="n">PARTITION</span> <span class="k">OF</span> <span class="n">main</span> 
+  <span class="k">FOR</span> <span class="k">VALUES</span> <span class="k">IN</span> <span class="p">(</span><span class="s1">'P1'</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">main_shard2</span> <span class="n">PARTITION</span> <span class="k">OF</span> <span class="n">main</span> 
+  <span class="k">FOR</span> <span class="k">VALUES</span> <span class="k">IN</span> <span class="p">(</span><span class="s1">'P2'</span><span class="p">);</span>
+  
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">ix_main_shard_p0_key</span> <span class="k">ON</span> <span class="n">main_shard0</span> <span class="p">(</span><span class="n">stamp</span><span class="p">,(</span><span class="n">payload</span><span class="o">-&gt;&gt;</span><span class="s1">'key'</span><span class="p">));</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">ix_main_shard_p1_key</span> <span class="k">ON</span> <span class="n">main_shard1</span> <span class="p">(</span><span class="n">stamp</span><span class="p">,(</span><span class="n">payload</span><span class="o">-&gt;&gt;</span><span class="s1">'key'</span><span class="p">));</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">ix_main_shard_p2_key</span> <span class="k">ON</span> <span class="n">main_shard2</span> <span class="p">(</span><span class="n">stamp</span><span class="p">,(</span><span class="n">payload</span><span class="o">-&gt;&gt;</span><span class="s1">'key'</span><span class="p">));</span>
+
+<span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">P_main_P0</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="n">main_shard0</span> <span class="k">WITH</span> <span class="p">(</span><span class="n">NOPUBLISH</span> <span class="k">DELETE</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">P_main_P1</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="n">main_shard1</span> <span class="k">WITH</span> <span class="p">(</span><span class="n">NOPUBLISH</span> <span class="k">DELETE</span><span class="p">);</span>
+<span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">P_main_P2</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="n">main_shard2</span> <span class="k">WITH</span> <span class="p">(</span><span class="n">NOPUBLISH</span> <span class="k">DELETE</span><span class="p">);</span>
+</code></pre>
+</div>
+
+<p>By the current patch, Logical Replication does not support filtering by column content as <code class="highlighter-rouge">pglogical</code> tool.
+Even tho is possible to filter by event statement, which still quite useful for our purpose.</p>
+
+<h3 id="creating-the-nodes">Creating the nodes</h3>
+
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="n">main_shard0</span> <span class="p">(</span><span class="n">group_id</span> <span class="n">char</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">stamp</span> <span class="k">timestamp</span> <span class="k">without</span> <span class="n">time</span> <span class="k">zone</span><span class="p">,</span> <span class="n">payload</span> <span class="n">jsonb</span><span class="p">);</span>
+</code></pre>
+</div>
+
+<p>We now create the SUBSCRIPTION to feed from the corresponding PUBLICATION on the master database.
+As the current implementation of the SUBSCRIPTION event does not support with copy data and the
+partitions are empty, we are going to create a logical replication slot on the source. This is 
+easily done by using the <code class="highlighter-rouge">CREATE SLOT</code> clause. This means that it will set the LSN position from
+which the changes must be applied to the destination:</p>
+
+<div class="language-sql highlighter-rouge"><pre class="highlight"><code><span class="k">CREATE</span> <span class="n">SUBSCRIPTION</span> <span class="n">P_main_P0</span> 
+  <span class="k">CONNECTION</span> <span class="s1">'port=7777 user=postgres dbname=master'</span> 
+  <span class="n">PUBLICATION</span> <span class="n">P_main_P0</span> <span class="k">WITH</span> <span class="p">(</span><span class="k">CREATE</span> <span class="n">SLOT</span><span class="p">);</span>
+</code></pre>
+</div>
+
+<p>It is remarkable to note, that each subscription will create <em>workers</em> in charge of sending and receiving
+those changes.</p>
+
+<blockquote>
+  <p>As it is not the scope of this article, I’m going to skip the explanation of the <em>[logical|streamin] replication slots</em>
+in order to keep this readable. Although, it is a core concept of the replication feature.</p>
+</blockquote>
+
+<h4 id="bonus-kafka-broker-feeding-example">Bonus: Kafka broker feeding example</h4>
+
+<p>Producing fake data to the Kafka broker, composed by <code class="highlighter-rouge">key</code> and <code class="highlighter-rouge">payload</code>:</p>
+
+<div class="language-sh highlighter-rouge"><pre class="highlight"><code>randtext<span class="o">()</span> <span class="o">{</span>cat /dev/urandom | tr -dc <span class="s1">'a-zA-Z0-9'</span> | fold -w 32 | head -n 1<span class="o">}</span>
+<span class="k">while</span> <span class="o">(</span><span class="nb">true</span><span class="o">)</span> ; 
+  <span class="k">do
+    for </span>i <span class="k">in</span> <span class="k">$(</span>seq 1 50<span class="k">)</span>  
+      <span class="k">do </span><span class="nb">echo</span> <span class="s2">"</span><span class="k">$(</span>uuidgen<span class="k">)</span><span class="s2">;</span><span class="k">$(</span>randtext<span class="k">)</span><span class="s2">"</span> 
+     <span class="k">done</span>  | kafkacat -P -b localhost:9092 -qe -K <span class="s1">';'</span> -t PGSHARD 
+     sleep 10
+  <span class="k">done</span>
+</code></pre>
+</div>
+
+<p>Consuming the topic partitionins from the <code class="highlighter-rouge">beginning</code> and setting a limit of <code class="highlighter-rouge">100</code> documents:</p>
+
+<div class="language-sh highlighter-rouge"><pre class="highlight"><code>bin/psql -p7777 -Upostgres master <span class="sh">&lt;&lt;EOF
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print "P0\t\""$0"\""}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 1 | awk ''{print "P1\t\""$0"\""}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 2 | awk ''{print "P2\t\""$0"\""}'' ';
+EOF
+</span></code></pre>
+</div>
+
+<p>And then using <code class="highlighter-rouge">stored</code>, in order to consume from the last offset left by the consumer on the group:</p>
+
+<div class="language-sh highlighter-rouge"><pre class="highlight"><code>bin/psql -p7777 -Upostgres master <span class="sh">&lt;&lt;EOF
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 0 | awk ''{print "P0\t\""$0"\""}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 1 | awk ''{print "P1\t\""$0"\""}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 2 | awk ''{print "P2\t\""$0"\""}'' ';
+EOF
+</span></code></pre>
+</div>
+
+<h3 id="querying-from-an-external-database">Querying from an external database</h3>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>CREATE EXTENSION postgres_fdw;
+CREATE SERVER shard0 FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS(host '127.0.0.1',port '7777',dbname 'shard0');
+CREATE SERVER shard1 FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS(host '127.0.0.1',port '8888',dbname 'shard1');
+CREATE SERVER shard2 FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS(host '127.0.0.1',port '9999',dbname 'shard2');
+
+CREATE USER MAPPING FOR postgres SERVER shard0 OPTIONS(user 'postgres');
+CREATE USER MAPPING FOR postgres SERVER shard1 OPTIONS(user 'postgres');
+CREATE USER MAPPING FOR postgres SERVER shard2 OPTIONS(user 'postgres');
+
+CREATE TABLE main (group_id char(2), payload jsonb);
+CREATE FOREIGN TABLE main_shard0 (CHECK (group_id = 'P0'))INHERITS (main) SERVER shard0;
+CREATE FOREIGN TABLE main_shard1 (CHECK (group_id = 'P1'))INHERITS (main) SERVER shard1;
+CREATE FOREIGN TABLE main_shard2 (CHECK (group_id = 'P2'))INHERITS (main) SERVER shard2;
+</code></pre>
+</div>
+
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/poorsmansharding" title="[Data on Weed] Poor's man sharding technique.">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next disabled"><a>Next &rarr;</a>
+      
+      </ul>
+    </div>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    
+    var disqus_developer = 1;
+    var disqus_shortname = 'jekyllbootstrap'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+  
+  <div class="span4">
+    <h4>Published</h4>
+    <div class="date"><span>18 February 2017</span></div>
+
+  
+    <h4>Tags</h4>
+    <ul class="tag_box">
+    
+    
+
+
+  
+     
+    	<li><a href="/tags.html#PostgreSQL-ref">PostgreSQL <span>8</span></a></li>
+     
+    	<li><a href="/tags.html#Sharding-ref">Sharding <span>2</span></a></li>
+     
+    	<li><a href="/tags.html#Partitioning-ref">Partitioning <span>1</span></a></li>
+     
+    	<li><a href="/tags.html#LogicalReplication-ref">LogicalReplication <span>1</span></a></li>
+    
+  
+
+
+
+    </ul>
+    
+  </div>
+</div>
+
+
+      </div>
+
+      <footer>
+        <p>&copy; Emanuel Calvo 2012 
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    
+
+
+
+  </body>
+</html>
+

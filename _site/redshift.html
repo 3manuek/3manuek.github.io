@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>redshift.</title>
+    <meta name="description" content="A full overview.">
+    <meta name="author" content="Emanuel Calvo">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/css/1.4.0/bootstrap.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="/">emanuelHub</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/refund_policy">Refund Policy</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/resume">Resume</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+    
+  
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="content">
+        
+
+<div class="page-header">
+  <h1>redshift. <small></small></h1>
+</div>
+
+<div class="row">
+  <div class="span10">
+    <p>STV tables are actually virtual system tables that contain snapshots of the current system data.</p>
+
+<p>http://docs.aws.amazon.com/redshift/latest/dg/c_intro_STV_tables.html</p>
+
+<p>STL Tables for Logging  http://docs.aws.amazon.com/redshift/latest/dg/c_intro_STL_tables.html</p>
+
+<p>SV (system views)</p>
+
+<p>http://docs.aws.amazon.com/redshift/latest/dg/c_intro_system_views.html</p>
+
+<p>https://aws.amazon.com/redshift/faqs/</p>
+
+<p>class Meta:
+        db_table = ‘request_stats_2015’
+        diststyle = base.RedshiftDiststyles.KEY
+        distkey = ‘identity_id’
+        sortkey = (‘created_at’, ‘store_id’, ‘resource_type’, ‘action’)
+        compression = dict(
+            id=base.RedshiftCompressionTypes.BYTEDICT,
+            created_at=base.RedshiftCompressionTypes.DELTA32K,
+            store_id=base.RedshiftCompressionTypes.BYTEDICT,
+            identity_id=base.RedshiftCompressionTypes.BYTEDICT,
+            remote_address=base.RedshiftCompressionTypes.BYTEDICT,
+            resource_type=base.RedshiftCompressionTypes.BYTEDICT,
+            resource_id=base.RedshiftCompressionTypes.TEXT255,
+            action=base.RedshiftCompressionTypes.TEXT255,
+            os=base.RedshiftCompressionTypes.BYTEDICT,
+            client=base.RedshiftCompressionTypes.BYTEDICT,
+            data=base.RedshiftCompressionTypes.LZO
+        )</p>
+
+<p>https://github.com/iMedicare/shared/blob/master/imedicare/shared/historical/request_stat.py#L29-L45</p>
+
+<p>Distribution of reads across disks:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>historical=# select host , diskno, sum(reads),sum(writes),sum(mbps),sum(seek_forward), sum(seek_back), max(used) from stv_partitions group by 1,2;
+ host | diskno |  sum  |   sum   | sum | sum  | sum  |  max  
+------+--------+-------+---------+-----+------+------+-------
+    1 |      0 |  8408 | 1667511 |   0 | 2915 | 2273 | 90125
+    2 |      0 | 20194 | 1523545 |   0 | 9389 | 4061 | 96542
+    0 |      0 |  8010 | 1611316 |   0 | 2838 | 2235 | 96542
+(3 rows)
+</code></pre>
+</div>
+
+<p>http://docs.aws.amazon.com/redshift/latest/dg/r_STV_PARTITIONS.html</p>
+
+<p>explain  SELECT max(created_at) as created_at
+from request_stats_2015
+WHERE (((“resource_type” = ‘patients’) AND
+           (“store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’)) 
+AND  (“remote_address” &lt;&gt; ‘10.0/16’))</p>
+
+<p>explain SELECT max(t1.created_at), t1.client
+FROM 
+( SELECT created_at, client
+request_stats_2015
+WHERE (((“resource_type” = ‘tokens’) AND
+           (“store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’)) AND
+          NOT (“remote_address” ILIKE ‘10.0.%’)) 
+  ORDER BY created_at DESC LIMIT 1
+) t1</p>
+
+<p>explain</p>
+
+<p>SELECT
+  (SELECT max(“t2”.”created_at”)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”resource_type” = ‘tokens’) AND
+           (“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’)) AND
+          NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)))                                                                                                                                                                                                                           AS last_login_at,
+  (SELECT “t2”.”client”
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”resource_type” = ‘tokens’) AND
+           (“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’)) AND
+          NOT (“t2”.”remote_address” ILIKE ‘10.0.%’))
+   ORDER BY “t2”.”created_at” DESC
+   LIMIT 1)                                                                                                                                                                                                                                                                      AS last_browser_used,
+  (SELECT count(‘<em>’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (((“t2”.”resource_type” = ‘patients’) AND (“t2”.”action” = ‘read’))
+           AND (“t2”.”data” ILIKE
+                ‘%ref%’))))                                                                                                                                                                                                                                                      AS opened_reports_count,
+  (SELECT count(‘</em>’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          ((“t2”.”resource_type” = ‘click_resource’) AND (“t2”.”action” =
+                                                          ‘created’))))                                                                                                                                                                                                          AS opened_library_count,
+  (SELECT count(‘<em>’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” IN
+           (‘click_print_preview_eligible_letter’, ‘click_manage_interventions’, ‘click_report_compare_plans’, ‘click_opportunity_reach_out’, ‘click_opportunity_manage_drugs’, ‘click_opportunity_review_plans’, ‘click_opportunity_view_profile’, ‘click_schedule_message’)))) AS report_actions_count,
+  (SELECT count(‘</em>’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_print_letter’)))                                                                                                                                                                                                                                               AS print_letter_count,
+  (SELECT count(‘<em>’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_email_letters’)))                                                                                                                                                                                                                                              AS email_letters_count,
+  (SELECT count(‘</em>’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_schedule_call’)))                                                                                                                                                                                                                                              AS schedule_call_count,
+  (SELECT count(‘<em>’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_schedule_calls’)))                                                                                                                                                                                                                                             AS schedule_calls_count,
+  (SELECT count(‘</em>’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_opportunity’)))                                                                                                                                                                                                                                                AS opportunity_count,
+  ((SELECT count(DISTINCT (“t2”.”resource_id”))
+    FROM “request_stats_2015” AS t2
+    WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+            NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+           (“t2”.”resource_type” = ‘click_print_preview_plans’))) +
+   (SELECT count(DISTINCT (“t2”.”resource_id”))
+    FROM “request_stats_2015” AS t2
+    WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+            NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+           (“t2”.”resource_type” =
+            ‘click_print_preview_comparison’))))                                                                                                                                                                                                                                 AS printed_comparisons_count
+FROM (SELECT 1) AS void;</p>
+
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/pgcryptoppgbench" title="PgCrypto overhead comparison with pgbench.">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next"><a href="/pgp-bitcoint-sha" title="Verificando descargas a traves de hashes y firmas">Next &rarr;</a></li>
+      
+      </ul>
+    </div>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    
+    var disqus_developer = 1;
+    var disqus_shortname = 'jekyllbootstrap'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+  
+  <div class="span4">
+    <h4>Published</h4>
+    <div class="date"><span>01 August 2016</span></div>
+
+  
+    <h4>Tags</h4>
+    <ul class="tag_box">
+    
+    
+
+
+  
+     
+    	<li><a href="/tags.html#PostgreSQL-ref">PostgreSQL <span>8</span></a></li>
+     
+    	<li><a href="/tags.html#Redshift-ref">Redshift <span>1</span></a></li>
+    
+  
+
+
+
+    </ul>
+    
+  </div>
+</div>
+
+
+      </div>
+
+      <footer>
+        <p>&copy; Emanuel Calvo 2012 
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    
+
+
+
+  </body>
+</html>
+
