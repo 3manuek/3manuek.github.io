@@ -13,24 +13,31 @@ permalink: postgres10logrepypart
 Heya! I this article we are going to explore two of the major features commited in 
 the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to 
 say that these features aren't yet available in the stable release, so they are prune
-to change or extended.
+to change or extended. 
+
+This is a sneak peak of the upcoming talk at [Percona Live 2017](), get your tickets !
+
 
 ## Logical Replication
 
-The current logical replication mechanism is a row based decoding, which defers on
+The current logical replication mechanism is a row based decoding, which defers from
 those techniques based on _statement_ in which no matter how many rows are involved
-on the source query, they will be shipped as individual rows into the slaves.
+on the source query, they will be shipped as individual rows (events) into the slaves.
 
 This is something you may want to have in consideration when doing bulk loads, as there
 are other tools which can be a better fit than streaming everything from the master.
 
-Generally speaking, it consist in three _visible_ elements:
+Generally speaking, it consist in three main elements:
 
 - a Publication  (source)
 - a Subscription (consumer)
 - and a Logical Replication Slot  
 
-The most important and yet probably the more complex is the Logical Replication Slot. 
+The most important and yet probably the more complex is the Logical Replication Slot,
+which holds the coordinates of the current LSN transferred and applied on the slave.
+In complex systems you will probably end with a few streaming or logical replication
+slots. 
+
 The magic is done through the `pgoutput` plugin, which is the piece of code in charge
 of translate the WAL records (`pg_wal`) into  entries in the _logical log_ (`pg_logical`).
 
@@ -41,7 +48,7 @@ The full feature is not entirely commited and is expected to count with a `WITH 
 option at subscription event creation in order to synchronize data from source. Currently,
 the patch has some bugs and is in process of review ^[1](https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl).
 
-Although the whole topic is interesting, everything related to Logical Decoding will be ommited
+Although the whole topic is interesting, everything related to _Logical *Decoding*_ will be ommited
 on this article.
 
 ## Partitioning
@@ -50,8 +57,12 @@ In the past versions, it was possible to reach a very flexible partitioning appr
 inheritance and multi-language based triggers. The current implementation does not allow to mix 
 inheritance and partitioning but still has some flexibility for detaching and attaching partitions.
 
+Although, it will be possible to still use INHERITANCE and constraint checks for more complex
+features (as combining partitioning with FDW INHERITed partitions, allowing to move rows from
+one shard to another while keeping others locally).
+
 In the current example, we are going to create three partitions with no data, just for keep focus
-only on the _POC_.
+only on the _POC_ (that is, without taking a snapshot of the data of partitions).
 
 
 ## POC
@@ -60,6 +71,7 @@ The concept works around on having slaves with a different retention policy of e
 replicating each on different destinations. As an addition, we are able to create a dummy structure,
 to point to each external partitioning for reporting or querying historic data.
 
+![Flight view][/images/logreppart5.jpg]
 
 The concept has three types of nodes/databases:
 
@@ -95,7 +107,9 @@ CREATE PUBLICATION P_main_P1 FOR TABLE main_shard1 WITH (NOPUBLISH DELETE);
 CREATE PUBLICATION P_main_P2 FOR TABLE main_shard2 WITH (NOPUBLISH DELETE);
 ```
 
-By the current patch, Logical Replication does not support filtering by column content as `pglogical` tool.
+By the current state of the last commits on PostgreSQL, Logical Replication does not support 
+filtering by column content as `pglogical` tool does.
+
 Even tho is possible to filter by event statement, which still quite useful for our purpose.
 
 
@@ -162,7 +176,9 @@ EOF
 
 ### Querying from an external database
 
-
+This example has no other purpose than to show an already existent feature (although improved 
+in recent versions) in action. But very specially I'm going to highlight the INHERIT on a
+FOREIGN TABLE.
 
 ```
 CREATE EXTENSION postgres_fdw;
