@@ -4,13 +4,416 @@
  <title>emanuelHub</title>
  <link href="https://github.com/3manuek/3manuek.github.io.git/atom.xml" rel="self"/>
  <link href="https://github.com/3manuek/3manuek.github.io.git"/>
- <updated>2016-10-06T00:04:38-03:00</updated>
+ <updated>2017-02-19T21:31:23-03:00</updated>
  <id>https://github.com/3manuek/3manuek.github.io.git</id>
  <author>
    <name>Emanuel Calvo</name>
    <email>3manuek@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/postgres10logrepypart"/>
+   <updated>2017-02-18T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/postgres-10-logrep-y-part</id>
+   <content type="html">&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in 
+the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to 
+say that these features aren’t yet available in the stable release, so they are prune
+to change or extended.&lt;/p&gt;
+
+&lt;h2 id=&quot;logical-replication&quot;&gt;Logical Replication&lt;/h2&gt;
+
+&lt;p&gt;The current logical replication mechanism is a row based decoding, which defers on
+those techniques based on &lt;em&gt;statement&lt;/em&gt; in which no matter how many rows are involved
+on the source query, they will be shipped as individual rows into the slaves.&lt;/p&gt;
+
+&lt;p&gt;This is something you may want to have in consideration when doing bulk loads, as there
+are other tools which can be a better fit than streaming everything from the master.&lt;/p&gt;
+
+&lt;p&gt;Generally speaking, it consist in three &lt;em&gt;visible&lt;/em&gt; elements:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;a Publication  (source)&lt;/li&gt;
+  &lt;li&gt;a Subscription (consumer)&lt;/li&gt;
+  &lt;li&gt;and a Logical Replication Slot&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The most important and yet probably the more complex is the Logical Replication Slot. 
+The magic is done through the &lt;code class=&quot;highlighter-rouge&quot;&gt;pgoutput&lt;/code&gt; plugin, which is the piece of code in charge
+of translate the WAL records (&lt;code class=&quot;highlighter-rouge&quot;&gt;pg_wal&lt;/code&gt;) into  entries in the &lt;em&gt;logical log&lt;/em&gt; (&lt;code class=&quot;highlighter-rouge&quot;&gt;pg_logical&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;Is simple: Consumers subscribe to a Publisher using a slot, which contains the snapshot of the
+database (the given &lt;em&gt;point in time&lt;/em&gt; of the cluster).&lt;/p&gt;
+
+&lt;p&gt;The full feature is not entirely commited and is expected to count with a &lt;code class=&quot;highlighter-rouge&quot;&gt;WITH COPY DATA&lt;/code&gt;
+option at subscription event creation in order to synchronize data from source. Currently,
+the patch has some bugs and is in process of review ^&lt;a href=&quot;https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl&quot;&gt;1&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Although the whole topic is interesting, everything related to Logical Decoding will be ommited
+on this article.&lt;/p&gt;
+
+&lt;h2 id=&quot;partitioning&quot;&gt;Partitioning&lt;/h2&gt;
+
+&lt;p&gt;In the past versions, it was possible to reach a very flexible partitioning approach by combining
+inheritance and multi-language based triggers. The current implementation does not allow to mix 
+inheritance and partitioning but still has some flexibility for detaching and attaching partitions.&lt;/p&gt;
+
+&lt;p&gt;In the current example, we are going to create three partitions with no data, just for keep focus
+only on the &lt;em&gt;POC&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;poc&quot;&gt;POC&lt;/h2&gt;
+
+&lt;p&gt;The concept works around on having slaves with a different retention policy of each partitioning by
+replicating each on different destinations. As an addition, we are able to create a dummy structure,
+to point to each external partitioning for reporting or querying historic data.&lt;/p&gt;
+
+&lt;p&gt;The concept has three types of nodes/databases:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;A proxy (holding only Foreign Data Wrappers pointing to child tables in inheritance of a dummy table)&lt;/li&gt;
+  &lt;li&gt;A master (Containing all the partitions)&lt;/li&gt;
+  &lt;li&gt;Shard databases (Only holding the corresponding shard information)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;partitioning-on-the-master-database&quot;&gt;Partitioning on the master database&lt;/h3&gt;
+
+&lt;p&gt;The master database will hold the definitions and the most recent data. The current concept, feeds 
+from a Apache Kafka broker’s topic which is partitioned in three. We are going to feed this table
+with streams using COPY command.&lt;/p&gt;
+
+&lt;p&gt;The current master DDL is:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;timestamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;without&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;zone&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DEFAULT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;now&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jsonb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LIST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; 
+  &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;VALUES&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'P0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; 
+  &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;VALUES&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'P1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard2&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; 
+  &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;VALUES&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'P2'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ix_main_shard_p0_key&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ix_main_shard_p1_key&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ix_main_shard_p2_key&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PUBLICATION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P0&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NOPUBLISH&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DELETE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PUBLICATION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NOPUBLISH&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DELETE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PUBLICATION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NOPUBLISH&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DELETE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;By the current patch, Logical Replication does not support filtering by column content as &lt;code class=&quot;highlighter-rouge&quot;&gt;pglogical&lt;/code&gt; tool.
+Even tho is possible to filter by event statement, which still quite useful for our purpose.&lt;/p&gt;
+
+&lt;h3 id=&quot;creating-the-nodes&quot;&gt;Creating the nodes&lt;/h3&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;timestamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;without&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;zone&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jsonb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;We now create the SUBSCRIPTION to feed from the corresponding PUBLICATION on the master database.
+As the current implementation of the SUBSCRIPTION event does not support with copy data and the
+partitions are empty, we are going to create a logical replication slot on the source. This is 
+easily done by using the &lt;code class=&quot;highlighter-rouge&quot;&gt;CREATE SLOT&lt;/code&gt; clause. This means that it will set the LSN position from
+which the changes must be applied to the destination:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SUBSCRIPTION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P0&lt;/span&gt; 
+  &lt;span class=&quot;k&quot;&gt;CONNECTION&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'port=7777 user=postgres dbname=master'&lt;/span&gt; 
+  &lt;span class=&quot;n&quot;&gt;PUBLICATION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P0&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SLOT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;It is remarkable to note, that each subscription will create &lt;em&gt;workers&lt;/em&gt; in charge of sending and receiving
+those changes.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;As it is not the scope of this article, I’m going to skip the explanation of the &lt;em&gt;[logical|streamin] replication slots&lt;/em&gt;
+in order to keep this readable. Although, it is a core concept of the replication feature.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;bonus-kafka-broker-feeding-example&quot;&gt;Bonus: Kafka broker feeding example&lt;/h4&gt;
+
+&lt;p&gt;Producing fake data to the Kafka broker, composed by &lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;payload&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;randtext&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;cat /dev/urandom | tr -dc &lt;span class=&quot;s1&quot;&gt;'a-zA-Z0-9'&lt;/span&gt; | fold -w 32 | head -n 1&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; ; 
+  &lt;span class=&quot;k&quot;&gt;do
+    for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 50&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;  
+      &lt;span class=&quot;k&quot;&gt;do &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;uuidgen&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;randtext&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; 
+     &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;  | kafkacat -P -b localhost:9092 -qe -K &lt;span class=&quot;s1&quot;&gt;';'&lt;/span&gt; -t PGSHARD 
+     sleep 10
+  &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Consuming the topic partitionins from the &lt;code class=&quot;highlighter-rouge&quot;&gt;beginning&lt;/code&gt; and setting a limit of &lt;code class=&quot;highlighter-rouge&quot;&gt;100&lt;/code&gt; documents:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/psql -p7777 -Upostgres master &lt;span class=&quot;sh&quot;&gt;&amp;lt;&amp;lt;EOF
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print &quot;P0\t\&quot;&quot;$0&quot;\&quot;&quot;}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 1 | awk ''{print &quot;P1\t\&quot;&quot;$0&quot;\&quot;&quot;}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 2 | awk ''{print &quot;P2\t\&quot;&quot;$0&quot;\&quot;&quot;}'' ';
+EOF
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;And then using &lt;code class=&quot;highlighter-rouge&quot;&gt;stored&lt;/code&gt;, in order to consume from the last offset left by the consumer on the group:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/psql -p7777 -Upostgres master &lt;span class=&quot;sh&quot;&gt;&amp;lt;&amp;lt;EOF
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 0 | awk ''{print &quot;P0\t\&quot;&quot;$0&quot;\&quot;&quot;}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 1 | awk ''{print &quot;P1\t\&quot;&quot;$0&quot;\&quot;&quot;}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 2 | awk ''{print &quot;P2\t\&quot;&quot;$0&quot;\&quot;&quot;}'' ';
+EOF
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;querying-from-an-external-database&quot;&gt;Querying from an external database&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE EXTENSION postgres_fdw;
+CREATE SERVER shard0 FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS(host '127.0.0.1',port '7777',dbname 'shard0');
+CREATE SERVER shard1 FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS(host '127.0.0.1',port '8888',dbname 'shard1');
+CREATE SERVER shard2 FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS(host '127.0.0.1',port '9999',dbname 'shard2');
+
+CREATE USER MAPPING FOR postgres SERVER shard0 OPTIONS(user 'postgres');
+CREATE USER MAPPING FOR postgres SERVER shard1 OPTIONS(user 'postgres');
+CREATE USER MAPPING FOR postgres SERVER shard2 OPTIONS(user 'postgres');
+
+CREATE TABLE main (group_id char(2), payload jsonb);
+CREATE FOREIGN TABLE main_shard0 (CHECK (group_id = 'P0'))INHERITS (main) SERVER shard0;
+CREATE FOREIGN TABLE main_shard1 (CHECK (group_id = 'P1'))INHERITS (main) SERVER shard1;
+CREATE FOREIGN TABLE main_shard2 (CHECK (group_id = 'P2'))INHERITS (main) SERVER shard2;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>[Data on Weed] Poor's man sharding technique.</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/poorsmansharding"/>
+   <updated>2017-01-31T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/Poors-man-sharding-technique</id>
+   <content type="html">&lt;h2 id=&quot;if-you-are-sober-stop&quot;&gt;If you are sober, STOP&lt;/h2&gt;
+
+&lt;p&gt;Data on Weed is a series of posts about data technologies with a twist. The twist is that you would never implement this in production
+if you are sober or, if you really &lt;em&gt;fuching&lt;/em&gt; know what you are doing.&lt;/p&gt;
+
+&lt;h2 id=&quot;concept&quot;&gt;Concept&lt;/h2&gt;
+
+&lt;p&gt;The &lt;em&gt;Poor’s man sharding technique&lt;/em&gt; is nothing more than a combination of two existing features (inheritance and foreign data wrappers)
+and one extension (&lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;It consists in a &lt;code class=&quot;highlighter-rouge&quot;&gt;proxy&lt;/code&gt; database and &lt;code class=&quot;highlighter-rouge&quot;&gt;shard&lt;/code&gt; or &lt;code class=&quot;highlighter-rouge&quot;&gt;data&lt;/code&gt; databases. Gues what. Yeah, &lt;code class=&quot;highlighter-rouge&quot;&gt;proxy&lt;/code&gt; database holds the entry points and the &lt;code class=&quot;highlighter-rouge&quot;&gt;shard&lt;/code&gt;
+databases the data itself.&lt;/p&gt;
+
+&lt;h2 id=&quot;warning&quot;&gt;Warning&lt;/h2&gt;
+
+&lt;p&gt;This is a POC, which I will suggest you think very well if you decide go into this way. It is mostly for didactic purposes or if you
+want to drain your brain out of your ears. Still preferable this way other than space bugs.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-this-works&quot;&gt;How this “works”&lt;/h2&gt;
+
+&lt;p&gt;You can have more than one &lt;code class=&quot;highlighter-rouge&quot;&gt;proxy&lt;/code&gt; database, as it does not persist the data. The &lt;code class=&quot;highlighter-rouge&quot;&gt;proxy&lt;/code&gt; database
+can be placed in a stand alone instance or on each server. Or anywhere. It does not matter. This
+is good as your entry points are not SPOF.&lt;/p&gt;
+
+&lt;p&gt;The concept is very simple, proxy database holds the server definitions and user mappings, along 
+with the entry point (table main,without data) and the inherited foreign data wrappers (which do not store data).
+This leaves the proxy database with &lt;em&gt;metadata&lt;/em&gt; only. Most importantly, it stores the partition 
+function and the trigger defition.&lt;/p&gt;
+
+&lt;p&gt;When an INSERT falls in, trigger executes the function and split the write to the inherited tables
+according to the key. This is a fake, as the table is a foreign table which points to a remote database.&lt;/p&gt;
+
+&lt;p&gt;The real tables will be on each &lt;code class=&quot;highlighter-rouge&quot;&gt;shardXX&lt;/code&gt; database, the location is up to the engineer.&lt;/p&gt;
+
+&lt;h2 id=&quot;no-magic-at-all&quot;&gt;No magic at all&lt;/h2&gt;
+
+&lt;p&gt;As you expect, life sucks and sometimes one does not have time to dig into every crazy idea that prompts.
+Special mention over those that come under doubtely states of consciousness.&lt;/p&gt;
+
+&lt;p&gt;For HA, SERVERs can point to slaves, but beware of this as you must need to change the
+FOREIGN TABLE definition and promote them, otherwise &lt;em&gt;writes won’t work and reads will be stale&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;This technique is very simplistic, and it lacks of a lot of features provided for sharding tools.&lt;/p&gt;
+
+&lt;p&gt;Postgres 9.6 has a nice set of improvements on FDWs, specially related with condition pushdowns.
+Being said, this kind of things will definitively a PITA under previous versions.&lt;/p&gt;
+
+&lt;h2 id=&quot;proxy-database&quot;&gt;proxy database&lt;/h2&gt;
+
+&lt;p&gt;I’m going to create two shards, because it’s hard to code being stoned. Actually I’m just lazy,
+but my friend Elrich Bachman told me that if it doesn’t come in pairs, one is artificial.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE EXTENSION postgres_fdw;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;These definitions are thw ones you’ll need to extend your shard:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE SERVER shard1_main FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS(host '127.0.0.1',port '5434',dbname 'shard1');
+CREATE SERVER shard2_main FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS(host '127.0.0.1',port '5435',dbname 'shard2');
+
+CREATE USER MAPPING FOR postgres SERVER shard1_main OPTIONS(user 'postgres');
+CREATE USER MAPPING FOR postgres SERVER shard2_main OPTIONS(user 'postgres');
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Create the tables, function and trigger. Obviously, you will need to create foreign tables as shards
+you are planning to have:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE TABLE main (shardKey char(2), key bigint, avalue text);
+CREATE FOREIGN TABLE main_shard01 (CHECK (shardKey = '01'))INHERITS (main) SERVER shard1_main;
+CREATE FOREIGN TABLE main_shard02 (CHECK (shardKey = '02'))INHERITS (main) SERVER shard2_main;
+
+CREATE OR REPLACE FUNCTION f_main_part() RETURNS TRIGGER AS
+$FMAINPART$
+DECLARE
+            partition_name text;
+BEGIN
+            partition_name := 'main_shard' || NEW.shardKey;
+            EXECUTE  'INSERT INTO ' ||  quote_ident(partition_name) ||  ' SELECT ($1).*' USING NEW ;
+            RETURN NULL;
+END;
+$FMAINPART$ LANGUAGE plpgsql;
+
+CREATE TRIGGER t_main BEFORE INSERT ON main FOR EACH ROW EXECUTE PROCEDURE f_main_part();
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;shards&quot;&gt;shards&lt;/h2&gt;
+
+&lt;p&gt;On shards is easier:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE TABLE main_shard01(shardKey char(2), key bigint, avalue text, CHECK(shardKey='01'));
+CREATE INDEX ON main_shard01(key);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;test&quot;&gt;TEST&lt;/h2&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;INSERT INTO main VALUES ('01',1,'trololol'),('01',2,random()::text),('02',2,random()::text);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;grab-them-from-the-hidden-columns&quot;&gt;&lt;em&gt;Grab them from the hidden columns&lt;/em&gt;&lt;/h2&gt;
+
+&lt;p&gt;The tableoid is the shard one, not the proxy foreign definition, this is important.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;proxy=# select tableoid,* from main;
+ tableoid | shardkey | key |      avalue       
+----------+----------+-----+-------------------
+    16422 | 01       |   1 | trololol
+    16422 | 01       |   2 | 0.544912547804415
+    16426 | 02       |   2 | 0.459446560591459
+(3 rows)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Shard Buffer Pool With Proxysql</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/2016/11/26/shard-buffer-pool-with-proxysql"/>
+   <updated>2016-11-26T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/2016/11/26/shard-buffer-pool-with-proxysql</id>
+   <content type="html">
+&lt;p&gt;docker-compose up node01
+docker-compose scale nodeN=2
+docker-compose scale proxysql=2
+docker pull quay.io/coreos/etcd
+docker run -d –name discovery -p 2379:2379 -p 2380:2380 -v /usr/share/ca-certificates/:/etc/ssl/certs –net host quay.io/coreos/etcd:v2.0.9 -name discovery -initial-advertise-peer-urls http://${IP}:2380,http://${IP}:7001 -listen-peer-urls http://${IP}:2380,http://${IP}:7001 -initial-cluster discovery=http://${IP}:2380,discovery=http://${IP}:7001 -advertise-client-urls http://${IP}:2379,http://${IP}:4001 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001&lt;/p&gt;
+
+&lt;p&gt;docker run -d –name discovery -p 2379:2379 -p 2380:2380 –net host quay.io/coreos/etcd -name discovery -initial-advertise-peer-urls http://${IP}:2380,http://${IP}:7001 -listen-peer-urls http://${IP}:2380,http://${IP}:7001 -initial-cluster discovery=http://${IP}:2380,discovery=http://${IP}:7001 -advertise-client-urls http://${IP}:2379,http://${IP}:4001 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001&lt;/p&gt;
+
+&lt;p&gt;https://github.com/percona/proxysql-admin-tool
+https://coreos.com/etcd/docs/latest/v2/docker_guide.html&lt;/p&gt;
+
+&lt;p&gt;ETCD_HOST=${ETCD_HOST:-10.20.2.4:2379}
+docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 4001:4001 -p 2380:2380 -p 2379:2379 \
+ –name etcd quay.io/coreos/etcd \
+ -name etcd0 \
+ -advertise-client-urls http://${ETCD_HOST}:2379,http://${ETCD_HOST}:4001 \
+ -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:4001 \
+ -initial-advertise-peer-urls http://${ETCD_HOST}:2380 \
+ -listen-peer-urls http://0.0.0.0:2380 \
+ -initial-cluster-token etcd-cluster-1 \
+ -initial-cluster etcd0=http://${ETCD_HOST}:2380 \
+ -initial-cluster-state new&lt;/p&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Mysql And Oom</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/2016/10/10/MySQL-and-OOM"/>
+   <updated>2016-10-10T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/2016/10/10/MySQL-and-OOM</id>
+   <content type="html">
+&lt;p&gt;OOM killer is a OS mechanism to avoid processes to consume more resources than the available in the host.
+It may look as a good idea for avoid scenarios wether certain proceses behave unexpectely.&lt;/p&gt;
+
+&lt;p&gt;swap configuration vm.swappiness=1 
+overcommit memory, applies to MySQL ?&lt;/p&gt;
+
+&lt;p&gt;There is another mechanism wether the OS &lt;em&gt;scores&lt;/em&gt; processes. THe higher the score, the more likely to be killed
+the process will be. I’ve been seeing fixes around by setting -20 or other numbers to the oom_score_adj. You may
+be aware that this only applies an arithmetic operations to the current score, but it won’t be a permanent fix,
+as scores changes according to the process status. The best source is &lt;a href=&quot;http://man7.org/linux/man-pages/man5/proc.5.html&quot;&gt;the proc man page&lt;/a&gt;.
+However, oom_adj is deprecated in 2.6.36 in favor of oom_score_adj.&lt;/p&gt;
+
+&lt;p&gt;http://www.oracle.com/technetwork/articles/servers-storage-dev/oom-killer-1911807.html&lt;/p&gt;
+
+&lt;p&gt;No consensus on an elegant way to do this:&lt;/p&gt;
+
+&lt;p&gt;https://groups.google.com/a/percona.com/forum/?hl=en#!msg/experts/78USb3jqJnA/3AlUYsLXEgAJ;context-place=forum/experts&lt;/p&gt;
+
+&lt;p&gt;Nor neiether Maria:
+https://jira.mariadb.org/browse/MDEV-9264&lt;/p&gt;
+
+&lt;p&gt;persist in cron line:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;*/1 * * * * root (pidof mysqld&lt;/td&gt;
+      &lt;td&gt;while read PID; do echo -1000 &amp;gt; /proc/$PID/oom_score_adj; done)&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;The -1000 has a reason, and it is explained clearly in the manpage:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The value of oom_score_adj is added to the badness score
+             before it is used to determine which task to kill.  Acceptable
+             values range from -1000 (OOM_SCORE_ADJ_MIN) to +1000
+             (OOM_SCORE_ADJ_MAX).  This allows user space to control the
+             preference for OOM-killing, ranging from always preferring a
+             certain task or completely disabling it from OOM killing.  The
+             lowest possible value, -1000, is equivalent to disabling OOM-
+             killing entirely for that task, since it will always report a
+             badness score of 0.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;As oom_score is a setting that can increase thourgh server acitivty, you may want to ensure that is
+always 0.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# cat /proc/$(pidof mysqld)/oom_score
+0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;What about overcommit:
+https://www.kernel.org/doc/Documentation/vm/overcommit-accounting&lt;/p&gt;
+
+</content>
+ </entry>
  
  <entry>
    <title>Go-Plus and Atom GOPATH fix</title>
@@ -78,7 +481,7 @@ nohup atom &amp;amp;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;h2 id=&quot;tldr-whats-the-expected-size-of-the-stattempdirectory&quot;&gt;TL;DR &lt;em&gt;What’s the expected size of the stat_temp_directory&lt;/em&gt;?&lt;/h2&gt;
+&lt;h2 id=&quot;tldr-whats-the-expected-size-of-the-stat_temp_directory&quot;&gt;TL;DR &lt;em&gt;What’s the expected size of the stat_temp_directory&lt;/em&gt;?&lt;/h2&gt;
 
 &lt;table&gt;
   &lt;thead&gt;
@@ -178,7 +581,7 @@ nohup atom &amp;amp;
 
 &lt;h2 id=&quot;references&quot;&gt;References&lt;/h2&gt;
 
-&lt;h3 id=&quot;pgstatstatdbentry&quot;&gt;PgStat_StatDBEntry&lt;/h3&gt;
+&lt;h3 id=&quot;pgstat_statdbentry&quot;&gt;PgStat_StatDBEntry&lt;/h3&gt;
 
 &lt;p&gt;The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don’t care about the size of this maps as it won’t be written to the stats file anyway. The whole database entry is 22 * 64 bit values + 1 * 32 bits, per database (180 bytes).&lt;/p&gt;
 
@@ -262,11 +665,22 @@ typedef struct PgStat_StatDBEntry
  </entry>
  
  <entry>
+   <title>Setting up PostgreSQL with Docker official image.</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/postgresdocker"/>
+   <updated>2016-09-01T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/postgres-docker</id>
+   <content type="html">&lt;h2 id=&quot;why-postgres-in-docker&quot;&gt;Why Postgres in Docker?&lt;/h2&gt;
+
+&lt;h2 id=&quot;resources-and-links&quot;&gt;Resources and Links&lt;/h2&gt;
+</content>
+ </entry>
+ 
+ <entry>
    <title>Verificando descargas a traves de hashes y firmas</title>
    <link href="https://github.com/3manuek/3manuek.github.io.git/pgp-bitcoint-sha"/>
    <updated>2016-08-18T00:00:00-03:00</updated>
    <id>https://github.com/3manuek/3manuek.github.io.git/verificar-hashes-y-firmas-en-binarios</id>
-   <content type="html">&lt;h2 id=&quot;la-razn&quot;&gt;La razón&lt;/h2&gt;
+   <content type="html">&lt;h2 id=&quot;la-razón&quot;&gt;La razón&lt;/h2&gt;
 
 &lt;p&gt;Bitcoin es en mi opinión, la más reciente y revolucionaria tecnología, que permite
 monetizar la capacidad de computo. No voy a entrar en detalles con respecto a
@@ -410,12 +824,389 @@ e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;h2 id=&quot;unas-ltimas-sugerencias&quot;&gt;Unas últimas sugerencias&lt;/h2&gt;
+&lt;h2 id=&quot;unas-últimas-sugerencias&quot;&gt;Unas últimas sugerencias&lt;/h2&gt;
 
 &lt;p&gt;‘ta jodida la mano, así que mejor arremangarse y empezar a corroborar toda
 esas cosas que descargamos, en especial aquellas que están en la mira.&lt;/p&gt;
 
 &lt;p&gt;Listo el pollo. ¡Espero que te haya servido!&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>redshift.</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/redshift"/>
+   <updated>2016-08-01T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/redshift</id>
+   <content type="html">&lt;p&gt;STV tables are actually virtual system tables that contain snapshots of the current system data.&lt;/p&gt;
+
+&lt;p&gt;http://docs.aws.amazon.com/redshift/latest/dg/c_intro_STV_tables.html&lt;/p&gt;
+
+&lt;p&gt;STL Tables for Logging  http://docs.aws.amazon.com/redshift/latest/dg/c_intro_STL_tables.html&lt;/p&gt;
+
+&lt;p&gt;SV (system views)&lt;/p&gt;
+
+&lt;p&gt;http://docs.aws.amazon.com/redshift/latest/dg/c_intro_system_views.html&lt;/p&gt;
+
+&lt;p&gt;https://aws.amazon.com/redshift/faqs/&lt;/p&gt;
+
+&lt;p&gt;class Meta:
+        db_table = ‘request_stats_2015’
+        diststyle = base.RedshiftDiststyles.KEY
+        distkey = ‘identity_id’
+        sortkey = (‘created_at’, ‘store_id’, ‘resource_type’, ‘action’)
+        compression = dict(
+            id=base.RedshiftCompressionTypes.BYTEDICT,
+            created_at=base.RedshiftCompressionTypes.DELTA32K,
+            store_id=base.RedshiftCompressionTypes.BYTEDICT,
+            identity_id=base.RedshiftCompressionTypes.BYTEDICT,
+            remote_address=base.RedshiftCompressionTypes.BYTEDICT,
+            resource_type=base.RedshiftCompressionTypes.BYTEDICT,
+            resource_id=base.RedshiftCompressionTypes.TEXT255,
+            action=base.RedshiftCompressionTypes.TEXT255,
+            os=base.RedshiftCompressionTypes.BYTEDICT,
+            client=base.RedshiftCompressionTypes.BYTEDICT,
+            data=base.RedshiftCompressionTypes.LZO
+        )&lt;/p&gt;
+
+&lt;p&gt;https://github.com/iMedicare/shared/blob/master/imedicare/shared/historical/request_stat.py#L29-L45&lt;/p&gt;
+
+&lt;p&gt;Distribution of reads across disks:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;historical=# select host , diskno, sum(reads),sum(writes),sum(mbps),sum(seek_forward), sum(seek_back), max(used) from stv_partitions group by 1,2;
+ host | diskno |  sum  |   sum   | sum | sum  | sum  |  max  
+------+--------+-------+---------+-----+------+------+-------
+    1 |      0 |  8408 | 1667511 |   0 | 2915 | 2273 | 90125
+    2 |      0 | 20194 | 1523545 |   0 | 9389 | 4061 | 96542
+    0 |      0 |  8010 | 1611316 |   0 | 2838 | 2235 | 96542
+(3 rows)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;http://docs.aws.amazon.com/redshift/latest/dg/r_STV_PARTITIONS.html&lt;/p&gt;
+
+&lt;p&gt;explain  SELECT max(created_at) as created_at
+from request_stats_2015
+WHERE (((“resource_type” = ‘patients’) AND
+           (“store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’)) 
+AND  (“remote_address” &amp;lt;&amp;gt; ‘10.0/16’))&lt;/p&gt;
+
+&lt;p&gt;explain SELECT max(t1.created_at), t1.client
+FROM 
+( SELECT created_at, client
+request_stats_2015
+WHERE (((“resource_type” = ‘tokens’) AND
+           (“store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’)) AND
+          NOT (“remote_address” ILIKE ‘10.0.%’)) 
+  ORDER BY created_at DESC LIMIT 1
+) t1&lt;/p&gt;
+
+&lt;p&gt;explain&lt;/p&gt;
+
+&lt;p&gt;SELECT
+  (SELECT max(“t2”.”created_at”)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”resource_type” = ‘tokens’) AND
+           (“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’)) AND
+          NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)))                                                                                                                                                                                                                           AS last_login_at,
+  (SELECT “t2”.”client”
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”resource_type” = ‘tokens’) AND
+           (“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’)) AND
+          NOT (“t2”.”remote_address” ILIKE ‘10.0.%’))
+   ORDER BY “t2”.”created_at” DESC
+   LIMIT 1)                                                                                                                                                                                                                                                                      AS last_browser_used,
+  (SELECT count(‘&lt;em&gt;’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (((“t2”.”resource_type” = ‘patients’) AND (“t2”.”action” = ‘read’))
+           AND (“t2”.”data” ILIKE
+                ‘%ref%’))))                                                                                                                                                                                                                                                      AS opened_reports_count,
+  (SELECT count(‘&lt;/em&gt;’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          ((“t2”.”resource_type” = ‘click_resource’) AND (“t2”.”action” =
+                                                          ‘created’))))                                                                                                                                                                                                          AS opened_library_count,
+  (SELECT count(‘&lt;em&gt;’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” IN
+           (‘click_print_preview_eligible_letter’, ‘click_manage_interventions’, ‘click_report_compare_plans’, ‘click_opportunity_reach_out’, ‘click_opportunity_manage_drugs’, ‘click_opportunity_review_plans’, ‘click_opportunity_view_profile’, ‘click_schedule_message’)))) AS report_actions_count,
+  (SELECT count(‘&lt;/em&gt;’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_print_letter’)))                                                                                                                                                                                                                                               AS print_letter_count,
+  (SELECT count(‘&lt;em&gt;’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_email_letters’)))                                                                                                                                                                                                                                              AS email_letters_count,
+  (SELECT count(‘&lt;/em&gt;’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_schedule_call’)))                                                                                                                                                                                                                                              AS schedule_call_count,
+  (SELECT count(‘&lt;em&gt;’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_schedule_calls’)))                                                                                                                                                                                                                                             AS schedule_calls_count,
+  (SELECT count(‘&lt;/em&gt;’)
+   FROM “request_stats_2015” AS t2
+   WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+           NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+          (“t2”.”resource_type” =
+           ‘click_opportunity’)))                                                                                                                                                                                                                                                AS opportunity_count,
+  ((SELECT count(DISTINCT (“t2”.”resource_id”))
+    FROM “request_stats_2015” AS t2
+    WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+            NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+           (“t2”.”resource_type” = ‘click_print_preview_plans’))) +
+   (SELECT count(DISTINCT (“t2”.”resource_id”))
+    FROM “request_stats_2015” AS t2
+    WHERE (((“t2”.”store_id” = ‘7f419e906bfe578faef5277c7fc9fb80’) AND
+            NOT (“t2”.”remote_address” ILIKE ‘10.0.%’)) AND
+           (“t2”.”resource_type” =
+            ‘click_print_preview_comparison’))))                                                                                                                                                                                                                                 AS printed_comparisons_count
+FROM (SELECT 1) AS void;&lt;/p&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>PgCrypto overhead comparison with pgbench.</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/pgcryptoppgbench"/>
+   <updated>2016-08-01T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/pgbench-crypto-overhead</id>
+   <content type="html">&lt;p&gt;There are certain scenarios where using certain features (LISTEN/NOTIFY &lt;a href=&quot;http://johtopg.blogspot.com.ar/2015/11/listening-connections-arent-cheap.html&quot;&gt;isn’t cheap&lt;/a&gt;) and contribs (like pgcrypto due to encryption libraries) that consume an extra amount of CPU processing that you may want to be aware. Certainly, processing scale-up isn’t limited to CPUs (known as homogenous scaling): &lt;em&gt;heterogenous scaling up&lt;/em&gt; with GPUs is implemented in &lt;a href=&quot;https://wiki.postgresql.org/wiki/PGStrom&quot;&gt;PG-Strom&lt;/a&gt;. So the answer will depend your requirements.
+http://dba.stackexchange.com/questions/17092/is-the-cpu-performance-relevant-for-a-database-server&lt;/p&gt;
+
+&lt;p&gt;Hey there again! This post will be covering simple benchmarks for &lt;a href=&quot;https://www.postgresql.org/docs/9.5/static/pgcrypto.html&quot;&gt;PgCrypto&lt;/a&gt; under
+Postgres 9.5.2. As a side note, here there are a few details about the test:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;I’m using &lt;a href=&quot;https://hub.docker.com/_/postgres/&quot;&gt;Docker image&lt;/a&gt; – &lt;a href=&quot;https://github.com/docker-library/postgres/blob/master/9.5/Dockerfile&quot;&gt;Code&lt;/a&gt;.&lt;/li&gt;
+  &lt;li&gt;All the tests are in a local machine, and I’ll be focusing in the performance difference
+ between algorithms.&lt;/li&gt;
+  &lt;li&gt;The test is intended to calculate before hand, the encryption overhead inside
+a Postgres instance.&lt;/li&gt;
+  &lt;li&gt;I’ll be using custom pgbench scripts in order to have a standard measurement. This
+means that in order to  reproduce the tests, you don’t need any additional tool
+outside the Postgres ecosystem.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note 1:
+As Docker is a new technology, I’ll be covering some basic aspects for those people
+whom never played with it before. You can skip those if you already have hands on.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note 2:
+Contribs are included in the Docker image. If you want to run tests over a custom
+installation, be aware to ahve installed the contrib packages.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note 3:
+ALl the code is present at &lt;a href=&quot;https://github.com/3manuek/pgCryptoBench&quot;&gt;pgCryptoBench&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note 4:
+Sar graphs done with ksar.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;supported-algorithms&quot;&gt;Supported algorithms&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;&quot;&gt;AES&lt;/a&gt;
+&lt;a href=&quot;&quot;&gt;Blowfish&lt;/a&gt;
+&lt;a href=&quot;&quot;&gt;3DES&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;cpu-basic-benchmark&quot;&gt;CPU basic benchmark&lt;/h2&gt;
+
+&lt;p&gt;There is a way to do a quick benchmark using only encrypt/decrypt functions, without
+incurring in the &lt;code class=&quot;highlighter-rouge&quot;&gt;pgbench&lt;/code&gt; usage. This is easier as no previous data is required to
+run it. &lt;a href=&quot;https://github.com/3manuek/pgCryptoBench&quot;&gt;pgCryptoBench&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;This test runs a process per core and times the execution, no disk activity, only
+in-memory processing.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run -P postgres
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;|sync;
+sysctrl -w vm.drop_caches=3;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Cassandrastart</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/2016/07/12/cassandraStart"/>
+   <updated>2016-07-12T23:34:19-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/2016/07/12/cassandraStart</id>
+   <content type="html">
+&lt;p&gt;Read  https://aphyr.com/posts/294-jepsen-cassandra&lt;/p&gt;
+
+&lt;p&gt;https://aphyr.com/posts/293-call-me-maybe-kafka&lt;/p&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ ccm create test -v 2.2.7 -n 3 -s
+17:53:45,633 ccm INFO Downloading http://archive.apache.org/dist/cassandra/2.2.7/apache-cassandra-2.2.7-bin.tar.gz to /tmp/ccm-mORIZf.tar.gz (28.229MB)
+  29401088  [9917:56:29,230 ccm INFO Extracting /tmp/ccm-mORIZf.tar.gz as version 2.2.7 …
+  29600429  [100.00%]Current cluster is now: test&lt;/p&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ sudo ifconfig lo:2 127.0.0.3&lt;/p&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ ccm node1 start
+  Traceback (most recent call last):
+    File “/usr/local/bin/ccm”, line 5, in &lt;module&gt;
+      pkg_resources.run_script('ccm==2.1.11', 'ccm')
+    File &quot;/usr/local/lib/python2.7/dist-packages/pkg_resources/__init__.py&quot;, line 726, in run_script
+      self.require(requires)[0].run_script(script_name, ns)
+    File &quot;/usr/local/lib/python2.7/dist-packages/pkg_resources/__init__.py&quot;, line 1491, in run_script
+      exec(script_code, namespace, namespace)
+    File &quot;/usr/local/lib/python2.7/dist-packages/ccm-2.1.11-py2.7.egg/EGG-INFO/scripts/ccm&quot;, line 86, in &lt;module&gt;&lt;/module&gt;&lt;/module&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;File &quot;build/bdist.linux-x86_64/egg/ccmlib/cmds/node_cmds.py&quot;, line 206, in run
+File &quot;build/bdist.linux-x86_64/egg/ccmlib/node.py&quot;, line 542, in start
+File &quot;build/bdist.linux-x86_64/egg/ccmlib/common.py&quot;, line 442, in check_socket_available   ccmlib.common.UnavailableSocketError: Inet address 127.0.0.1:9042 is not available: [Errno 98] Address already in use
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ ccm node1 show
+  node1: DOWN (Not initialized)
+         cluster=test
+         auto_bootstrap=False
+         thrift=(‘127.0.0.1’, 9160)
+         binary=(‘127.0.0.1’, 9042)
+         storage=(‘127.0.0.1’, 7000)
+         jmx_port=7100
+         remote_debug_port=0
+         byteman_port=0
+         initial_token=-9223372036854775808&lt;/p&gt;
+
+&lt;p&gt;https://github.com/pcmanus/ccm/issues/87
+cat ~/bin/loop_alias.sh
+#!/bin/bash&lt;/p&gt;
+
+&lt;p&gt;sudo ifconfig lo0 alias 127.0.0.2 up
+sudo ifconfig lo0 alias 127.0.0.3 up
+sudo ifconfig lo0 alias 127.0.0.4 up
+sudo ifconfig lo0 alias 127.0.0.5 up
+sudo ifconfig lo0 alias 127.0.0.6 up&lt;/p&gt;
+
+&lt;p&gt;sudo ifconfig lo0 alias 127.0.1.1 up
+sudo ifconfig lo0 alias 127.0.1.2 up
+sudo ifconfig lo0 alias 127.0.1.3 up
+sudo ifconfig lo0 alias 127.0.1.4 up
+sudo ifconfig lo0 alias 127.0.1.5 up
+sudo ifconfig lo0 alias 127.0.1.6 up&lt;/p&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ ps -ef | grep java
+emanuel  11317     1  2 17:56 pts/9    00:00:31 java -ea -javaagent:/home/emanuel/.ccm/repository/2.2.7/lib/jamm-0.3.0.jar -XX:+CMSClassUnloadingEnabled -XX:+UseThreadPriorities -XX:ThreadPriorityPolicy=42 -Xms500M -Xmx500M -Xmn50M -XX:+HeapDumpOnOutOfMemoryError -Xss256k -XX:StringTableSize=1000003 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:SurvivorRatio=8 -XX:MaxTenuringThreshold=1 -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -XX:+UseTLAB -XX:+PerfDisableSharedMem -XX:CompileCommandFile=/home/emanuel/.ccm/test/node1/conf/hotspot_compiler -XX:CMSWaitDuration=10000 -XX:+CMSParallelInitialMarkEnabled -XX:+CMSEdenChunksRecordAlways -XX:CMSWaitDuration=10000 -XX:+UseCondCardMark -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintHeapAtGC -XX:+PrintTenuringDistribution -XX:+PrintGCApplicationStoppedTime -XX:+PrintPromotionFailure -Xloggc:/home/emanuel/.ccm/test/node1/logs/gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M -Xloggc:/home/emanuel/.ccm/test/node1/logs/gc.log -Djava.net.preferIPv4Stack=true -Dcassandra.jmx.local.port=7100 -XX:+DisableExplicitGC -Djava.library.path=/home/emanuel/.ccm/repository/2.2.7/lib/sigar-bin -Dcassandra.libjemalloc=/usr/lib/x86_64-linux-gnu/libjemalloc.so.1 -Dlogback.configurationFile=logback.xml -Dcassandra.logdir=/home/emanuel/.ccm/repository/2.2.7/logs -Dcassandra.storagedir=/home/emanuel/.ccm/repository/2.2.7/data -Dcassandra-pidfile=/home/emanuel/.ccm/test/node1/cassandra.pid -cp /home/emanuel/.ccm/test/node1/conf:/home/emanuel/.ccm/repository/2.2.7/build/classes/main:/home/emanuel/.ccm/repository/2.2.7/build/classes/thrift:/home/emanuel/.ccm/repository/2.2.7/lib/ST4-4.0.8.jar:/home/emanuel/.ccm/repository/2.2.7/lib/airline-0.6.jar:/home/emanuel/.ccm/repository/2.2.7/lib/antlr-runtime-3.5.2.jar:/home/emanuel/.ccm/repository/2.2.7/lib/apache-cassandra-2.2.7.jar:/home/emanuel/.ccm/repository/2.2.7/lib/apache-cassandra-clientutil-2.2.7.jar:/home/emanuel/.ccm/repository/2.2.7/lib/apache-cassandra-thrift-2.2.7.jar:/home/emanuel/.ccm/repository/2.2.7/lib/cassandra-driver-core-2.2.0-rc2-SNAPSHOT-20150617-shaded.jar:/home/emanuel/.ccm/repository/2.2.7/lib/commons-cli-1.1.jar:/home/emanuel/.ccm/repository/2.2.7/lib/commons-codec-1.2.jar:/home/emanuel/.ccm/repository/2.2.7/lib/commons-lang3-3.1.jar:/home/emanuel/.ccm/repository/2.2.7/lib/commons-math3-3.2.jar:/home/emanuel/.ccm/repository/2.2.7/lib/compress-lzf-0.8.4.jar:/home/emanuel/.ccm/repository/2.2.7/lib/concurrentlinkedhashmap-lru-1.4.jar:/home/emanuel/.ccm/repository/2.2.7/lib/crc32ex-0.1.1.jar:/home/emanuel/.ccm/repository/2.2.7/lib/disruptor-3.0.1.jar:/home/emanuel/.ccm/repository/2.2.7/lib/ecj-4.4.2.jar:/home/emanuel/.ccm/repository/2.2.7/lib/guava-16.0.jar:/home/emanuel/.ccm/repository/2.2.7/lib/high-scale-lib-1.0.6.jar:/home/emanuel/.ccm/repository/2.2.7/lib/jackson-core-asl-1.9.2.jar:/home/emanuel/.ccm/repository/2.2.7/lib/jackson-mapper-asl-1.9.2.jar:/home/emanuel/.ccm/repository/2.2.7/lib/jamm-0.3.0.jar:/home/emanuel/.ccm/repository/2.2.7/lib/javax.inject.jar:/home/emanuel/.ccm/repository/2.2.7/lib/jbcrypt-0.3m.jar:/home/emanuel/.ccm/repository/2.2.7/lib/jcl-over-slf4j-1.7.7.jar:/home/emanuel/.ccm/repository/2.2.7/lib/jna-4.0.0.jar:/home/emanuel/.ccm/repository/2.2.7/lib/joda-time-2.4.jar:/home/emanuel/.ccm/repository/2.2.7/lib/json-simple-1.1.jar:/home/emanuel/.ccm/repository/2.2.7/lib/libthrift-0.9.2.jar:/home/emanuel/.ccm/repository/2.2.7/lib/log4j-over-slf4j-1.7.7.jar:/home/emanuel/.ccm/repository/2.2.7/lib/logback-classic-1.1.3.jar:/home/emanuel/.ccm/repository/2.2.7/lib/logback-core-1.1.3.jar:/home/emanuel/.ccm/repository/2.2.7/lib/lz4-1.3.0.jar:/home/emanuel/.ccm/repository/2.2.7/lib/metrics-core-3.1.0.jar:/home/emanuel/.ccm/repository/2.2.7/lib/metrics-logback-3.1.0.jar:/home/emanuel/.ccm/repository/2.2.7/lib/netty-all-4.0.23.Final.jar:/home/emanuel/.ccm/repository/2.2.7/lib/ohc-core-0.3.4.jar:/home/emanuel/.ccm/repository/2.2.7/lib/ohc-core-j8-0.3.4.jar:/home/emanuel/.ccm/repository/2.2.7/lib/reporter-config-base-3.0.0.jar:/home/emanuel/.ccm/repository/2.2.7/lib/reporter-config3
+emanuel  12645 10860  0 18:15 pts/9    00:00:00 grep –color=auto –exclude-dir=.bzr –exclude-dir=CVS –exclude-dir=.git –exclude-dir=.hg –exclude-dir=.svn java
+➜  ccm git:(master) ✗ kill -9 11317&lt;/p&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ ccm status
+Cluster: ‘test’
+—————
+node1: UP
+node3: UP
+node2: UP&lt;/p&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ ccm node1 ring&lt;/p&gt;
+
+&lt;h1 id=&quot;datacenter-datacenter1&quot;&gt;Datacenter: datacenter1&lt;/h1&gt;
+&lt;p&gt;Address    Rack        Status State   Load            Owns                Token                                     &lt;br /&gt;
+                                                                          3074457345618258602                       &lt;br /&gt;
+127.0.0.1  rack1       Up     Normal  121.87 KB       66.67%              -9223372036854775808                      &lt;br /&gt;
+127.0.0.2  rack1       Up     Normal  95.01 KB        66.67%              -3074457345618258603                      &lt;br /&gt;
+127.0.0.3  rack1       Up     Normal  115.57 KB       66.67%              3074457345618258602&lt;/p&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ ccm node2 cqlsh
+Connected to test at 127.0.0.2:9042.
+[cqlsh 5.0.1 | Cassandra 2.2.7 | CQL spec 3.3.1 | Native protocol v4]
+Use HELP for help.
+cqlsh&amp;gt; help&lt;/p&gt;
+
+&lt;h1 id=&quot;documented-shell-commands&quot;&gt;Documented shell commands:&lt;/h1&gt;
+&lt;p&gt;CAPTURE  CLS          COPY  DESCRIBE  EXPAND  LOGIN   SERIAL  SOURCE   UNICODE
+CLEAR    CONSISTENCY  DESC  EXIT      HELP    PAGING  SHOW    TRACING&lt;/p&gt;
+
+&lt;h1 id=&quot;cql-help-topics&quot;&gt;CQL help topics:&lt;/h1&gt;
+&lt;p&gt;AGGREGATES        CREATE_COLUMNFAMILY  DROP_INDEX     LIST_PERMISSIONS  UUID
+ALTER_KEYSPACE    CREATE_FUNCTION      DROP_KEYSPACE  LIST_USERS    &lt;br /&gt;
+ALTER_TABLE       CREATE_INDEX         DROP_TABLE     PERMISSIONS   &lt;br /&gt;
+ALTER_TYPE        CREATE_KEYSPACE      DROP_TRIGGER   REVOKE        &lt;br /&gt;
+ALTER_USER        CREATE_TABLE         DROP_TYPE      SELECT        &lt;br /&gt;
+APPLY             CREATE_TRIGGER       DROP_USER      SELECT_JSON   &lt;br /&gt;
+ASCII             CREATE_TYPE          FUNCTIONS      TEXT          &lt;br /&gt;
+BATCH             CREATE_USER          GRANT          TIME          &lt;br /&gt;
+BEGIN             DATE                 INSERT         TIMESTAMP     &lt;br /&gt;
+BLOB              DELETE               INSERT_JSON    TRUNCATE      &lt;br /&gt;
+BOOLEAN           DROP_AGGREGATE       INT            TYPES         &lt;br /&gt;
+COUNTER           DROP_COLUMNFAMILY    JSON           UPDATE        &lt;br /&gt;
+CREATE_AGGREGATE  DROP_FUNCTION        KEYWORDS       USE&lt;/p&gt;
+
+&lt;p&gt;cqlsh&amp;gt; CREATE KEYSPACE mykeyspace
+   … WITH REPLICATION = { ‘class’ : ‘SimpleStrategy’, ‘replication_factor’ : 3 };
+cqlsh&amp;gt; USE mykeyspave
+   … ;
+InvalidRequest: code=2200 [Invalid query] message=”Keyspace ‘mykeyspave’ does not exist”
+cqlsh&amp;gt; USE mykeyspace
+   …
+   … ;
+cqlsh:mykeyspace&amp;gt; CREATE TABLE users (
+              …   user_id int PRIMARY KEY,
+              …   fname text,
+              …   lname text
+              … );
+cqlsh:mykeyspace&amp;gt; INSERT INTO users (user_id,  fname, lname)
+              …   VALUES (1745, ‘john’, ‘smith’);
+cqlsh:mykeyspace&amp;gt; INSERT INTO users (user_id,  fname, lname)
+              …   VALUES (1744, ‘john’, ‘doe’);
+cqlsh:mykeyspace&amp;gt; INSERT INTO users (user_id,  fname, lname)
+              …   VALUES (1746, ‘john’, ‘smith’);
+cqlsh:mykeyspace&amp;gt; select * from users;&lt;/p&gt;
+
+&lt;p&gt;user_id | fname | lname
+———+——-+——-
+    1745 |  john | smith
+    1744 |  john |   doe
+    1746 |  john | smith&lt;/p&gt;
+
+&lt;p&gt;(3 rows)
+cqlsh:mykeyspace&amp;gt; quit
+➜  ccm git:(master) ✗ ccm node2 nodetool status&lt;/p&gt;
+
+&lt;h1 id=&quot;datacenter-datacenter1-1&quot;&gt;Datacenter: datacenter1&lt;/h1&gt;
+&lt;p&gt;Status=Up/Down
+|/ State=Normal/Leaving/Joining/Moving
+–  Address    Load       Tokens       Owns (effective)  Host ID                               Rack
+UN  127.0.0.1  126.42 KB  1            100.0%            801233ec-95e3-44ce-a009-1cac60a983aa  rack1
+UN  127.0.0.2  160.72 KB  1            100.0%            26dd7a0c-6d54-403c-91db-9c09bd5f1988  rack1
+UN  127.0.0.3  118.03 KB  1            100.0%            16c35fa9-26e5-4e82-b2fd-c9d22a4f944e  rack1&lt;/p&gt;
+
+&lt;p&gt;➜  ccm git:(master) ✗ ccm node1 nodetool status&lt;/p&gt;
+
+&lt;h1 id=&quot;datacenter-datacenter1-2&quot;&gt;Datacenter: datacenter1&lt;/h1&gt;
+&lt;p&gt;Status=Up/Down
+|/ State=Normal/Leaving/Joining/Moving
+–  Address    Load       Tokens       Owns (effective)  Host ID                               Rack
+UN  127.0.0.1  126.42 KB  1            100.0%            801233ec-95e3-44ce-a009-1cac60a983aa  rack1
+UN  127.0.0.2  160.72 KB  1            100.0%            26dd7a0c-6d54-403c-91db-9c09bd5f1988  rack1
+UN  127.0.0.3  118.03 KB  1            100.0%            16c35fa9-26e5-4e82-b2fd-c9d22a4f944e  rack1&lt;/p&gt;
 </content>
  </entry>
  
@@ -516,6 +1307,389 @@ e4e0c655e1aa        host                host
 mysql&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Jekyll Introduction Draft</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/lessons/2016/06/22/jekyll-introduction-draft"/>
+   <updated>2016-06-22T15:29:04-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/lessons/2016/06/22/jekyll-introduction-draft</id>
+   <content type="html">
+&lt;p&gt;This is an example of a draft. Read more here: &lt;a href=&quot;http://jekyllrb.com/docs/drafts/&quot;&gt;http://jekyllrb.com/docs/drafts/&lt;/a&gt;&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Keeping persistent connections in Postgres.</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/keeppersistentconnections"/>
+   <updated>2016-06-22T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/keeping-idle-connections-open</id>
+   <content type="html">&lt;p&gt;It sounds like a bad idea, I won’t disagree,  however there is certainly usual that
+some applications use persistent connections, without handling the &lt;code class=&quot;highlighter-rouge&quot;&gt;keepalive&lt;/code&gt;.
+Before to spit out the &lt;em&gt;partial workaround&lt;/em&gt; (assuming that you don’t have any firewall
+or network setup), you should read this &lt;a href=&quot;http://hans.io/blog/2014/02/19/postgresql_connection/&quot;&gt;article&lt;/a&gt; which actually shows how bad is
+the idea of keeping connections open in certain scenarios.&lt;/p&gt;
+
+&lt;p&gt;The &lt;em&gt;potato&lt;/em&gt; in Postgres is to play with the &lt;a href=&quot;https://www.postgresql.org/docs/9.5/static/runtime-config-connection.html#GUC-TCP-KEEPALIVES-IDLE&quot;&gt;&lt;em&gt;tcp options&lt;/em&gt;&lt;/a&gt;,
+which I know, it isn’t the most clear way to say &lt;em&gt;idle&lt;/em&gt; with &lt;em&gt;timeout&lt;/em&gt; together.&lt;/p&gt;
+
+&lt;p&gt;However it has a point, as it is actually how it works, and it allows you to play
+with the same variables as most of the network solutions that follow the TCP protocol.&lt;/p&gt;
+
+&lt;p&gt;Let’s explain the TCP keepalives in a &lt;em&gt;street lang&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;tcp_keepalives_idle server -&amp;gt; client each n seconds
+tcp_keepalives_interval server’s nap after the last NOT ACKED keepalive message from the client.
+tcp_keepalives_count is basically, the server is asking himself “how many times should I ignore?”.&lt;/p&gt;
+
+&lt;p&gt;What we don’t want is to keep alive sessions that get closed by an abortion signal.&lt;/p&gt;
+
+&lt;p&gt;tcp_keepalives_interval
+tcp_keepalives_idle en 36000. 10 horas.&lt;/p&gt;
+
+&lt;p&gt;tcp_keepalives_count = 1 (exacto 10 horas) , n (numero de counts,cada uno 10 horas)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;root@658e7f4e9bff:/var/lib/postgresql/data# sysctl -A |grep -i tcp                 
+fs.nfs.nlm_tcpport = 0
+net.ipv4.tcp_ecn = 2
+net.ipv4.tcp_fwmark_accept = 0
+net.netfilter.nf_conntrack_tcp_be_liberal = 0
+net.netfilter.nf_conntrack_tcp_loose = 1
+net.netfilter.nf_conntrack_tcp_max_retrans = 3
+net.netfilter.nf_conntrack_tcp_timeout_close = 10
+net.netfilter.nf_conntrack_tcp_timeout_close_wait = 60
+net.netfilter.nf_conntrack_tcp_timeout_established = 432000
+net.netfilter.nf_conntrack_tcp_timeout_fin_wait = 120
+net.netfilter.nf_conntrack_tcp_timeout_last_ack = 30
+net.netfilter.nf_conntrack_tcp_timeout_max_retrans = 300
+net.netfilter.nf_conntrack_tcp_timeout_syn_recv = 60
+net.netfilter.nf_conntrack_tcp_timeout_syn_sent = 120
+net.netfilter.nf_conntrack_tcp_timeout_time_wait = 120
+net.netfilter.nf_conntrack_tcp_timeout_unacknowledged = 300
+sunrpc.tcp_fin_timeout = 15
+sunrpc.tcp_max_slot_table_entries = 65536
+sunrpc.tcp_slot_table_entries = 2
+sunrpc.transports = tcp 1048576
+sunrpc.transports = tcp-bc 1048576
+
+
+root@658e7f4e9bff:/var/lib/postgresql/data# cat /proc/net/tcp
+  sl  local_address rem_address   st tx_queue rx_queue tr tm-&amp;gt;when retrnsmt   uid  timeout inode                                                     
+   0: 00000000:1538 00000000:0000 0A 00000000:00000000 00:00000000 00000000   999        0 24653 1 0000000000000000 100 0 0 10 0                     
+   1: 020011AC:1538 010011AC:D814 01 00000000:00000000 02:0000003F 00000000   999        0 29752 2 0000000000000000 20 4 1 10 -1                     
+root@658e7f4e9bff:/var/lib/postgresql/data# cat /proc/net/sockstat
+sockets: used 544
+TCP: inuse 2 orphan 0 tw 2 alloc 30 mem 1
+UDP: inuse 0 mem 10
+UDPLITE: inuse 0
+RAW: inuse 0
+FRAG: inuse 0 memory 0
+root@658e7f4e9bff:/var/lib/postgresql/data# cat /proc/net/tcp     
+  sl  local_address rem_address   st tx_queue rx_queue tr tm-&amp;gt;when retrnsmt   uid  timeout inode                                                     
+   0: 00000000:1538 00000000:0000 0A 00000000:00000000 00:00000000 00000000   999        0 24653 1 0000000000000000 100 0 0 10 0                     
+   1: 020011AC:1538 010011AC:D814 01 00000000:00000000 02:0000001A 00000000   999        0 29752 2 0000000000000000 20 4 1 10 -1                     
+   2: 020011AC:1538 010011AC:D840 01 00000000:00000000 02:0000002C 00000000   999        0 37341 2 0000000000000000 20 4 23 10 -1                    
+root@658e7f4e9bff:/var/lib/postgresql/data# cat /proc/net/sockstat
+sockets: used 546
+TCP: inuse 3 orphan 0 tw 3 alloc 32 mem 1
+UDP: inuse 0 mem 10
+UDPLITE: inuse 0
+RAW: inuse 0
+FRAG: inuse 0 memory 0
+
+root@658e7f4e9bff:/var/lib/postgresql/data# sysctl -A |grep -i ^net.ipv4.conf                
+net.ipv4.conf.all.accept_local = 0
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.all.arp_accept = 0
+net.ipv4.conf.all.arp_announce = 0
+net.ipv4.conf.all.arp_filter = 0
+net.ipv4.conf.all.arp_ignore = 0
+net.ipv4.conf.all.arp_notify = 0
+net.ipv4.conf.all.bootp_relay = 0
+net.ipv4.conf.all.disable_policy = 0
+net.ipv4.conf.all.disable_xfrm = 0
+net.ipv4.conf.all.force_igmp_version = 0
+net.ipv4.conf.all.forwarding = 1
+net.ipv4.conf.all.igmpv2_unsolicited_report_interval = 10000
+net.ipv4.conf.all.igmpv3_unsolicited_report_interval = 1000
+net.ipv4.conf.all.log_martians = 0
+net.ipv4.conf.all.mc_forwarding = 0
+net.ipv4.conf.all.medium_id = 0
+net.ipv4.conf.all.promote_secondaries = 0
+net.ipv4.conf.all.proxy_arp = 0
+net.ipv4.conf.all.proxy_arp_pvlan = 0
+net.ipv4.conf.all.route_localnet = 0
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.all.secure_redirects = 1
+net.ipv4.conf.all.send_redirects = 1
+net.ipv4.conf.all.shared_media = 1
+net.ipv4.conf.all.src_valid_mark = 0
+net.ipv4.conf.all.tag = 0
+net.ipv4.conf.default.accept_local = 0
+net.ipv4.conf.default.accept_redirects = 1
+net.ipv4.conf.default.accept_source_route = 1
+net.ipv4.conf.default.arp_accept = 0
+net.ipv4.conf.default.arp_announce = 0
+net.ipv4.conf.default.arp_filter = 0
+net.ipv4.conf.default.arp_ignore = 0
+net.ipv4.conf.default.arp_notify = 0
+net.ipv4.conf.default.bootp_relay = 0
+net.ipv4.conf.default.disable_policy = 0
+net.ipv4.conf.default.disable_xfrm = 0
+net.ipv4.conf.default.force_igmp_version = 0
+net.ipv4.conf.default.forwarding = 1
+net.ipv4.conf.default.igmpv2_unsolicited_report_interval = 10000
+net.ipv4.conf.default.igmpv3_unsolicited_report_interval = 1000
+net.ipv4.conf.default.log_martians = 0
+net.ipv4.conf.default.mc_forwarding = 0
+net.ipv4.conf.default.medium_id = 0
+net.ipv4.conf.default.promote_secondaries = 0
+net.ipv4.conf.default.proxy_arp = 0
+net.ipv4.conf.default.proxy_arp_pvlan = 0
+net.ipv4.conf.default.route_localnet = 0
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.default.secure_redirects = 1
+net.ipv4.conf.default.send_redirects = 1
+net.ipv4.conf.default.shared_media = 1
+net.ipv4.conf.default.src_valid_mark = 0
+net.ipv4.conf.default.tag = 0
+net.ipv4.conf.eth0.accept_local = 0
+net.ipv4.conf.eth0.accept_redirects = 1
+net.ipv4.conf.eth0.accept_source_route = 1
+net.ipv4.conf.eth0.arp_accept = 0
+net.ipv4.conf.eth0.arp_announce = 0
+net.ipv4.conf.eth0.arp_filter = 0
+net.ipv4.conf.eth0.arp_ignore = 0
+net.ipv4.conf.eth0.arp_notify = 0
+net.ipv4.conf.eth0.bootp_relay = 0
+net.ipv4.conf.eth0.disable_policy = 0
+net.ipv4.conf.eth0.disable_xfrm = 0
+net.ipv4.conf.eth0.force_igmp_version = 0
+net.ipv4.conf.eth0.forwarding = 1
+net.ipv4.conf.eth0.igmpv2_unsolicited_report_interval = 10000
+net.ipv4.conf.eth0.igmpv3_unsolicited_report_interval = 1000
+net.ipv4.conf.eth0.log_martians = 0
+net.ipv4.conf.eth0.mc_forwarding = 0
+net.ipv4.conf.eth0.medium_id = 0
+net.ipv4.conf.eth0.promote_secondaries = 0
+net.ipv4.conf.eth0.proxy_arp = 0
+net.ipv4.conf.eth0.proxy_arp_pvlan = 0
+net.ipv4.conf.eth0.route_localnet = 0
+net.ipv4.conf.eth0.rp_filter = 1
+net.ipv4.conf.eth0.secure_redirects = 1
+net.ipv4.conf.eth0.send_redirects = 1
+net.ipv4.conf.eth0.shared_media = 1
+net.ipv4.conf.eth0.src_valid_mark = 0
+net.ipv4.conf.eth0.tag = 0
+net.ipv4.conf.lo.accept_local = 0
+net.ipv4.conf.lo.accept_redirects = 1
+net.ipv4.conf.lo.accept_source_route = 1
+net.ipv4.conf.lo.arp_accept = 0
+net.ipv4.conf.lo.arp_announce = 0
+net.ipv4.conf.lo.arp_filter = 0
+net.ipv4.conf.lo.arp_ignore = 0
+net.ipv4.conf.lo.arp_notify = 0
+net.ipv4.conf.lo.bootp_relay = 0
+net.ipv4.conf.lo.disable_policy = 1
+net.ipv4.conf.lo.disable_xfrm = 1
+net.ipv4.conf.lo.force_igmp_version = 0
+net.ipv4.conf.lo.forwarding = 1
+net.ipv4.conf.lo.igmpv2_unsolicited_report_interval = 10000
+net.ipv4.conf.lo.igmpv3_unsolicited_report_interval = 1000
+net.ipv4.conf.lo.log_martians = 0
+net.ipv4.conf.lo.mc_forwarding = 0
+net.ipv4.conf.lo.medium_id = 0
+net.ipv4.conf.lo.promote_secondaries = 0
+net.ipv4.conf.lo.proxy_arp = 0
+net.ipv4.conf.lo.proxy_arp_pvlan = 0
+net.ipv4.conf.lo.route_localnet = 0
+net.ipv4.conf.lo.rp_filter = 1
+net.ipv4.conf.lo.secure_redirects = 1
+net.ipv4.conf.lo.send_redirects = 1
+net.ipv4.conf.lo.shared_media = 1
+net.ipv4.conf.lo.src_valid_mark = 0
+net.ipv4.conf.lo.tag = 0
+
+3laptop ~ # docker network inspect bridge | jq .[].Options
+{
+  &quot;com.docker.network.driver.mtu&quot;: &quot;1500&quot;,
+  &quot;com.docker.network.bridge.name&quot;: &quot;docker0&quot;,
+  &quot;com.docker.network.bridge.host_binding_ipv4&quot;: &quot;0.0.0.0&quot;,
+  &quot;com.docker.network.bridge.enable_ip_masquerade&quot;: &quot;true&quot;,
+  &quot;com.docker.network.bridge.enable_icc&quot;: &quot;true&quot;,
+  &quot;com.docker.network.bridge.default_bridge&quot;: &quot;true&quot;
+}
+
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;how-to-run-a-test-with-docker&quot;&gt;How to run a test with Docker&lt;/h2&gt;
+
+&lt;p&gt;You have all you need to start &lt;a href=&quot;https://github.com/docker-library/docs/tree/master/postgres&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;In that doc it is not mentioned, but you can pass variables when executing the run:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ # docker run --name postgres95 -e POSTGRES_PASSWORD=postgres -d postgres --tcp_keepalives_idle=3 --tcp_keepalives_interval=2 --tcp_keepalives_count=3
+658e7f4e9bff6768dbcc3d3db1d22639d76f4c125e6e571423f23dac6fce031f
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;➜  ~ aws --region=us-east-1 ecs run-task --task-definition postgres:latest
+Could not connect to the endpoint URL: &quot;https://ecs.sa-east-1.amazonaws.com/&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>How you can start MySQL Slow query analysis.</title>
+   <link href="https://github.com/3manuek/3manuek.github.io.git/querydigestcomplements"/>
+   <updated>2016-06-22T00:00:00-03:00</updated>
+   <id>https://github.com/3manuek/3manuek.github.io.git/pt-query-digest-usage</id>
+   <content type="html">&lt;h2 id=&quot;objective-of-the-article&quot;&gt;Objective of the article&lt;/h2&gt;
+
+&lt;p&gt;This is not intended to be the ultimate guide for query analysis, it is just a simple starting guide for people that want to do so.
+If you want to start from something, I strongly recommend you to start with &lt;a href=&quot;https://www.amazon.es/Effective-MySQL-Optimizing-Statements-Oracle/dp/0071782796&quot;&gt;Effective MySQL: optimizing SQL Statements by Ronald Bradford&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Query Analysis is pretty much valuated for consultants, as a good query analysis
+and query rewriting can &lt;em&gt;save money&lt;/em&gt;. I saw customers buying new hardware just because &lt;em&gt;the MySQL was too slow&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;And -the most important- is not only about performance. A good query profiling can be a good
+diagnostic of the entire software and data architecture. Sometimes, RDBMS are used for stuff
+that are not the best fit for or, even NoSQLs were used when MySQL/Postgres can be a better fit.&lt;/p&gt;
+
+&lt;p&gt;Also, this article is not focus on SQL tricks or neither how to understand MySQL
+explain, which I assume you already have some knowledge to continue the reading. A
+very nice library to enjoy can be found at &lt;a href=&quot;http://use-the-index-luke.com/&quot;&gt;Use the index, Luke!&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-approach&quot;&gt;The approach&lt;/h2&gt;
+
+&lt;p&gt;First of all you need to know what the customer is literally doing in the server,
+which information and type of server they have online. This may be something pretty
+much &lt;em&gt;obvious&lt;/em&gt;, but believe me, it is not trivial to repeat this.&lt;/p&gt;
+
+&lt;p&gt;A server could be part of a sharded cluster, a report server, a BI server, a web
+&lt;em&gt;OLTP&lt;/em&gt; server, test server, and so on. Market impose those infinite combinations,
+however there are a few rules for good practice when writing queries. And those
+good practices will depend on the RDBMS you are working on (in this particular case,
+  we will focus on MySQL).&lt;/p&gt;
+
+&lt;p&gt;Now, you know what you need to get and how to start the analysis. Beyond query complexity,
+sometimes you need to know which solution can be applied or not when you rewrite the query or provide suggestions.&lt;/p&gt;
+
+&lt;p&gt;Generally, queries can be slow due to:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Missing indexes&lt;/li&gt;
+  &lt;li&gt;Bad cardinality and not useful filters&lt;/li&gt;
+  &lt;li&gt;Inner joins with outer order using different keys&lt;/li&gt;
+  &lt;li&gt;File sorting&lt;/li&gt;
+  &lt;li&gt;Bad writing queries (large subqueries, large IN clauses, non targeted bugs, i.e.)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Check the latest &lt;a href=&quot;https://bugs.mysql.com/search.php?cmd=display&amp;amp;status=Active&amp;amp;severity=-5&amp;amp;search_for=query&amp;amp;os=0&amp;amp;bug_age=0&amp;amp;order_by=bug_type&amp;amp;direction=ASC&amp;amp;limit=10&amp;amp;mine=0&amp;amp;reorder_by=bug_type&quot;&gt;bugs reported&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-much-do-you-need-to-collect&quot;&gt;How much do you need to collect?&lt;/h2&gt;
+
+&lt;p&gt;For a query analysis you want to collect &lt;em&gt;as much as you can&lt;/em&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;general query log, or&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;long_query_time&lt;/code&gt; = 0 or,&lt;/li&gt;
+  &lt;li&gt;tcpdump&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Using others will lead to non-complete profiling when processing. However, there are cases where is not possible to have the &lt;code class=&quot;highlighter-rouge&quot;&gt;long_query_time = 0&lt;/code&gt; due to the high amount of TPS (&lt;em&gt;Transactions Per Second&lt;/em&gt;). You can set it to &lt;code class=&quot;highlighter-rouge&quot;&gt;0.5&lt;/code&gt; or higher. The closer to 0, the better.&lt;/p&gt;
+
+&lt;p&gt;You will collect the whole set of queries. You are not hunting &lt;em&gt;slow queries&lt;/em&gt; but also &lt;em&gt;very frequent queries&lt;/em&gt;. I did have cases where the issue was not regarding any slow query, but an application bug doing 2x the same query. Also you will be probably hunting buggy queries, with unnecessary large result sets, suspicious orders, bad FTS usage, slow procedures, etc.&lt;/p&gt;
+
+&lt;p&gt;Generally, when analyzing BI or reporting servers, it is accepted to have a large &lt;code class=&quot;highlighter-rouge&quot;&gt;long_query_time&lt;/code&gt;, as you will probably focusing on slow queries.&lt;/p&gt;
+
+&lt;h3 id=&quot;percona-enhancements-to-be-aware-of&quot;&gt;Percona enhancements to be aware of&lt;/h3&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.percona.com/doc/percona-server/5.7/diagnostics/slow_extended.html&quot;&gt;Slow log extended&lt;/a&gt; options add extra verbosity to the slow log.&lt;/p&gt;
+
+&lt;p&gt;The option is &lt;code class=&quot;highlighter-rouge&quot;&gt;log_slow_verbosity&lt;/code&gt; and it has several options. Just keep in mind that &lt;code class=&quot;highlighter-rouge&quot;&gt;full&lt;/code&gt; does not include &lt;code class=&quot;highlighter-rouge&quot;&gt;profiling&lt;/code&gt; neither &lt;code class=&quot;highlighter-rouge&quot;&gt;profiling_use_getrusage&lt;/code&gt;. I assume that you don’t need to enable profiling just the first time you run a query review. It will interesting to enable the full query collection if using &lt;a href=&quot;https://www.percona.com/doc/percona-playback/index.html&quot;&gt;Percona Playback&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;pt-query-digest-is-your-friend&quot;&gt;&lt;a href=&quot;https://www.percona.com/doc/percona-toolkit/2.2/pt-query-digest.html#cmdoption-pt-query-digest--review&quot;&gt;pt-query-digest&lt;/a&gt; is your friend&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;pt-query-digest&lt;/code&gt; can be used with an impressive set of options. Before you use it, I encourage the reader to do a quick read over its documentation.&lt;/p&gt;
+
+&lt;p&gt;For example, you can gather not only the report but also the explains of the queries safely (that is, if a query has a subquery, it won’t execute the query on the master).&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;pt-query-digest --type=slowlog --report-all --explain h=172.17.0.2 --user=root --password=mysql /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data/cb740be0743c-slow.log &amp;gt; /tmp/report.txt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;examining-the-query-results&quot;&gt;Examining the query results&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Rows examined vs. rows returned&lt;/li&gt;
+  &lt;li&gt;The order of the result&lt;/li&gt;
+  &lt;li&gt;Does the application uses the full set of rows? Limit the number of rows as much as possible&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;other-complementary-tools&quot;&gt;Other complementary tools&lt;/h2&gt;
+
+&lt;h3 id=&quot;anemometer&quot;&gt;&lt;a href=&quot;https://github.com/box/Anemometer&quot;&gt;Anemometer&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;If you have a large fleet of MySQL servers and you usually do query analysis, the &lt;em&gt;next tool&lt;/em&gt; you want to look is &lt;a href=&quot;https://github.com/3manuek/Anemometer&quot;&gt;Anemometer&lt;/a&gt;.Originally, this project has been made by Box, however if you want to test the vagrant machine, I suggest to use the fork linked above. The project looks like stable and they are not merging new pull requests. It just works.&lt;/p&gt;
+
+&lt;p&gt;The idea was to have available in a single glance the slow logs, which can become very handy when scaling complex boxes. Also it improves proactive monitoring and partial trending.&lt;/p&gt;
+
+&lt;h3 id=&quot;binlogeventstats&quot;&gt;&lt;a href=&quot;https://github.com/pythian/binlogEventStats&quot;&gt;binlogEventStats&lt;/a&gt;&lt;/h3&gt;
+
+&lt;p&gt;The idea is to do a &lt;em&gt;top style&lt;/em&gt; metrics of the  streamed transactions from the replication flow in a more detailed way, so you can see the writes from a master (ideally to trace/debug slave lags). This is not entirely related with Query Reviews generally, however it could be a detection tool when some unexpected floods happen.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note: Is still in development.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;the-main-parts-of-the-pt-query-digest&quot;&gt;The main parts of the &lt;code class=&quot;highlighter-rouge&quot;&gt;pt-query-digest&lt;/code&gt;&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Overall stats (useful for general comparisons)&lt;/li&gt;
+  &lt;li&gt;Profile: Query by ranking in terms of execution time.&lt;/li&gt;
+  &lt;li&gt;Queries: Each query with execution details.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;where-do-i-start-analyzing&quot;&gt;Where do I start analyzing?&lt;/h3&gt;
+
+&lt;p&gt;The general rule of the thumb is start by the heaviest down to the others. I would
+say that it depends on how much time you want to waste and the complexity of the queries.&lt;/p&gt;
+
+&lt;p&gt;My recommendation is to do the queries that consume more than 40-50% of accumulated execution time on BI servers
+and 50-70% when it is an OLTP workload.&lt;/p&gt;
+
+&lt;p&gt;Once you do a first query review, the subsequent analysis will not be very useful if no
+changes are applied on the queries.&lt;/p&gt;
+
+&lt;h3 id=&quot;get-the-table-details&quot;&gt;Get the table details&lt;/h3&gt;
+
+&lt;p&gt;How to execute the SHOWS in the &lt;code class=&quot;highlighter-rouge&quot;&gt;pt-query-digest&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;egrep &lt;span class=&quot;s2&quot;&gt;&quot;SHOW.[TABLE|CREATE].*&quot;&lt;/span&gt; /tmp/report.txt | sed &lt;span class=&quot;s1&quot;&gt;'s/^#\s*//'&lt;/span&gt; | sed &lt;span class=&quot;s1&quot;&gt;'s/\\/\\\\/g'&lt;/span&gt; | sort | uniq | sed &lt;span class=&quot;s2&quot;&gt;&quot;s/'/&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\\\'&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;/g&quot;&lt;/span&gt; | xargs -i mysql --user&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mysql --password&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;SHADOW -e &lt;span class=&quot;o&quot;&gt;{}&lt;/span&gt; &amp;gt; /tmp/SHOW.txt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;As a rule, the rewritten query should return the same amount of records and order, unless
+your recommendation specifies that the current result set size or order are not
+convenient. i.e. very large result sets with a lot of discarded rows from the application,
+a query that is returning an incorrect order, etc.&lt;/p&gt;
+
+&lt;h2 id=&quot;comparing-the-before-and-after&quot;&gt;Comparing the before and after&lt;/h2&gt;
+
+&lt;p&gt;Finally, once changes have been made (any change)&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Same interval of time and day use ( &lt;code class=&quot;highlighter-rouge&quot;&gt;--since&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;--until&lt;/code&gt; options ).&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;--review&lt;/code&gt; option will help you to do incremental analysis.&lt;/li&gt;
+  &lt;li&gt;TPS before and after.&lt;/li&gt;
+  &lt;li&gt;Overall Execution time make easier the job of comparing the effectiveness of the changes.&lt;/li&gt;
+  &lt;li&gt;Use always the same &lt;code class=&quot;highlighter-rouge&quot;&gt;long_query_time&lt;/code&gt; on both.&lt;/li&gt;
+&lt;/ul&gt;
 </content>
  </entry>
  
@@ -686,7 +1860,7 @@ increase the probability to have more words that appear among the search term.
 In the case of &lt;code class=&quot;highlighter-rouge&quot;&gt;bookContent&lt;/code&gt; table (by paragraph table), the average field size
 is &lt;code class=&quot;highlighter-rouge&quot;&gt;r rs$len&lt;/code&gt; characters.&lt;/p&gt;
 
-&lt;h2 id=&quot;the-innodbftindextable&quot;&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;INNODB_FT_INDEX_TABLE&lt;/code&gt;&lt;/h2&gt;
+&lt;h2 id=&quot;the-innodb_ft_index_table&quot;&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;INNODB_FT_INDEX_TABLE&lt;/code&gt;&lt;/h2&gt;
 
 &lt;p&gt;There is a way to play with the contents of the FTS indexes. As you may noticed
 in the previous examples, I used the &lt;code class=&quot;highlighter-rouge&quot;&gt;set global innodb_ft_aux_table = 'ftslab/bookContent';&lt;/code&gt;
@@ -881,7 +2055,7 @@ type is stricted as &lt;code class=&quot;highlighter-rouge&quot;&gt;bigint unsig
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;h3 id=&quot;ftqueryexpansionlimit&quot;&gt;FT_QUERY_EXPANSION_LIMIT&lt;/h3&gt;
+&lt;h3 id=&quot;ft_query_expansion_limit&quot;&gt;FT_QUERY_EXPANSION_LIMIT&lt;/h3&gt;
 
 &lt;p&gt;This variable controls the number of top matches when using &lt;code class=&quot;highlighter-rouge&quot;&gt;WITH QUERY EXPANSION&lt;/code&gt; (affects only MyISAM).&lt;/p&gt;
 
@@ -965,7 +2139,7 @@ All the work on this article is a &lt;strong&gt;POC&lt;/strong&gt; (Proof of con
 This is something that is related for &lt;a href=&quot;https://en.wikipedia.org/wiki/Health_Insurance_Portability_and_Accountability_Act&quot;&gt;HIPAA&lt;/a&gt; compliant.&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;h2 id=&quot;kmshttpawsamazoncomkmsrdshttpsawsamazoncomrdspostgresql&quot;&gt;&lt;a href=&quot;http://aws.amazon.com/kms/&quot;&gt;KMS&lt;/a&gt;/&lt;a href=&quot;https://aws.amazon.com/rds/postgresql/&quot;&gt;RDS&lt;/a&gt;&lt;/h2&gt;
+&lt;h2 id=&quot;kmsrds&quot;&gt;&lt;a href=&quot;http://aws.amazon.com/kms/&quot;&gt;KMS&lt;/a&gt;/&lt;a href=&quot;https://aws.amazon.com/rds/postgresql/&quot;&gt;RDS&lt;/a&gt;&lt;/h2&gt;
 
 &lt;p&gt;The POC on this article was developed before the releasing of the Key Management service
 for RDS.&lt;/p&gt;

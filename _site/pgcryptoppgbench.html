@@ -1,0 +1,265 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>PgCrypto overhead comparison with pgbench.</title>
+    <meta name="description" content="A full overview.">
+    <meta name="author" content="Emanuel Calvo">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/css/1.4.0/bootstrap.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+  </head>
+
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="/">emanuelHub</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/refund_policy">Refund Policy</a></li>
+      	
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/resume">Resume</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+    
+  
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="content">
+        
+
+<div class="page-header">
+  <h1>PgCrypto overhead comparison with pgbench. <small></small></h1>
+</div>
+
+<div class="row">
+  <div class="span10">
+    <p>There are certain scenarios where using certain features (LISTEN/NOTIFY <a href="http://johtopg.blogspot.com.ar/2015/11/listening-connections-arent-cheap.html">isn’t cheap</a>) and contribs (like pgcrypto due to encryption libraries) that consume an extra amount of CPU processing that you may want to be aware. Certainly, processing scale-up isn’t limited to CPUs (known as homogenous scaling): <em>heterogenous scaling up</em> with GPUs is implemented in <a href="https://wiki.postgresql.org/wiki/PGStrom">PG-Strom</a>. So the answer will depend your requirements.
+http://dba.stackexchange.com/questions/17092/is-the-cpu-performance-relevant-for-a-database-server</p>
+
+<p>Hey there again! This post will be covering simple benchmarks for <a href="https://www.postgresql.org/docs/9.5/static/pgcrypto.html">PgCrypto</a> under
+Postgres 9.5.2. As a side note, here there are a few details about the test:</p>
+
+<ul>
+  <li>I’m using <a href="https://hub.docker.com/_/postgres/">Docker image</a> – <a href="https://github.com/docker-library/postgres/blob/master/9.5/Dockerfile">Code</a>.</li>
+  <li>All the tests are in a local machine, and I’ll be focusing in the performance difference
+ between algorithms.</li>
+  <li>The test is intended to calculate before hand, the encryption overhead inside
+a Postgres instance.</li>
+  <li>I’ll be using custom pgbench scripts in order to have a standard measurement. This
+means that in order to  reproduce the tests, you don’t need any additional tool
+outside the Postgres ecosystem.</li>
+</ul>
+
+<blockquote>
+  <p>Note 1:
+As Docker is a new technology, I’ll be covering some basic aspects for those people
+whom never played with it before. You can skip those if you already have hands on.</p>
+</blockquote>
+
+<blockquote>
+  <p>Note 2:
+Contribs are included in the Docker image. If you want to run tests over a custom
+installation, be aware to ahve installed the contrib packages.</p>
+</blockquote>
+
+<blockquote>
+  <p>Note 3:
+ALl the code is present at <a href="https://github.com/3manuek/pgCryptoBench">pgCryptoBench</a></p>
+</blockquote>
+
+<blockquote>
+  <p>Note 4:
+Sar graphs done with ksar.</p>
+</blockquote>
+
+<h2 id="supported-algorithms">Supported algorithms</h2>
+
+<p><a href="">AES</a>
+<a href="">Blowfish</a>
+<a href="">3DES</a></p>
+
+<h2 id="cpu-basic-benchmark">CPU basic benchmark</h2>
+
+<p>There is a way to do a quick benchmark using only encrypt/decrypt functions, without
+incurring in the <code class="highlighter-rouge">pgbench</code> usage. This is easier as no previous data is required to
+run it. <a href="https://github.com/3manuek/pgCryptoBench">pgCryptoBench</a>.</p>
+
+<p>This test runs a process per core and times the execution, no disk activity, only
+in-memory processing.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>docker run -P postgres
+</code></pre>
+</div>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>|sync;
+sysctrl -w vm.drop_caches=3;
+</code></pre>
+</div>
+
+    <hr>
+    <div class="pagination">
+      <ul>
+      
+        <li class="prev"><a href="/2016/07/12/cassandraStart" title="Cassandrastart">&larr; Previous</a></li>
+      
+        <li><a href="/archive.html">Archive</a></li>
+      
+        <li class="next"><a href="/redshift" title="redshift.">Next &rarr;</a></li>
+      
+      </ul>
+    </div>
+    <hr>
+    
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    
+    var disqus_developer = 1;
+    var disqus_shortname = 'jekyllbootstrap'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+  </div>
+  
+  <div class="span4">
+    <h4>Published</h4>
+    <div class="date"><span>01 August 2016</span></div>
+
+  
+    <h4>Tags</h4>
+    <ul class="tag_box">
+    
+    
+
+
+  
+     
+    	<li><a href="/tags.html#PostgreSQL-ref">PostgreSQL <span>8</span></a></li>
+     
+    	<li><a href="/tags.html#Benchmark-ref">Benchmark <span>2</span></a></li>
+    
+  
+
+
+
+    </ul>
+    
+  </div>
+</div>
+
+
+      </div>
+
+      <footer>
+        <p>&copy; Emanuel Calvo 2012 
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    
+
+
+
+  </body>
+</html>
+
