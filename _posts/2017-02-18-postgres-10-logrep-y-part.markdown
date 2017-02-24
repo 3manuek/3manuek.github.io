@@ -118,6 +118,12 @@ CREATE PUBLICATION P_main_P1 FOR TABLE main_shard1 WITH (NOPUBLISH DELETE);
 CREATE PUBLICATION P_main_P2 FOR TABLE main_shard2 WITH (NOPUBLISH DELETE);
 ```
 
+By not publishing DELETE events, it allows to the administrator the capability of having
+different retention policies between nodes and the source database. This is pretty useful
+for saving storage purposes on the master, keeping also a more maintenable table size.
+Queries against archiving can be done directly on the nodes or through the proxy implementation
+mentioned forward.
+
 By the current state of the last commits on PostgreSQL, Logical Replication does not support 
 filtering by column content as [pglogical][2] tool does. Even tho is possible to filter by 
 event statement, which still quite useful for our purpose (`NOPUBLISH|PUBLISH`).

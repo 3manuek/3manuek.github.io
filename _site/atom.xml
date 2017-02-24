@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2017-02-24T15:19:43-03:00</updated>
+ <updated>2017-02-24T15:34:00-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -269,6 +269,12 @@ publications:&lt;/p&gt;
 &lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PUBLICATION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NOPUBLISH&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DELETE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
+
+&lt;p&gt;By not publishing DELETE events, it allows to the administrator the capability of having
+different retention policies between nodes and the source database. This is pretty useful
+for saving storage purposes on the master, keeping also a more maintenable table size.
+Queries against archiving can be done directly on the nodes or through the proxy implementation
+mentioned forward.&lt;/p&gt;
 
 &lt;p&gt;By the current state of the last commits on PostgreSQL, Logical Replication does not support 
 filtering by column content as &lt;a href=&quot;https://2ndquadrant.com/es/resources/pglogical/&quot;&gt;pglogical&lt;/a&gt; tool does. Even tho is possible to filter by 
