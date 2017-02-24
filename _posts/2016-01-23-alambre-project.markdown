@@ -8,7 +8,7 @@ headerImage: true
 projects: true
 hidden: true # don't count this post in blog pagination
 description: "This is just ugly scripts intended to save time in daily basis."
-jemoji: '<img class="emoji" title=":wrench:" alt=":wrench:" src="https://assets.github.com/images/icons/emoji/unicode/1f35c.png" height="20" width="20" align="absmiddle">'
+jemoji: '<img class="emoji" title=":wrench:" alt=":wrench:" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f527.png" height="20" width="20" align="absmiddle">'
 category: project
 author: 3manuek
 externalLink: false
