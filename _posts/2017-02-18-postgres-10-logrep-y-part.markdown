@@ -6,8 +6,9 @@ description: And playing with retention policies.
 tags : [PostgreSQL, Sharding, Partitioning, LogicalReplication]
 categories:
 - PostgreSQL
-permalink: postgres10logrepypart
+category: blog
 comments: true 
+permalink: postgres10logrepypart
 ---
 
 
