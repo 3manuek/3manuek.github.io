@@ -16,7 +16,7 @@ resume: true
 resume-external: true
 resume-url: http://www.3manuek.com/resume
 
-url: http://3manuek.github.io #www.3manuek.com
+url: http://www.3manuek.com #www.3manuek.com
 # your url: http://USERNAME.github.io
 
 permalink: /:title/
