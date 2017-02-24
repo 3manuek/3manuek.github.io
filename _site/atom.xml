@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2017-02-23T23:22:08-03:00</updated>
+ <updated>2017-02-24T09:25:50-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -22,6 +22,9 @@ the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless
 say that these features aren’t yet available in the stable release, so they are prune
 to change or extended.&lt;/p&gt;
 
+&lt;p&gt;The current article is just a sneak peak of the upcoming talk &lt;em&gt;Demystifying Logical
+Replication on PostgreSQL&lt;/em&gt; at &lt;a href=&quot;https://www.percona.com/live/17/sessions/demystifying-postgres-logical-replication&quot;&gt;Percona Live Santa Clara 2017&lt;/a&gt;. Get your tickets!&lt;/p&gt;
+
 &lt;h2 id=&quot;logical-replication&quot;&gt;Logical Replication&lt;/h2&gt;
 
 &lt;p&gt;The current logical replication mechanism is a row based decoding, which defers on
@@ -38,6 +41,9 @@ are other tools which can be a better fit than streaming everything from the mas
   &lt;li&gt;a Subscription (consumer)&lt;/li&gt;
   &lt;li&gt;and a Logical Replication Slot&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/logicalrepinternals.jpg&quot; alt=&quot;POC Image&quot; /&gt;&lt;/p&gt;
+&lt;figcaption class=&quot;caption&quot;&gt;Basic elements of the Logical Replication.&lt;/figcaption&gt;
 
 &lt;p&gt;The most important and yet probably the more complex is the Logical Replication Slot. 
 The magic is done through the &lt;code class=&quot;highlighter-rouge&quot;&gt;pgoutput&lt;/code&gt; plugin, which is the piece of code in charge
@@ -76,7 +82,7 @@ to point to each external partitioning for reporting or querying historic data.&
   &lt;li&gt;Shard databases (Only holding the corresponding shard information)&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;&lt;img src=&quot;#image&quot; alt=&quot;POC Image&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/logreppart.jpg&quot; alt=&quot;POC Image&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
 
 &lt;h3 id=&quot;partitioning-on-the-master-database&quot;&gt;Partitioning on the master database&lt;/h3&gt;
 
@@ -1215,7 +1221,7 @@ data into RDS using FDW (the standard postgres_fdw package).&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;https://raw.githubusercontent.com/3manuek/RDS_HIPAA_FTS/master/FDW_TO_RDS/images/image1.png&quot; alt=&quot;alt text&quot; title=&quot;Image 1&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;https://raw.githubusercontent.com/3manuek/RDS_HIPAA_FTS/master/FDW_TO_RDS/images/image1.png&quot; alt=&quot;Implemented POC&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/image1.png&quot; alt=&quot;Implemented POC&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;POC image, detailing each part of the examples.&lt;/figcaption&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://www.lucidchart.com/documents/edit/c22ce7a1-c09d-4ca8-922d-dcb123d577a5?driveId=0AHk8my7IafcZUk9PVA#&quot;&gt;Source&lt;/a&gt;&lt;/p&gt;
