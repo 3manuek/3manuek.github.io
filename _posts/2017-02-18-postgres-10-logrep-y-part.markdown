@@ -39,7 +39,6 @@ Generally speaking, it consist in three _visible_ elements:
 <figcaption class="caption">Basic elements of the Logical Replication.</figcaption>
 
 
-
 The most important and yet probably the more complex is the Logical Replication Slot. 
 The magic is done through the `pgoutput` plugin, which is the piece of code in charge
 of translate the WAL records (`pg_wal`) into  entries in the _logical log_ (`pg_logical`).
@@ -140,41 +139,6 @@ those changes.
 > As it is not the scope of this article, I'm going to skip the explanation of the _[logical|streamin] replication slots_
 > in order to keep this readable. Although, it is a core concept of the replication feature.
 
-
-#### Bonus: Kafka broker feeding example
-
-Producing fake data to the Kafka broker, composed by `key` and `payload`:
-
-```sh
-randtext() {cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1}
-while (true) ; 
-  do
-    for i in $(seq 1 50)  
-      do echo "$(uuidgen);$(randtext)" 
-     done  | kafkacat -P -b localhost:9092 -qe -K ';' -t PGSHARD 
-     sleep 10
-  done
-```
-
-Consuming the topic partitionins from the `beginning` and setting a limit of `100` documents:
-
-```sh
-bin/psql -p7777 -Upostgres master <<EOF
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print "P0\t\""$0"\""}'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 1 | awk ''{print "P1\t\""$0"\""}'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 2 | awk ''{print "P2\t\""$0"\""}'' ';
-EOF
-```
-
-And then using `stored`, in order to consume from the last offset left by the consumer on the group:
-
-```sh
-bin/psql -p7777 -Upostgres master <<EOF
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 0 | awk ''{print "P0\t\""$0"\""}'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 1 | awk ''{print "P1\t\""$0"\""}'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 2 | awk ''{print "P2\t\""$0"\""}'' ';
-EOF
-```
 
 ### Querying from an external database
 
