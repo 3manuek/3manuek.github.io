@@ -30,6 +30,11 @@ Generally speaking, it consist in three _visible_ elements:
 - a Subscription (consumer)
 - and a Logical Replication Slot  
 
+![POC Image][3]
+<figcaption class="caption">Basic elements of the Logical Replication.</figcaption>
+
+
+
 The most important and yet probably the more complex is the Logical Replication Slot. 
 The magic is done through the `pgoutput` plugin, which is the piece of code in charge
 of translate the WAL records (`pg_wal`) into  entries in the _logical log_ (`pg_logical`).
@@ -67,7 +72,7 @@ The concept has three types of nodes/databases:
 - Shard databases (Only holding the corresponding shard information)
 
 
-![POC Image][1]
+![POC Image][1]{: class="bigger-image" }
 
 
 
@@ -191,9 +196,9 @@ CREATE FOREIGN TABLE main_shard1 (CHECK (group_id = 'P1'))INHERITS (main) SERVER
 CREATE FOREIGN TABLE main_shard2 (CHECK (group_id = 'P2'))INHERITS (main) SERVER shard2;
 ```
 
-[1]: #image
+[1]: http://www.3manuek.com/assets/posts/logreppart.jpg 
 [2]: https://2ndquadrant.com/es/resources/pglogical/
-
+[3]: http://www.3manuek.com/assets/posts/logicalrepinternals.tif
 
 
 

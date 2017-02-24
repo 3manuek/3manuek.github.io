@@ -670,7 +670,7 @@ Discussion in the community mailing lis [here](http://postgresql.nabble.com/Fast
 {% endif %}
 
 
-[1]: https://raw.githubusercontent.com/3manuek/RDS_HIPAA_FTS/master/FDW_TO_RDS/images/image1.png
+[1]: http://www.3manuek.com/assets/posts/image1.png
 [2]: https://www.lucidchart.com/documents/edit/c22ce7a1-c09d-4ca8-922d-dcb123d577a5?driveId=0AHk8my7IafcZUk9PVA#
 [3]: http://www.drugs.com/drug_information.html
 [4]: https://simple.wikipedia.org/wiki/List_of_diseases
