@@ -22,14 +22,17 @@ Replication on PostgreSQL_ at [Percona Live Santa Clara 2017][4]. Get your ticke
 
 ## Logical Replication
 
-The current logical replication mechanism is a row based decoding, which defers on
-those techniques based on _statement_ in which no matter how many rows are involved
-on the source query, they will be shipped as individual rows into the slaves.
+The current logical replication mechanism is only _row based_. If you are around MySQL
+world, _statement_ mode is not supported. If you are not familiar with the difference
+between the modes, TL;DR no matter how many rows are involved
+on the source query, they will be shipped as individual rows into the slaves ( a multi
+row single statement as an INSERT with a lot of values input).
 
 This is something you may want to have in consideration when doing bulk loads, as there
 are other tools which can be a better fit than streaming everything from the master.
 
-Generally speaking, it consist in three _visible_ elements:
+Generally speaking, it consist in three _visible_ elements, also detailed on the image
+bellow:
 
 - a Publication  (source)
 - a Subscription (consumer)
@@ -40,18 +43,19 @@ Generally speaking, it consist in three _visible_ elements:
 
 
 The most important and yet probably the more complex is the Logical Replication Slot. 
-The magic is done through the `pgoutput` plugin, which is the piece of code in charge
+The magic is done internally through the `pgoutput` plugin, which is the piece of code in charge
 of translate the WAL records (`pg_wal`) into  entries in the _logical log_ (`pg_logical`).
 
-Is simple: Consumers subscribe to a Publisher using a slot, which contains the snapshot of the
-database (the given _point in time_ of the cluster). 
+Is simple: Consumers subscribe to a single Publisher using a slot, which contains the snapshot of the
+database (the given _point in time_ of the cluster). The slot will provide the information
+to the engine about the point in time since the changes must be replicated. 
 
 The full feature is not entirely commited and is expected to count with a `WITH COPY DATA`
 option at subscription event creation in order to synchronize data from source. Currently,
 the patch has some bugs and is in process of review ^[1](https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl).
 
 Although the whole topic is interesting, everything related to Logical Decoding will be ommited
-on this article.
+on this article. You can do more than just Postgres to Postgres _replication_.
 
 ## Partitioning
 
@@ -75,19 +79,20 @@ The concept has three types of nodes/databases:
 - A master (Containing all the partitions)
 - Shard databases (Only holding the corresponding shard information)
 
+More or less, using the commands on this article, you should end with a picture like this:
 
 ![POC Image][1]{: class="bigger-image" }
-
+<figcaption class="caption">Flight view of the POC.</figcaption>
 
 
 ### Partitioning on the master database
 
 The master database will hold the definitions and the most recent data. The current concept, feeds 
 from a Apache Kafka broker's topic which is partitioned in three. We are going to feed this table
-with streams using COPY command.
+with streams using COPY command. The article explaining how this was done is [here][5].
 
 
-The current master DDL is:
+The current master database tables DDL is:
 
 
 ```sql
@@ -102,16 +107,20 @@ CREATE TABLE main_shard2 PARTITION OF main
 CREATE INDEX ix_main_shard_p0_key ON main_shard0 (stamp,(payload->>'key'));
 CREATE INDEX ix_main_shard_p1_key ON main_shard1 (stamp,(payload->>'key'));
 CREATE INDEX ix_main_shard_p2_key ON main_shard2 (stamp,(payload->>'key'));
+```
 
+Now, it is time to publish them. At this point no slot is associated with the
+publications:
+
+```sql
 CREATE PUBLICATION P_main_P0 FOR TABLE main_shard0 WITH (NOPUBLISH DELETE);
 CREATE PUBLICATION P_main_P1 FOR TABLE main_shard1 WITH (NOPUBLISH DELETE);
 CREATE PUBLICATION P_main_P2 FOR TABLE main_shard2 WITH (NOPUBLISH DELETE);
 ```
 
 By the current state of the last commits on PostgreSQL, Logical Replication does not support 
-filtering by column content as [pglogical][2] tool does.
-
-Even tho is possible to filter by event statement, which still quite useful for our purpose.
+filtering by column content as [pglogical][2] tool does. Even tho is possible to filter by 
+event statement, which still quite useful for our purpose (`NOPUBLISH|PUBLISH`).
 
 
 ### Creating the nodes
@@ -133,11 +142,12 @@ CREATE SUBSCRIPTION P_main_P0
   PUBLICATION P_main_P0 WITH (CREATE SLOT);
 ```
 
-It is remarkable to note, that each subscription will create _workers_ in charge of sending and receiving
-those changes. 
+It is remarkable to note, that after subscription creation you will notice new  _workers_ in charge 
+of sending and receiving those changes, as described in the image above. 
 
-> As it is not the scope of this article, I'm going to skip the explanation of the _[logical|streamin] replication slots_
-> in order to keep this readable. Although, it is a core concept of the replication feature.
+> As it is not the scope of this article, I'm going to skip the explanation of the 
+> _[logical|streaming] replication slots_ in order to keep this readable. 
+> Although, it is a core concept of the replication feature.
 
 
 ### Querying from an external database
@@ -145,6 +155,9 @@ those changes.
 This example has no other purpose than to show an already existent feature (although improved 
 in recent versions) in action. But very specially I'm going to highlight the INHERIT on a
 FOREIGN TABLE.
+
+The following DLL resides on a `proxy` database, which does not hold any data of the partitions
+and is only intended to show some relatively new Postgres' capabilities.
 
 ```
 CREATE EXTENSION postgres_fdw;
@@ -166,8 +179,26 @@ CREATE FOREIGN TABLE main_shard2 (CHECK (group_id = 'P2'))INHERITS (main) SERVER
 ```
 
 As you may appreciate, we are combining inheritance, constraint checks and foreign data wrappers
-for avoiding queries to remote tables that do not match the filter.
+for avoiding queries to remote tables that do not match the `group_id` filter. Also, I attached
+an EXPLAIN as proof that none of the other foreign tables have been examined. 
 
+```sql
+proxy=# SELECT * FROM main WHERE payload->>'key' = '847f5dd2-f892-4f56-b04a-b106063cfe0d' and group_id = 'P0';
+ group_id |                                                                     payload                                                                      
+----------+--------------------------------------------------------------------------------------------------------------------------------------------------
+ P0       | {"key": "847f5dd2-f892-4f56-b04a-b106063cfe0d", "topic": "PGSHARD", "offset": 47, "payload": "PXdmzb3EhEeNDdn5surg2VNmEdJoIys9", "partition": 0}
+(1 rows)
+
+proxy=# EXPLAIN SELECT * FROM main WHERE payload->>'key' = '847f5dd2-f892-4f56-b04a-b106063cfe0d' and group_id = 'P0';
+                                                         QUERY PLAN                                                         
+----------------------------------------------------------------------------------------------------------------------------
+ Append  (cost=0.00..135.07 rows=2 width=44)
+   ->  Seq Scan on main  (cost=0.00..0.00 rows=1 width=44)
+         Filter: ((group_id = 'P0'::bpchar) AND ((payload ->> 'key'::text) = '847f5dd2-f892-4f56-b04a-b106063cfe0d'::text))
+   ->  Foreign Scan on main_shard0  (cost=100.00..135.07 rows=1 width=44)
+         Filter: ((payload ->> 'key'::text) = '847f5dd2-f892-4f56-b04a-b106063cfe0d'::text)
+(5 rows)
+```
 
 
 
@@ -196,5 +227,5 @@ s.setAttribute('data-timestamp', +new Date());
 [2]: https://2ndquadrant.com/es/resources/pglogical/
 [3]: http://www.3manuek.com/assets/posts/logicalrepinternals.jpg
 [4]: https://www.percona.com/live/17/sessions/demystifying-postgres-logical-replication
-
+[5]: http://www.3manuek.com/kafkaandcopypg
 

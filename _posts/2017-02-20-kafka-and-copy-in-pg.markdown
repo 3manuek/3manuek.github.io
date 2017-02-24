@@ -11,6 +11,10 @@ comments: true
 permalink: kafkaandcopypg
 ---
 
+* This article is WIP *
+
+![POC Image][4]
+
 
 ## COPY and kafkacat
 
@@ -25,7 +29,6 @@ simplistic implementations.
 
 [kafkacat][1] is a tool based on the same author's library [librdkafka][2] which
 does exactly what its name propose: produce and consume from a Kafka broker.
-
 
 
 
@@ -47,13 +50,24 @@ while (true) ;
 
 ### Consuming topics incrementally inside Postgres
 
+
+Inside Postgres:
+
+```sql
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print "P0\t" $0 }'' ';
+```
+
+
 Consuming the topic partitionins from the `beginning` and setting a limit of `100` documents:
 
 ```sh
 bin/psql -p7777 -Upostgres master <<EOF
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print "P0\t\""$0"\""}'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 1 | awk ''{print "P1\t\""$0"\""}'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 2 | awk ''{print "P2\t\""$0"\""}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print "P0\t" \$0 }'' ';
+
+
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 1 | awk ''{print "P1\t" \$0 }'' ';
+
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 2 | awk ''{print "P2\t" \$0 }'' ';
 EOF
 ```
 
@@ -61,21 +75,70 @@ And then using `stored`, in order to consume from the last offset left by the co
 
 ```sh
 bin/psql -p7777 -Upostgres master <<EOF
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 0 | awk ''{print "P0\t\""$0"\""}'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 1 | awk ''{print "P1\t\""$0"\""}'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 2 | awk ''{print "P2\t\""$0"\""}'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 0 | awk ''{print "P0\t" \$0 }'' ';
+
+
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 1 | awk ''{print "P1\t" \$0 }'' ';
+
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 2 | awk ''{print "P2\t" \$0 }'' ';
 EOF
 ```
 
 ### Producing messages from COPY
 
 The same way is possible to consume changes, it is possible to do the same for producing 
-data to the broker. In the bellow example, I'm using the server address as a key.
+data to the broker. 
+
 
 ```sh
-bin/psql -p7777 -Upostgres master <<EOF
-COPY ( SELECT inet_server_add() || ';',group_id,payload FROM sourte_table) TO PROGRAM 'kafkacat -P -b localhost:9092 -qe -K ';' -t PGSHARD';
+master=# COPY (select row_to_json(row(now() ,group_id , count(*))) from main group by group_id) TO PROGRAM 'kafkacat -P -b localhost:9092 -qe  -t AGGREGATIONS';
+COPY 3
 ```
+
+If you have a farm of servers and want to search the topic contents using a key,
+you can do the following tweak:
+
+```sh
+COPY (select inet_server_addr() || ';', row_to_json(row(now() ,group_id , count(*))) from main group by group_id) TO PROGRAM 'kafkacat -P -K '';'' -b localhost:9092 -qe  -t AGGREGATIONS';
+```
+
+
+Taking a look to the topic contents:
+
+
+```sh
+➜  PG10 kafkacat -C -b localhost:9092 -qeJ -t AGGREGATIONS -X group.id=1  -o beginning 
+{"topic":"AGGREGATIONS","partition":0,"offset":0,"key":"","payload":"{\"f1\":\"2017-02-24T12:34:13.711732-03:00\",\"f2\":\"P1\",\"f3\":172}"}
+{"topic":"AGGREGATIONS","partition":0,"offset":1,"key":"","payload":"{\"f1\":\"2017-02-24T12:34:13.711732-03:00\",\"f2\":\"P0\",\"f3\":140}"}
+{"topic":"AGGREGATIONS","partition":0,"offset":2,"key":"","payload":"{\"f1\":\"2017-02-24T12:34:13.711732-03:00\",\"f2\":\"P2\",\"f3\":155}"}
+```
+
+With key set:
+
+```
+{"topic":"AGGREGATIONS","partition":0,"offset":3,"key":"127.0.0.1/32","payload":"\t{\"f1\":\"2017-02-24T12:40:39.017644-03:00\",\"f2\":\"P1\",\"f3\":733}"}
+{"topic":"AGGREGATIONS","partition":0,"offset":4,"key":"127.0.0.1/32","payload":"\t{\"f1\":\"2017-02-24T12:40:39.017644-03:00\",\"f2\":\"P0\",\"f3\":994}"}
+{"topic":"AGGREGATIONS","partition":0,"offset":5,"key":"127.0.0.1/32","payload":"\t{\"f1\":\"2017-02-24T12:40:39.017644-03:00\",\"f2\":\"P2\",\"f3\":716}"}
+```
+
+
+
+### Basic topic manipulation
+
+
+```sh
+bin/kafka-topics.sh --list --zookeeper localhost:2181
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 3 --topic PGSHARD
+bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic PGSHARD
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic AGGREGATIONS
+bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic AGGREGATIONS
+
+```
+
+```sh
+kafkacat -C -b localhost:9092 -qeJ -t PGSHARD -X group.id=1  -o beginning
+```
+
 
 Hope this post its useful!
 
@@ -103,3 +166,4 @@ s.setAttribute('data-timestamp', +new Date());
 [1]: https://github.com/edenhill/kafkacat
 [2]: https://github.com/edenhill/librdkafka
 [3]: https://www.confluent.io/blog/bottled-water-real-time-integration-of-postgresql-and-kafka/
+[4]: http://www.3manuek.com/assets/posts/dosequis.jpg
