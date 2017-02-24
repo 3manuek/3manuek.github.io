@@ -16,13 +16,14 @@ resume: true
 resume-external: true
 resume-url: http://www.3manuek.com/resume
 
-url: www.3manuek.com
+url: http://3manuek.github.io #www.3manuek.com
 # your url: http://USERNAME.github.io
 
 permalink: /:title/
 
 # To enable google analytics, supply your token below
-# analytics-google: 'UA-MYANALYTICS'
+analytics-google: 'UA-76884172-1'
+
 
 # To enable piwik tracking, supply your url & site ID below
 # analytics-piwik-url: 'piwik.my-host.com'
