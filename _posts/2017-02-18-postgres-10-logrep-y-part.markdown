@@ -17,7 +17,7 @@ the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless
 say that these features aren't yet available in the stable release, so they are prune
 to change or extended.
 
-The current article is just a sneak peak of the upcoming talk _Demystifying Logical
+> The current article is just a sneak peak of the upcoming talk _Demystifying Logical
 Replication on PostgreSQL_ at [Percona Live Santa Clara 2017][4]. Get your tickets!
 
 ## Logical Replication
@@ -200,6 +200,11 @@ CREATE FOREIGN TABLE main_shard0 (CHECK (group_id = 'P0'))INHERITS (main) SERVER
 CREATE FOREIGN TABLE main_shard1 (CHECK (group_id = 'P1'))INHERITS (main) SERVER shard1;
 CREATE FOREIGN TABLE main_shard2 (CHECK (group_id = 'P2'))INHERITS (main) SERVER shard2;
 ```
+
+As you may appreciate, we are combining inheritance, constraint checks and foreign data wrappers
+for avoiding queries to remote tables that do not match the filter.
+
+
 
 
 {% if page.comments %}
