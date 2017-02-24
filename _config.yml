@@ -1,141 +1,107 @@
-# This is the default format.
-# For more see: http://jekyllrb.com/docs/permalinks/
-permalink: /:categories/:year/:month/:day/:title
+# main text of home
+name: Emanuel Calvo
+bio: Open Source Data Engineering and Hidden Reptilian
 
-exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md"]
-#highlighter: pygments
+# twitter summary info
+description: A few experiments on OSDB 
 
-markdown:    kramdown
-# This is how you put pygments config in jekyll 2.0 instead of pygments: true
-highlighter: rouge
+# if it's an external image, update below for true
+# better with square images
+external-image: false
+picture: assets/images/profile.jpg
 
+# If you want to include your resume, set to true
+# and specify source (external or local).
+resume: true
+resume-external: true
+resume-url: http://www.3manuek.com/resume
 
-# Themes are encouraged to use these universal variables
-# so be sure to set them if your theme uses them.
-title : emanuelHub
-tagline: Data Engineering and Open Source Consultant
-author :
-  name : Emanuel Calvo
-  email : 3manuek@gmail.com
-  github : 3manuek
-  twitter : 3manuek
-  feedburner : 3manuek
+url: www.3manuek.com
+# your url: http://USERNAME.github.io
 
-# The production_url is only used when full-domain names are needed
-# such as sitemap.txt
-# Most places will/should use BASE_PATH to make the urls
-#
-# If you have set a CNAME (pages.github.com) set your custom domain here.
-# Else if you are pushing to username.github.io, replace with your username.
-# Finally if you are pushing to a GitHub project page, include the project name at the end.
-#
-production_url : https://github.com/3manuek/3manuek.github.io.git
+permalink: /:title/
 
-url : www.3manuek.com
+# To enable google analytics, supply your token below
+# analytics-google: 'UA-MYANALYTICS'
 
-gems: ["jekyll-sitemap"]
+# To enable piwik tracking, supply your url & site ID below
+# analytics-piwik-url: 'piwik.my-host.com'
+# analytics-piwik-id: 1
 
-# All Jekyll-Bootstrap specific configurations are namespaced into this hash
-#
-JB :
-  version : 0.3.0
+# if you don't want comments in your posts, leave categories empty
+disqus:
+  shortname: jekyllbootstrap  # enter this from your disqus account
+  #categories: [blog, project] # only show disqus for posts that have these categories
 
-  # All links will be namespaced by BASE_PATH if defined.
-  # Links in your website should always be prefixed with {{BASE_PATH}}
-  # however this value will be dynamically changed depending on your deployment situation.
-  #
-  # CNAME (http://yourcustomdomain.com)
-  #   DO NOT SET BASE_PATH
-  #   (urls will be prefixed with "/" and work relatively)
-  #
-  # GitHub Pages (http://username.github.io)
-  #   DO NOT SET BASE_PATH
-  #   (urls will be prefixed with "/" and work relatively)
-  #
-  # GitHub Project Pages (http://username.github.io/project-name)
-  #
-  #   A GitHub Project site exists in the `gh-pages` branch of one of your repositories.
-  #  REQUIRED! Set BASE_PATH to: http://username.github.io/project-name
-  #
-  # CAUTION:
-  #   - When in Localhost, your site will run from root "/" regardless of BASE_PATH
-  #   - Only the following values are falsy: ["", null, false]
-  #   - When setting BASE_PATH it must be a valid url.
-  #     This means always setting the protocol (http|https) or prefixing with "/"
-  BASE_PATH : http://3manuek.github.io
+# if you don't have any of social below, comment the line
+# facebook: myfacebook
+twitter: 3manuek
+# google: mygoogle
+# instagram: myinstagram
+# pinterest: mypinterest
+linkedin: ecbcbcb
+# youtube: myyoutube
+# spotify: myspotify
+github: 3manuek
+#stackoverflow: 7044681/mystackoverflow
+# quora: userquora
+# reddit: username
+# medium: medium
+# vimeo: myvimeo
+email: nospam++3manuek@gmail.com
 
-  # By default, the asset_path is automatically defined relative to BASE_PATH plus the enabled theme.
-  # ex: [BASE_PATH]/assets/themes/[THEME-NAME]
-  #
-  # Override this by defining an absolute path to assets here.
-  # ex:
-  #   http://s3.amazonaws.com/yoursite/themes/watermelon
-  #   /assets
-  #
-  ASSET_PATH : false
+authors:
+    3manuek:
+        name: Emanuel Calvo
+        bio: Open Source Data Engineering
+        external-image: false
+        picture: assets/images/profile.jpg
+        twitter: 3manuek
+        #    jamesfoster:
+        # name: James Foster
+        # bio: A Man who develops software with coffee
+        #external-image: false
+        #picture: assets/images/james.jpg
+        #twitter: jamesfoster
 
-  # These paths are to the main pages Jekyll-Bootstrap ships with.
-  # Some JB helpers refer to these paths; change them here if needed.
-  #
-  archive_path: /archive.html
-  categories_path : /categories.html
-  tags_path : /tags.html
-  atom_path : /atom.xml
-  rss_path : /rss.xml
+# do you want a larger site? change the option below
+# options: [normal, large] | default: normal
+# normal = 560px / large = 810px
+width: normal
 
-  # Settings for comments helper
-  # Set 'provider' to the comment provider you want to use.
-  # Set 'provider' to false to turn commenting off globally.
-  #
-  comments :
-    provider : disqus
-    disqus :
-      short_name : jekyllbootstrap
-#    livefyre :
-#      site_id : 123
-#    intensedebate :
-#      account : 123abc
-#    facebook :
-#      appid : 123
-#      num_posts: 5
-#      width: 580
-#      colorscheme: light
-#    duoshuo :
-#      short_name : jekyllbootstrap
+# if you don't need pagination, comment the *paginate* configs below
+# paginate: 5
+# paginate_path: "blog/:num/"
 
-  # Settings for analytics helper
-  # Set 'provider' to the analytics provider you want to use.
-  # Set 'provider' to false to turn analytics off globally.
-  #
-  analytics :
-    provider : google
-    gauges :
-        site_id : 'SITE ID'
-    google :
-        tracking_id : 'UA-79505389-1'
-#    getclicky :
-#      site_id :
-#    mixpanel :
-#        token : '_MIXPANEL_TOKEN_'
-#    piwik :
-#        baseURL : 'myserver.tld/piwik' # Piwik installation address (without protocol)
-#        idsite : '1'                   # the id of the site on Piwik
+# if you don't need projects, comment the *projects* configs below
+projects: true
 
-  # Settings for sharing helper.
-  # Sharing is for things like tweet, plusone, like, reddit buttons etc.
-  # Set 'provider' to the sharing provider you want to use.
-  # Set 'provider' to false to turn sharing off globally.
-  #
-  sharing :
-    provider : false
+# if you don't need "about" or "blog", comment them out below
+about: true
+blog: true
+refund: true
 
-  # Settings for all other include helpers can be defined by creating
-  # a hash with key named for the given helper. ex:
-  #
-  #   pages_list :
-  #     provider : "custom"
-  #
-  # Setting any helper's provider to 'custom' will bypass the helper code
-  # and include your custom code. Your custom file must be defined at:
-  #   ./_includes/custom/[HELPER]
-  # where [HELPER] is the name of the helper you are overriding.
+# do you want to show the "read time" of the posts?
+read-time: true
+
+# do you want to show the "tags" inside the posts?
+show-tags: true
+
+# related posts inside a post?
+related: true
+
+# Display links for next and previous posts for the specified categories
+post-advance-links: [blog]
+
+# show author block at the end of a post ?
+show-author: true
+
+# do you want some animations?
+animation: true
+
+gems:
+  - jekyll-seo-tag
+  - jekyll-gist
+
+jekyll-mentions:
+    base_url: https://github.com

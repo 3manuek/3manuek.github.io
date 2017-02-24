@@ -7,6 +7,8 @@ tags : [AWS, RDS, PostgreSQL]
 categories:
 - PostgreSQL
 permalink: rds-hipaa-fts
+star: true
+category: blog
 ---
 
 
@@ -88,7 +90,11 @@ A simple flight view of the idea can be observed in the image bellow.
 [//]: (/Users/emanuel/git/RDS_HIPPA_FTS/FDW_TO_RDS/images/image1.png if using local file)
 ![alt text](https://raw.githubusercontent.com/3manuek/RDS_HIPAA_FTS/master/FDW_TO_RDS/images/image1.png "Image 1")
 
-Source: https://www.lucidchart.com/documents/edit/c22ce7a1-c09d-4ca8-922d-dcb123d577a5?driveId=0AHk8my7IafcZUk9PVA#
+
+![Implemented POC][1]{: class="bigger-image" }
+<figcaption class="caption">POC image, detailing each part of the examples.</figcaption>
+
+[Source][2] 
 
 
 ## RDS structure and mirrored local structure with FDW
@@ -97,13 +103,13 @@ Source: https://www.lucidchart.com/documents/edit/c22ce7a1-c09d-4ca8-922d-dcb123
 RDS instance schema structure contains a parent table , a partitioning trigger  and
 its trigger:
 
-```
+```sql
 CREATE SCHEMA enc_schema;
 
 SET search_path TO enc_schema;
 
 -- Encrpting locally, that's why we don't need to reference the key here.
-create table enc_schema.__person__pgp
+CREATE TABLE enc_schema.__person__pgp
      (
       id bigint,
       source varchar(8),
@@ -149,8 +155,6 @@ $basic_ins_trig$;
 
 CREATE TRIGGER part_person_pgp BEFORE INSERT ON __person__pgp
 FOR EACH ROW EXECUTE PROCEDURE basic_ins_trig() ;
-
-
 ```
 
 We are not going to use the `partial SSN` column in the examples, but I found it very helpful to
@@ -171,7 +175,7 @@ You will see no indexes over encrypted data
 
 Local nodes structure:
 
-```
+```sql
 CREATE DATABASE fts_proxy;  --  connect using \c fts_proxy on psql
 
 -- The sauce
@@ -217,7 +221,7 @@ Just to avoid an extended article, I will skip the GPG key creation commands her
 We can insert they keys in several ways, but I found very convenient to use `psql`
 features to do so. Once the keys are in place you can use `\lo_import` command:
 
-```
+```bash
 postgres=# \lo_import /var/lib/postgresql/9.4/main/private.key
 lo_import 33583
 postgres=# \lo_import /var/lib/postgresql/9.4/main/public.key
@@ -230,7 +234,7 @@ article I'm going to do so (only for decrypt data in the SELECT query).
 
 > `pgp_key_id` will return the same key no matter if you use private or public key.
 
-```
+```sql
 CREATE TABLE keys (
    keyid varchar(16) PRIMARY KEY,
    pub bytea,
@@ -255,7 +259,7 @@ Now, here is when the tricky part starts. We are going to achieve some functiona
 ### FTS table structures
 
 
-```
+```sql
 -- Parent table
 CREATE TABLE local_search (
   id bigint PRIMARY KEY,
@@ -275,7 +279,7 @@ Is not necessary to only have 1 source or route per node. The only requirement f
 
 ## Main code
 
-```
+```sql
 CREATE SEQUENCE global_seq INCREMENT BY 1 MINVALUE 1 NO MAXVALUE;
 
 
@@ -336,7 +340,7 @@ EXECUTE PROCEDURE _func_get_FTS_encrypt_and_push_to_RDS();
 
 This functions does everything. It inserts the data on RDS and split the data on the corresponding FTS child table. For performance purposes, I didn't want to catch exceptions at insert time (if the child table does not exists, i.e.), but you can also add this feature with an exception block as follows:
 
-```
+```sql
    BEGIN
     EXECUTE 'INSERT INTO local_search_' || NEW.source || ' SELECT (' ||  quote_literal(FTS_MAP) || '::local_search).* ';
    EXCEPTION WHEN undefined_table THEN
@@ -356,7 +360,7 @@ At insertion time, we are going to push data through a mapping table. The reason
 
 A random data query will look as:
 
-```
+```sql
 INSERT INTO __person__pgp_map
   SELECT
       'host1',  -- source: host1
@@ -383,7 +387,7 @@ We are almost done! Now we can do  some queries. Here are some examples:
 
 Limiting the matches:
 
-```
+```sql
 # SELECT convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name)
 # FROM __person__pgp_rds as rds JOIN
 #       keys ks USING (keyid)
@@ -403,7 +407,7 @@ Limiting the matches:
 
 All the matches and double check from were the data came from:
 
-```
+```sql
 # SELECT ls.tableoid::regclass, rds.source,
 #        convert_from(pgp_pub_decrypt(ssn::text::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name)
 # FROM local_search ls JOIN
@@ -450,7 +454,7 @@ I can't continue the article without showing the query plan executed by the loca
 
 
 
-```
+```sql
 EXPLAIN (buffers,verbose,analyze) SELECT rds.id,
  convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
  convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
@@ -485,7 +489,7 @@ Wait a minute. Looks like the remote SQL is somehow dangerous to execute. It is 
 _id_! There is a reason for that, and its related on how postgres gather the foreign table statistics.
 If I use the _remote estimations_ we can see how the remote SQL changes in the Query Plan:
 
-```
+```sql
  EXPLAIN (ANALYZE, VERBOSE, BUFFERS) SELECT rds.id,
       convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
       convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
@@ -517,7 +521,7 @@ without `use_remote_estimate` and a query using the local estimations (`__person
 after issuing ANALYZE and without _URE_.
 
 
-```
+```sql
 fts_proxy=# \o /dev/null
 fts_proxy=#  SELECT rds.id,
       convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
@@ -569,7 +573,7 @@ You can collapse all the data and use `json` datatype on the mapping and foreign
 
 Put all the encrypted columns in a `bytea` column on RDS. The mapping table will look as follows:
 
-```
+```sql
 CREATE TABLE __person__pgp_map
      (
       keyid varchar(16),
@@ -589,7 +593,7 @@ Also, for updates, the jsonb datatype will need extra work when extracting attri
 In the insert statement above, you will see a user defined function that gets a random length vector of drugs. It is implemented using the following code:
 
 
-```
+```sql
 CREATE TABLE drugsList ( id serial PRIMARY KEY, drugName text);
 
 INSERT INTO drugsList(drugName) SELECT p.nameD FROM regexp_split_to_table(
@@ -648,11 +652,11 @@ LANGUAGE 'sql' VOLATILE;
 
 ## References
 
-A very awesome tutorial about FTS for PostgreSQL can be found [here](http://www.sai.msu.su/~megera/postgres/fts/doc/appendixes.html).
+A very awesome tutorial about FTS for PostgreSQL can be found [here][5].
 
-[Source for drugs list](http://www.drugs.com/drug_information.html)
+[Source for drugs list][3]
 
-[Source for diseases](https://simple.wikipedia.org/wiki/List_of_diseases)
+[Source for diseases][4]
 
 [Getting started with GPG keys](https://www.gnupg.org/gph/en/manual/c14.html)
 
@@ -664,3 +668,12 @@ Discussion in the community mailing lis [here](http://postgresql.nabble.com/Fast
 {% if page.comments %}
 <div id="disqus_thread"></div> <script> /** * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS. * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables */ /* var disqus_config = function () { this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable }; */ (function() { // DON'T EDIT BELOW THIS LINE var d = document, s = d.createElement('script'); s.src = '//3manuek.disqus.com/embed.js'; s.setAttribute('data-timestamp', +new Date()); (d.head || d.body).appendChild(s); })(); </script> <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
 {% endif %}
+
+
+[1]: https://raw.githubusercontent.com/3manuek/RDS_HIPAA_FTS/master/FDW_TO_RDS/images/image1.png
+[2]: https://www.lucidchart.com/documents/edit/c22ce7a1-c09d-4ca8-922d-dcb123d577a5?driveId=0AHk8my7IafcZUk9PVA#
+[3]: http://www.drugs.com/drug_information.html
+[4]: https://simple.wikipedia.org/wiki/List_of_diseases
+[5]: http://www.sai.msu.su/~megera/postgres/fts/doc/appendixes.html
+
+
