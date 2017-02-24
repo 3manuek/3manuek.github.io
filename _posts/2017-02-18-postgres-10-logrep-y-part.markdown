@@ -7,6 +7,7 @@ tags : [PostgreSQL, Sharding, Partitioning, LogicalReplication]
 categories:
 - PostgreSQL
 permalink: postgres10logrepypart
+comments: true 
 ---
 
 
