@@ -8,6 +8,8 @@ categories:
 - MySQL
 - FTS
 - InnoDB
+category: blog
+comments: true
 permalink: fts-innodb
 ---
 
@@ -428,3 +430,25 @@ This R Markdown document is made interactive using Shiny. Unlike the more tradit
 workflow of creating static reports, you can now create documents that allow your
 readers to change the assumptions underlying your analysis and see the results immediately.  
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+
+var disqus_config = function () {
+this.page.url = {{ site.url }};  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = {{ page.title }}; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = '//3manuek.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
+

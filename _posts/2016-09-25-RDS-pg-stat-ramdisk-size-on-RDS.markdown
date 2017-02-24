@@ -7,6 +7,8 @@ tags : [PostgreSQL, RDS]
 categories:
 - PostgreSQL
 - RDS
+category: blog
+comments: true
 tagline: If you are using RDS, you want to read this.
 permalink: pgstatramdisksize
 ---
@@ -146,3 +148,25 @@ PgStat_StatTabEntry | 20 * 64 bits and 1 * 32 Oid | (164 bytes)
 PgStat_StatFuncEntry | 3 * 64 bits and 1 * 32 Oid | (28 bytes)
 PgStat_GlobalStats | 11 * 64 bits, 8 bytes + 1 * 32 bit, 4 bytes | (92 bytes)
 PgStat_ArchiverStats | 4 *  8bytes, 2 char 41 bytes. | (114 bytes)
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+
+var disqus_config = function () {
+this.page.url = {{ site.url }};  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = {{ page.title }}; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = '//3manuek.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
+

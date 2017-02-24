@@ -8,6 +8,8 @@ categories:
 - PGP
 - Bitcoin
 - Security
+category: blog
+comments: true
 permalink: pgp-bitcoint-sha
 ---
 
@@ -162,3 +164,25 @@ e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1
 esas cosas que descargamos, en especial aquellas que están en la mira.
 
 Listo el pollo. ¡Espero que te haya servido!
+
+
+{% if page.comments %}
+<div id="disqus_thread"></div>
+<script>
+
+
+var disqus_config = function () {
+this.page.url = {{ site.url }};  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = {{ page.title }}; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = '//3manuek.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+{% endif %}
+
