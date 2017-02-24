@@ -15,6 +15,9 @@ the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless
 say that these features aren't yet available in the stable release, so they are prune
 to change or extended.
 
+The current article is just a sneak peak of the upcoming talk _Demystifying Logical
+Replication on PostgreSQL_ at [Percona Live Santa Clara 2017][4]. Get your tickets!
+
 ## Logical Replication
 
 The current logical replication mechanism is a row based decoding, which defers on
@@ -198,7 +201,7 @@ CREATE FOREIGN TABLE main_shard2 (CHECK (group_id = 'P2'))INHERITS (main) SERVER
 
 [1]: http://www.3manuek.com/assets/posts/logreppart.jpg 
 [2]: https://2ndquadrant.com/es/resources/pglogical/
-[3]: http://www.3manuek.com/assets/posts/logicalrepinternals.tif
-
+[3]: http://www.3manuek.com/assets/posts/logicalrepinternals.jpg
+[4]: https://www.percona.com/live/17/sessions/demystifying-postgres-logical-replication
 
 
