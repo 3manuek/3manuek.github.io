@@ -52,10 +52,10 @@ to the engine about the point in time since the changes must be replicated.
 
 The full feature is not entirely commited and is expected to count with a `WITH COPY DATA`
 option at subscription event creation in order to synchronize data from source. Currently,
-the patch has some bugs and is in process of review ^[1](https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl).
+the [patch has some bugs and is in process of review][6].
 
 Although the whole topic is interesting, everything related to Logical Decoding will be ommited
-on this article. You can do more than just Postgres to Postgres _replication_.
+on this article. You can do more than just Postgres-to-Postgres _replication_.
 
 ## Partitioning
 
@@ -202,6 +202,9 @@ proxy=# EXPLAIN SELECT * FROM main WHERE payload->>'key' = '847f5dd2-f892-4f56-b
 
 
 
+Hope you liked the article!
+
+
 {% if page.comments %}
 <div id="disqus_thread"></div>
 <script>
@@ -228,4 +231,4 @@ s.setAttribute('data-timestamp', +new Date());
 [3]: http://www.3manuek.com/assets/posts/logicalrepinternals.jpg
 [4]: https://www.percona.com/live/17/sessions/demystifying-postgres-logical-replication
 [5]: http://www.3manuek.com/kafkaandcopypg
-
+[6]: https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl

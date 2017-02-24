@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2017-02-24T13:08:21-03:00</updated>
+ <updated>2017-02-24T15:19:43-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -206,10 +206,10 @@ to the engine about the point in time since the changes must be replicated.&lt;/
 
 &lt;p&gt;The full feature is not entirely commited and is expected to count with a &lt;code class=&quot;highlighter-rouge&quot;&gt;WITH COPY DATA&lt;/code&gt;
 option at subscription event creation in order to synchronize data from source. Currently,
-the patch has some bugs and is in process of review ^&lt;a href=&quot;https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl&quot;&gt;1&lt;/a&gt;.&lt;/p&gt;
+the &lt;a href=&quot;https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl&quot;&gt;patch has some bugs and is in process of review&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;Although the whole topic is interesting, everything related to Logical Decoding will be ommited
-on this article. You can do more than just Postgres to Postgres &lt;em&gt;replication&lt;/em&gt;.&lt;/p&gt;
+on this article. You can do more than just Postgres-to-Postgres &lt;em&gt;replication&lt;/em&gt;.&lt;/p&gt;
 
 &lt;h2 id=&quot;partitioning&quot;&gt;Partitioning&lt;/h2&gt;
 
@@ -351,6 +351,8 @@ an EXPLAIN as proof that none of the other foreign tables have been examined.&lt
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
+&lt;p&gt;Hope you liked the article!&lt;/p&gt;
+
 &lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
 &lt;script&gt;
 
@@ -461,6 +463,8 @@ s.setAttribute('data-timestamp', +new Date());
 
 &lt;h2 id=&quot;tldr-whats-the-expected-size-of-the-stat_temp_directory&quot;&gt;TL;DR &lt;em&gt;What’s the expected size of the stat_temp_directory&lt;/em&gt;?&lt;/h2&gt;
 
+&lt;p&gt;Before move forward, lets detail the structure of the entries for the stat file:&lt;/p&gt;
+
 &lt;table&gt;
   &lt;thead&gt;
     &lt;tr&gt;
@@ -492,19 +496,31 @@ s.setAttribute('data-timestamp', +new Date());
   &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;p&gt;First of all, as it’ll explained later, not all the tables, indexes and functions are written on the &lt;em&gt;db statsfile&lt;/em&gt;. Basically, a basic formula will be &lt;em&gt;SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) + closingChar&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;First of all, as it’ll explained later, not all the tables, indexes and functions are written on the &lt;em&gt;db statsfile&lt;/em&gt;. Basically, a basic formula will be:&lt;/p&gt;
 
-&lt;p&gt;Query 1) will give you the estimate for the tables &lt;em&gt;if all of them were flushed on the file&lt;/em&gt;. Also, you need to do the same within &lt;code class=&quot;highlighter-rouge&quot;&gt;pg_proc&lt;/code&gt;, but instead the factor will be 28 bytes. You’ll need to run this on every database, and sum them all.&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;em&gt;SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + 
+                    (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) +
+                    closingChar&lt;/em&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
 
-&lt;p&gt;Query 1)&lt;/p&gt;
+&lt;p&gt;In order to get the estimate space needed for the current tables on each database (keep
+in mind that this considers all tables flushed on file), there is a query you can execute
+safely on &lt;em&gt;each database in your PostgreSQL instance&lt;/em&gt; (statfile is one &lt;em&gt;per database&lt;/em&gt;):&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;select count(*) * 164 &quot;size in bytes&quot; from pg_class where relkind ('r','i','S')
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;164&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;size in bytes&quot;&lt;/span&gt; 
+  &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pg_class&lt;/span&gt; 
+  &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;relkind&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'r'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'i'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'S'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;p&gt;This database statfile is one &lt;em&gt;per database&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Also, you need to do the same within &lt;code class=&quot;highlighter-rouge&quot;&gt;pg_proc&lt;/code&gt;, but instead the factor will be 28 bytes. You’ll need to run this on every database, and sum them all. This is for tracking stats for function usage, which can be
+disabled from the &lt;code class=&quot;highlighter-rouge&quot;&gt;postgresql.conf&lt;/code&gt; file with the &lt;code class=&quot;highlighter-rouge&quot;&gt;track_functions&lt;/code&gt; variable. Also, all the aspects
+of runtime statistics can be found &lt;a href=&quot;https://www.postgresql.org/docs/9.6/static/runtime-config-statistics.html&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h3 id=&quot;global-stats&quot;&gt;Global Stats&lt;/h3&gt;
+
+&lt;p&gt;Structure of the global stats:&lt;/p&gt;
 
 &lt;table&gt;
   &lt;thead&gt;
@@ -533,7 +549,12 @@ s.setAttribute('data-timestamp', +new Date());
   &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;p&gt;The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to &lt;em&gt;PGSTAT_FILE_FORMAT_ID +describer + PgStat_GlobalStats + PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;em&gt;PGSTAT_FILE_FORMAT_ID + describer + PgStat_GlobalStats + 
+PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;p&gt;So, as you can see, the limitation imposed by AWS in regarding is way above the amount of data held on this directory in most of the databases that can run inside RDS expectations.&lt;/p&gt;
 
@@ -555,58 +576,60 @@ s.setAttribute('data-timestamp', +new Date());
 
 &lt;p&gt;Which backends can request a file write? All the backends, the archiver, the bgwriter. All of them use the same structure for passing the changes (PgStat_Msg).&lt;/p&gt;
 
-&lt;p&gt;There are 2 functions for write (pgstat_write_db_statsfile, pgstat_write_statsfiles) and 2 for read (pgstat_read_db_statsfile,pgstat_read_statsfiles) each of those controlling either the &lt;code class=&quot;highlighter-rouge&quot;&gt;db_&amp;lt;oid&amp;gt;.stat&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;global.stat&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;There are 2 functions for write (&lt;code class=&quot;highlighter-rouge&quot;&gt;pgstat_write_db_statsfile&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;pgstat_write_statsfiles&lt;/code&gt;) and 2 for read (&lt;code class=&quot;highlighter-rouge&quot;&gt;pgstat_read_db_statsfile&lt;/code&gt; ,&lt;code class=&quot;highlighter-rouge&quot;&gt;pgstat_read_statsfiles&lt;/code&gt; ) each of those controlling either the &lt;code class=&quot;highlighter-rouge&quot;&gt;db_&amp;lt;oid&amp;gt;.stat&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;global.stat&lt;/code&gt;.&lt;/p&gt;
 
 &lt;h2 id=&quot;references&quot;&gt;References&lt;/h2&gt;
 
 &lt;h3 id=&quot;pgstat_statdbentry&quot;&gt;PgStat_StatDBEntry&lt;/h3&gt;
 
-&lt;p&gt;The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don’t care about the size of this maps as it won’t be written to the stats file anyway. The whole database entry is 22 * 64 bit values + 1 * 32 bits, per database (180 bytes).&lt;/p&gt;
+&lt;p&gt;The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don’t care about the size of this maps as it won’t be written to the stats file anyway. The whole database entry is &lt;code class=&quot;highlighter-rouge&quot;&gt;22 * 64 bit&lt;/code&gt; values + &lt;code class=&quot;highlighter-rouge&quot;&gt;1 * 32 bits&lt;/code&gt;, per database (&lt;em&gt;180 bytes&lt;/em&gt;).&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#define PGSTAT_FILE_FORMAT_ID   0x01A5BC9D
-typedef struct PgStat_StatDBEntry
-{
-        /*
+&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;#define PGSTAT_FILE_FORMAT_ID   0x01A5BC9D
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;typedef&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PgStat_StatDBEntry&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;cm&quot;&gt;/*
         NOTE:
         The oid type is currently implemented as an unsigned four-byte integer.
             typedef unsigned int Oid;
-        */
-        Oid                     databaseid;
-        PgStat_Counter n_xact_commit;
-        PgStat_Counter n_xact_rollback;
-        PgStat_Counter n_blocks_fetched;
-        PgStat_Counter n_blocks_hit;
-        PgStat_Counter n_tuples_returned;
-        PgStat_Counter n_tuples_fetched;
-        PgStat_Counter n_tuples_inserted;
-        PgStat_Counter n_tuples_updated;
-        PgStat_Counter n_tuples_deleted;
-        TimestampTz last_autovac_time;
-        PgStat_Counter n_conflict_tablespace;
-        PgStat_Counter n_conflict_lock;
-        PgStat_Counter n_conflict_snapshot;
-        PgStat_Counter n_conflict_bufferpin;
-        PgStat_Counter n_conflict_startup_deadlock;
-        PgStat_Counter n_temp_files;
-        PgStat_Counter n_temp_bytes;
-        PgStat_Counter n_deadlocks;
-        PgStat_Counter n_block_read_time;       /* times in microseconds */
-        PgStat_Counter n_block_write_time;
+        */&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;Oid&lt;/span&gt;                     &lt;span class=&quot;n&quot;&gt;databaseid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_xact_commit&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_xact_rollback&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_blocks_fetched&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_blocks_hit&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_tuples_returned&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_tuples_fetched&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_tuples_inserted&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_tuples_updated&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_tuples_deleted&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;TimestampTz&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;last_autovac_time&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_conflict_tablespace&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_conflict_lock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_conflict_snapshot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_conflict_bufferpin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_conflict_startup_deadlock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_temp_files&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_temp_bytes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_deadlocks&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_block_read_time&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;       &lt;span class=&quot;cm&quot;&gt;/* times in microseconds */&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;PgStat_Counter&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_block_write_time&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 
-        TimestampTz stat_reset_timestamp;
-        TimestampTz stats_timestamp;    /* time of db stats file update */
+        &lt;span class=&quot;n&quot;&gt;TimestampTz&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stat_reset_timestamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;TimestampTz&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stats_timestamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;    &lt;span class=&quot;cm&quot;&gt;/* time of db stats file update */&lt;/span&gt;
 
-        /*
+        &lt;span class=&quot;cm&quot;&gt;/*
          * tables and functions must be last in the struct, because we don't write
          * the pointers out to the stats file.
-         */
-        HTAB       *tables;             // defined in utils/hsearch.h
-        HTAB       *functions;
-} PgStat_StatDBEntry;
+         */&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;HTAB&lt;/span&gt;       &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tables&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;             &lt;span class=&quot;c1&quot;&gt;// defined in utils/hsearch.h
+&lt;/span&gt;        &lt;span class=&quot;n&quot;&gt;HTAB&lt;/span&gt;       &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;functions&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PgStat_StatDBEntry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
 &lt;h3 id=&quot;structures&quot;&gt;Structures&lt;/h3&gt;
+
+&lt;p&gt;In overal, this is the structure size of each:&lt;/p&gt;
 
 &lt;table&gt;
   &lt;thead&gt;
@@ -639,6 +662,8 @@ typedef struct PgStat_StatDBEntry
     &lt;/tr&gt;
   &lt;/tbody&gt;
 &lt;/table&gt;
+
+&lt;p&gt;Hope you enjoyed the article!&lt;/p&gt;
 
 &lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
 &lt;script&gt;
@@ -847,7 +872,7 @@ s.setAttribute('data-timestamp', +new Date());
    <id>/percona-docker</id>
    <content type="html">&lt;h2 id=&quot;before-starting-the-container&quot;&gt;Before starting the container&lt;/h2&gt;
 
-&lt;p&gt;This article is not an introductory explanation of docker,however it’s scope if for docker’s beginners. You can consider it as an extension of the well documented &lt;a href=&quot;https://hub.docker.com/_/percona/&quot;&gt;Percona docker hub doc&lt;/a&gt;. For the source code of the image, the repository is at &lt;a href=&quot;https://github.com/dockerfile/percona&quot;&gt;github&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;This article is not an introductory explanation of docker,however it’s scope if for docker’s beginners. You can consider it as an extension of the well documented &lt;a href=&quot;https://hub.docker.com/_/percona/&quot;&gt;Percona docker hub doc&lt;/a&gt;. For the source code of the image, the repository is at &lt;a href=&quot;https://github.com/dockerfile/percona&quot;&gt;github&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;Here is the all what you need to do for start:&lt;/p&gt;
 
@@ -863,7 +888,7 @@ s.setAttribute('data-timestamp', +new Date());
 
 &lt;p&gt;For example, a full logging container will be started with this:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysql  -d percona:5.7 --general-log=1 --slow-query-log=1 --long-query-time=0  --log_slow_verbosity='full, profiling, profiling_use_getrusage'
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e &lt;span class=&quot;nv&quot;&gt;MYSQL_ROOT_PASSWORD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mysql  -d percona:5.7 --general-log&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1 --slow-query-log&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1 --long-query-time&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0  --log_slow_verbosity&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'full, profiling, profiling_use_getrusage'&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
@@ -911,28 +936,28 @@ cb740be0743c        percona:5.7         &lt;span class=&quot;s2&quot;&gt;&quot;d
 
 &lt;p&gt;Obviously, when using docker in production, you don’t want to access it locally.  For getting the host of our container (and all the running containers), we can do the following commands:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ # docker network ls
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ &lt;span class=&quot;c&quot;&gt;# docker network ls&lt;/span&gt;
 NETWORK ID          NAME                DRIVER
 5fddd2e1a80a        bridge              bridge              
 e4e0c655e1aa        host                host                
 565f4a23d95a        none                null  
 
-3laptop ~ # docker network inspect 5fddd2e1a80a | jq .[].Containers
-{
-  &quot;cb740be0743cd662c700f73586fe481dc25e4eb27ef94e075c4668a5421eca13&quot;: {
-    &quot;IPv6Address&quot;: &quot;&quot;,
-    &quot;IPv4Address&quot;: &quot;172.17.0.2/16&quot;,
-    &quot;MacAddress&quot;: &quot;02:42:ac:11:00:02&quot;,
-    &quot;EndpointID&quot;: &quot;6dbd28900efe2c6f6edffcbbec0ac7d6446b4336e6e31f018f18d00f1005a812&quot;,
-    &quot;Name&quot;: &quot;percona57&quot;
-  }
-}
+3laptop ~ &lt;span class=&quot;c&quot;&gt;# docker network inspect 5fddd2e1a80a | jq .[].Containers&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;s2&quot;&gt;&quot;cb740be0743cd662c700f73586fe481dc25e4eb27ef94e075c4668a5421eca13&quot;&lt;/span&gt;: &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;s2&quot;&gt;&quot;IPv6Address&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;IPv4Address&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;172.17.0.2/16&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;MacAddress&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;02:42:ac:11:00:02&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;EndpointID&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;6dbd28900efe2c6f6edffcbbec0ac7d6446b4336e6e31f018f18d00f1005a812&quot;&lt;/span&gt;,
+    &lt;span class=&quot;s2&quot;&gt;&quot;Name&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;percona57&quot;&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
 &lt;p&gt;We can see that our container &lt;code class=&quot;highlighter-rouge&quot;&gt;percona57&lt;/code&gt; is running over &lt;code class=&quot;highlighter-rouge&quot;&gt;172.17.0.2&lt;/code&gt; IP address. To access it, you only need to do as usual:&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ # mysql -h 172.17.0.2 -p
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ &lt;span class=&quot;c&quot;&gt;# mysql -h 172.17.0.2 -p&lt;/span&gt;
 ....
 mysql&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;

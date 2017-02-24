@@ -34,6 +34,8 @@ show stats_temp_directory;
 
 ## TL;DR *What's the expected size of the stat_temp_directory*?
 
+Before move forward, lets detail the structure of the entries for the stat file:
+
 | Structure/Constant          | Size
 |-----|----
 | PGSTAT_FILE_FORMAT_ID  | 1 byte
@@ -42,19 +44,32 @@ show stats_temp_directory;
 | closingChar | 'E'
 | describers  | char (T or F in this case)
 
-First of all, as it'll explained later, not all the tables, indexes and functions are written on the _db statsfile_. Basically, a basic formula will be _SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) + closingChar_.
 
-Query 1) will give you the estimate for the tables _if all of them were flushed on the file_. Also, you need to do the same within `pg_proc`, but instead the factor will be 28 bytes. You'll need to run this on every database, and sum them all.
+First of all, as it'll explained later, not all the tables, indexes and functions are written on the _db statsfile_. Basically, a basic formula will be:
 
-Query 1)
+> _SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + 
+>                     (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) +
+>                     closingChar_
 
+In order to get the estimate space needed for the current tables on each database (keep
+in mind that this considers all tables flushed on file), there is a query you can execute
+safely on _each database in your PostgreSQL instance_ (statfile is one _per database_):
+
+
+```sql
+SELECT count(*) * 164 "size in bytes" 
+  FROM pg_class 
+  WHERE relkind ('r','i','S');
 ```
-select count(*) * 164 "size in bytes" from pg_class where relkind ('r','i','S')
-```
 
-This database statfile is one _per database_.
+Also, you need to do the same within `pg_proc`, but instead the factor will be 28 bytes. You'll need to run this on every database, and sum them all. This is for tracking stats for function usage, which can be
+disabled from the `postgresql.conf` file with the `track_functions` variable. Also, all the aspects
+of runtime statistics can be found [here][1].
+
 
 ### Global Stats
+
+Structure of the global stats:
 
 | Structure          | Size
 |-----|----
@@ -63,7 +78,10 @@ This database statfile is one _per database_.
 | PgStat_ArchiverStats | 114 bytes
 | describer            | char ('D')
 
-The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to _PGSTAT_FILE_FORMAT_ID +describer + PgStat_GlobalStats + PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases_.
+The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to:
+
+> _PGSTAT_FILE_FORMAT_ID + describer + PgStat_GlobalStats + 
+> PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases_.
 
 So, as you can see, the limitation imposed by AWS in regarding is way above the amount of data held on this directory in most of the databases that can run inside RDS expectations.
 
@@ -76,7 +94,7 @@ If your application is write intensive, you will see the impact on the Write lat
 
 ## A deeper look
 
-So the [question](http://dba.stackexchange.com/questions/150474/how-to-determine-optimal-value-for-pg-stat-ramdisk-size-on-amazon-rds/150579#150579) didn't took much time to appear in the network and, I wasn't the exception. Is there a way to pre calculate the contents of the directory?  
+So the [question][2] didn't took much time to appear in the network and, I wasn't the exception. Is there a way to pre calculate the contents of the directory?  
 
 I couldn't end up with an exact number however, you may know that the size of the files are more related to the number of tables, indexes, functions and databases. The following structure is the core of this implementation. It is so important that it actually has a defined `PGSTAT_FILE_FORMAT_ID` that it is written also in the stat files.
 
@@ -86,16 +104,16 @@ Backends communicate to the collector through `StatMsgType` struct, when is diff
 
 Which backends can request a file write? All the backends, the archiver, the bgwriter. All of them use the same structure for passing the changes (PgStat_Msg).
 
-There are 2 functions for write (pgstat_write_db_statsfile, pgstat_write_statsfiles) and 2 for read (pgstat_read_db_statsfile,pgstat_read_statsfiles) each of those controlling either the `db_<oid>.stat` and `global.stat`.
+There are 2 functions for write (`pgstat_write_db_statsfile`, `pgstat_write_statsfiles`) and 2 for read (`pgstat_read_db_statsfile` ,`pgstat_read_statsfiles` ) each of those controlling either the `db_<oid>.stat` and `global.stat`.
 
 
 ## References
 
 ### PgStat_StatDBEntry
 
-The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don't care about the size of this maps as it won't be written to the stats file anyway. The whole database entry is 22 * 64 bit values + 1 * 32 bits, per database (180 bytes).
+The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don't care about the size of this maps as it won't be written to the stats file anyway. The whole database entry is `22 * 64 bit` values + `1 * 32 bits`, per database (*180 bytes*).
 
-```
+```c
 #define PGSTAT_FILE_FORMAT_ID   0x01A5BC9D
 typedef struct PgStat_StatDBEntry
 {
@@ -142,12 +160,17 @@ typedef struct PgStat_StatDBEntry
 
 ### Structures
 
+In overal, this is the structure size of each:
+
 Structure | Detail | Total
 ----|-----|------
 PgStat_StatTabEntry | 20 * 64 bits and 1 * 32 Oid | (164 bytes)
 PgStat_StatFuncEntry | 3 * 64 bits and 1 * 32 Oid | (28 bytes)
 PgStat_GlobalStats | 11 * 64 bits, 8 bytes + 1 * 32 bit, 4 bytes | (92 bytes)
 PgStat_ArchiverStats | 4 *  8bytes, 2 char 41 bytes. | (114 bytes)
+
+
+Hope you enjoyed the article!
 
 
 {% if page.comments %}
@@ -170,3 +193,5 @@ s.setAttribute('data-timestamp', +new Date());
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 {% endif %}
 
+[1]: https://www.postgresql.org/docs/9.6/static/runtime-config-statistics.html
+[2]: http://dba.stackexchange.com/questions/150474/how-to-determine-optimal-value-for-pg-stat-ramdisk-size-on-amazon-rds/150579#150579

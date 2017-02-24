@@ -14,7 +14,7 @@ permalink: perconaserverbasichowto
 
 ## Before starting the container
 
-This article is not an introductory explanation of docker,however it's scope if for docker's beginners. You can consider it as an extension of the well documented [Percona docker hub doc](https://hub.docker.com/_/percona/). For the source code of the image, the repository is at [github](https://github.com/dockerfile/percona)
+This article is not an introductory explanation of docker,however it's scope if for docker's beginners. You can consider it as an extension of the well documented [Percona docker hub doc][1]. For the source code of the image, the repository is at [github][2].
 
 Here is the all what you need to do for start:
 
@@ -30,7 +30,7 @@ To start the container is pretty easy, but if you are not very used to Docker, y
 
 For example, a full logging container will be started with this:
 
-```
+```bash
 docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e MYSQL_ROOT_PASSWORD=mysql  -d percona:5.7 --general-log=1 --slow-query-log=1 --long-query-time=0  --log_slow_verbosity='full, profiling, profiling_use_getrusage'
 ```
 
@@ -79,7 +79,7 @@ The logs (general and slow) are using the `container id` in the file name, which
 Obviously, when using docker in production, you don't want to access it locally.  For getting the host of our container (and all the running containers), we can do the following commands:
 
 
-```
+```bash
 3laptop ~ # docker network ls
 NETWORK ID          NAME                DRIVER
 5fddd2e1a80a        bridge              bridge              
@@ -100,11 +100,12 @@ e4e0c655e1aa        host                host
 
 We can see that our container `percona57` is running over `172.17.0.2` IP address. To access it, you only need to do as usual:
 
-```
+```bash
 3laptop ~ # mysql -h 172.17.0.2 -p
 ....
 mysql>
 ```
+
 
 
 {% if page.comments %}
@@ -126,3 +127,6 @@ s.setAttribute('data-timestamp', +new Date());
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 {% endif %}
+
+[1]: https://hub.docker.com/_/percona/
+[2]: https://github.com/dockerfile/percona
