@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2017-02-24T09:25:50-03:00</updated>
+ <updated>2017-02-24T10:05:10-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -1219,11 +1219,8 @@ data into RDS using FDW (the standard postgres_fdw package).&lt;/p&gt;
 
 &lt;p&gt;A simple flight view of the idea can be observed in the image bellow.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;https://raw.githubusercontent.com/3manuek/RDS_HIPAA_FTS/master/FDW_TO_RDS/images/image1.png&quot; alt=&quot;alt text&quot; title=&quot;Image 1&quot; /&gt;&lt;/p&gt;
-
 &lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/image1.png&quot; alt=&quot;Implemented POC&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;POC image, detailing each part of the examples.&lt;/figcaption&gt;
-
 &lt;p&gt;&lt;a href=&quot;https://www.lucidchart.com/documents/edit/c22ce7a1-c09d-4ca8-922d-dcb123d577a5?driveId=0AHk8my7IafcZUk9PVA#&quot;&gt;Source&lt;/a&gt;&lt;/p&gt;
 
 &lt;h2 id=&quot;rds-structure-and-mirrored-local-structure-with-fdw&quot;&gt;RDS structure and mirrored local structure with FDW&lt;/h2&gt;

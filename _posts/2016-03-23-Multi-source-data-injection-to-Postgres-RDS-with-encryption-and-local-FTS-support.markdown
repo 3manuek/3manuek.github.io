@@ -2,13 +2,14 @@
 layout: post
 title:  "Multi source data injection to Postgres RDS with encryption and FTS support"
 date:   2016-03-23
-description: "Multi source data injection to [Postgres RDS]() with encryption and FTS support."
+description: "Multi source data injection to Postgres RDS with encryption and FTS support."
 tags : [AWS, RDS, PostgreSQL]
 categories:
 - PostgreSQL
 permalink: rds-hipaa-fts
 star: true
 category: blog
+comments: true 
 ---
 
 
@@ -87,14 +88,11 @@ data into RDS using FDW (the standard postgres_fdw package).
 
 A simple flight view of the idea can be observed in the image bellow.
 
-[//]: (/Users/emanuel/git/RDS_HIPPA_FTS/FDW_TO_RDS/images/image1.png if using local file)
-![alt text](https://raw.githubusercontent.com/3manuek/RDS_HIPAA_FTS/master/FDW_TO_RDS/images/image1.png "Image 1")
-
-
 ![Implemented POC][1]{: class="bigger-image" }
 <figcaption class="caption">POC image, detailing each part of the examples.</figcaption>
-
 [Source][2] 
+
+
 
 
 ## RDS structure and mirrored local structure with FDW
@@ -666,7 +664,26 @@ Discussion in the community mailing lis [here](http://postgresql.nabble.com/Fast
 
 
 {% if page.comments %}
-<div id="disqus_thread"></div> <script> /** * RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS. * LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables */ /* var disqus_config = function () { this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable }; */ (function() { // DON'T EDIT BELOW THIS LINE var d = document, s = d.createElement('script'); s.src = '//3manuek.disqus.com/embed.js'; s.setAttribute('data-timestamp', +new Date()); (d.head || d.body).appendChild(s); })(); </script> <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+<div id="disqus_thread"></div>
+<script>
+
+/**
+*  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+*  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = '//3manuek.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 {% endif %}
 
 

@@ -3,7 +3,7 @@ name: Emanuel Calvo
 bio: Open Source Data Engineering and Hidden Reptilian
 
 # twitter summary info
-description: A few experiments on OSDB 
+description: A few experiments and articles on OSDB 
 
 # if it's an external image, update below for true
 # better with square images
@@ -54,7 +54,7 @@ email: nospam++3manuek@gmail.com
 authors:
     3manuek:
         name: Emanuel Calvo
-        bio: Open Source Data Engineering
+        bio: Open Source Data Engineering/Reptilian
         external-image: false
         picture: assets/images/profile.jpg
         twitter: 3manuek
@@ -68,7 +68,7 @@ authors:
 # do you want a larger site? change the option below
 # options: [normal, large] | default: normal
 # normal = 560px / large = 810px
-width: normal
+width: large
 
 # if you don't need pagination, comment the *paginate* configs below
 # paginate: 5
