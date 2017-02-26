@@ -7,11 +7,11 @@ tags : [PostgreSQL, Kafka]
 categories:
 - PostgreSQL
 category: blog
-comments: true 
+comments: true
 permalink: kafkaandcopypg
 ---
 
-* This article is WIP *
+*This article is WIP*
 
 ![POC Image][4]
 
@@ -21,8 +21,8 @@ permalink: kafkaandcopypg
 Obviously, integrations as [bottlewater][3] allows a more elegant solution for
 producing changes from a Postgres instance to a kafka broker.
 
-Althuogh, the exposed technique in the current post could be used for more 
-simplistic implementations. 
+Althuogh, the exposed technique in the current post could be used for more
+simplistic implementations.
 
 
 ### kafkacat and librdkafka
@@ -38,11 +38,11 @@ Producing fake data to the Kafka broker, composed by `key` and `payload`:
 
 ```sh
 randtext() {cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1}
-while (true) ; 
+while (true) ;
   do
     for i in $(seq 1 50)  
-      do echo "$(uuidgen);$(randtext)" 
-     done  | kafkacat -P -b localhost:9092 -qe -K ';' -t PGSHARD 
+      do echo "$(uuidgen);$(randtext)"
+     done  | kafkacat -P -b localhost:9092 -qe -K ';' -t PGSHARD
      sleep 10
   done
 ```
@@ -63,10 +63,7 @@ Consuming the topic partitionins from the `beginning` and setting a limit of `10
 ```sh
 bin/psql -p7777 -Upostgres master <<EOF
 COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print "P0\t" \$0 }'' ';
-
-
 COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 1 | awk ''{print "P1\t" \$0 }'' ';
-
 COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 2 | awk ''{print "P2\t" \$0 }'' ';
 EOF
 ```
@@ -76,21 +73,18 @@ And then using `stored`, in order to consume from the last offset left by the co
 ```sh
 bin/psql -p7777 -Upostgres master <<EOF
 COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 0 | awk ''{print "P0\t" \$0 }'' ';
-
-
 COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 1 | awk ''{print "P1\t" \$0 }'' ';
-
 COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 2 | awk ''{print "P2\t" \$0 }'' ';
 EOF
 ```
 
-### Producing messages from COPY
+### Producing messages with COPY
 
-The same way is possible to consume changes, it is possible to do the same for producing 
-data to the broker. 
+The same way is possible to consume changes, it is possible to do the same for producing
+data to the broker.
 
 
-```sh
+```
 master=# COPY (select row_to_json(row(now() ,group_id , count(*))) from main group by group_id) TO PROGRAM 'kafkacat -P -b localhost:9092 -qe  -t AGGREGATIONS';
 COPY 3
 ```
@@ -98,7 +92,7 @@ COPY 3
 If you have a farm of servers and want to search the topic contents using a key,
 you can do the following tweak:
 
-```sh
+```
 COPY (select inet_server_addr() || ';', row_to_json(row(now() ,group_id , count(*))) from main group by group_id) TO PROGRAM 'kafkacat -P -K '';'' -b localhost:9092 -qe  -t AGGREGATIONS';
 ```
 
@@ -106,8 +100,8 @@ COPY (select inet_server_addr() || ';', row_to_json(row(now() ,group_id , count(
 Taking a look to the topic contents:
 
 
-```sh
-➜  PG10 kafkacat -C -b localhost:9092 -qeJ -t AGGREGATIONS -X group.id=1  -o beginning 
+```
+➜  PG10 kafkacat -C -b localhost:9092 -qeJ -t AGGREGATIONS -X group.id=1  -o beginning
 {"topic":"AGGREGATIONS","partition":0,"offset":0,"key":"","payload":"{\"f1\":\"2017-02-24T12:34:13.711732-03:00\",\"f2\":\"P1\",\"f3\":172}"}
 {"topic":"AGGREGATIONS","partition":0,"offset":1,"key":"","payload":"{\"f1\":\"2017-02-24T12:34:13.711732-03:00\",\"f2\":\"P0\",\"f3\":140}"}
 {"topic":"AGGREGATIONS","partition":0,"offset":2,"key":"","payload":"{\"f1\":\"2017-02-24T12:34:13.711732-03:00\",\"f2\":\"P2\",\"f3\":155}"}
@@ -122,9 +116,18 @@ With key set:
 ```
 
 
-
 ### Basic topic manipulation
 
+The bellow commands are useful when using a fresh intalled Apache Kafka version.
+
+Starting everything:
+
+```
+bin/zookeeper-server-start.sh config/zookeeper.properties 2> zookeper.log &
+bin/kafka-server-start.sh config/server.properties 2> kafka.log &
+```
+
+Creating topics and others:
 
 ```sh
 bin/kafka-topics.sh --list --zookeeper localhost:2181
@@ -132,13 +135,23 @@ bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 -
 bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic PGSHARD
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic AGGREGATIONS
 bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic AGGREGATIONS
-
 ```
+
+> NOTE: For deleting topics, you need to enable the `delete.topic.enable=true` in
+> server.properties file.
+
+Consuming with `kafkacat`:
 
 ```sh
 kafkacat -C -b localhost:9092 -qeJ -t PGSHARD -X group.id=1  -o beginning
 ```
 
+There is something useul and is that you can format the output on the fly as needed
+with the `-f` option instead the `-J` (JSON output format). This could be pretty
+useful for generating rows with specific column definitions.
+
+
+---
 
 Hope this post its useful!
 
