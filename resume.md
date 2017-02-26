@@ -55,7 +55,7 @@ DataScience Specialization, Coursera (80% completed):
 
 -----
 
-## Current position
+## Current positions
 
 ### Percona -  Senior Technical Services Engineer _[main position]_
 > Buenos Aires, Argentina
@@ -63,12 +63,21 @@ DataScience Specialization, Coursera (80% completed):
 
 Full description of the role [here](https://www.percona.com/about-percona/careers/senior-technical-services-engineer).
 
+Remote DBA for MySQL and forks around several customers (Team Atlas).
+
+### Ayres.io - Root and Data Engineer
+> El Rio de la Plata, Argentina
+> September, 2016 - Current
+
+Ayres became as a local project for Data Engineers aroud Open Source solutions.  
+
 
 ### 8kData - Data External Advisor
 > Madrid, Spain
 > January 2016 - Current
 
 Providing advise regarding tangent technologies and community support.
+
 
 ### UDE - Open Source Source Undergraduate Degree Associate Professor
 > La Plata, Argentina
@@ -180,6 +189,9 @@ Some of the 'extra' task was made some Perl scripts for support area.
 
 As a consultant, I provided independent database consulting services for the following companies (in non-particular order):
 
+- iMedicare (USA)
+- Eloquentix (USA)
+- PFA (Argentina)
 - Autofarma (Arg)
 - VSTour (Arg)
 - Jampp (Arg/USA)
@@ -194,9 +206,7 @@ As a consultant, I provided independent database consulting services for the fol
 - TreeLogic (Asturias)
 - BTS (Usa - Zaragoza)
 - LCRCOM.net (Madrid)
-- Pampa Business Solutions (Argentina)
-- Eloquentix (USA)
-- iMedicare (USA)
+- Pampa Business Solutions - Telecentro (Argentina)
 - Ericsson/EDB ( USA)
 - Sindicato de Pasteleros y afines (Arg)
 - 8kdata (Spain, Madrid)
