@@ -1,23 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
- 
- <title></title>
- <link href="" rel="self"/>
- <link href=""/>
- <updated>2017-02-27T16:29:32-03:00</updated>
- <id></id>
- <author>
-   <name></name>
-   <email></email>
- </author>
-
- 
- <entry>
-   <title>Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title>
-   <link href="/postgres10logrepypart"/>
-   <updated>2017-02-18T00:00:00-03:00</updated>
-   <id>/postgres-10-logrep-y-part</id>
-   <content type="html">&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2017-02-27T16:29:32-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title><link href="http://www.3manuek.com/postgres10logrepypart" rel="alternate" type="text/html" title="Highlighting Postgres 10 new features: Logical Replication and Partitioning." /><published>2017-02-18T00:00:00-03:00</published><updated>2017-02-18T00:00:00-03:00</updated><id>http://www.3manuek.com/postgres-10-logrep-y-part</id><content type="html" xml:base="http://www.3manuek.com/postgres10logrepypart">&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in
 the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to
 say that these features &lt;strong&gt;aren’t yet available in the stable release, so they are prune
 to change or extended.&lt;/strong&gt;&lt;/p&gt;
@@ -244,17 +225,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</content>
- </entry>
- 
- <entry>
-   <title>Go-Plus and Atom GOPATH fix</title>
-   <link href="/goplusatomcopath"/>
-   <updated>2016-10-05T00:00:00-03:00</updated>
-   <id>/GoPlus-and-Atom-GOPATH-fix-HOWTO</id>
-   <content type="html">&lt;h2 id=&quot;the-background&quot;&gt;The background&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name></name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><category term="Partitioning" /><category term="LogicalReplication" /><summary type="html">Heya! I this article we are going to explore two of the major features commited in the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to say that these features aren’t yet available in the stable release, so they are prune to change or extended.</summary></entry><entry><title type="html">Go-Plus and Atom GOPATH fix</title><link href="http://www.3manuek.com/goplusatomcopath" rel="alternate" type="text/html" title="Go-Plus and Atom GOPATH fix" /><published>2016-10-05T00:00:00-03:00</published><updated>2016-10-05T00:00:00-03:00</updated><id>http://www.3manuek.com/GoPlus-and-Atom-GOPATH-fix-HOWTO</id><content type="html" xml:base="http://www.3manuek.com/goplusatomcopath">&lt;h2 id=&quot;the-background&quot;&gt;The background&lt;/h2&gt;
 
 &lt;p&gt;Golang is an awesome language, but I found it pretty unstable within the environment variables (at least in macOS Sierra/El Capitan). &lt;code class=&quot;highlighter-rouge&quot;&gt;gvm&lt;/code&gt; is your friend btw, and it helped me to fix some of the issues by installing the latest release candidate of the 1.7.1 series.&lt;/p&gt;
 
@@ -306,17 +277,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</content>
- </entry>
- 
- <entry>
-   <title>PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</title>
-   <link href="/pgstatramdisksize"/>
-   <updated>2016-09-25T00:00:00-03:00</updated>
-   <id>/RDS-pg-stat-ramdisk-size-on-RDS</id>
-   <content type="html">&lt;h2 id=&quot;what-does-it-change-and-why-is-so-important&quot;&gt;What does it change and why is so important?&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name></name></author><category term="blog" /><category term="Golang" /><category term="Go" /><category term="Atom" /><summary type="html">The background</summary></entry><entry><title type="html">PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</title><link href="http://www.3manuek.com/pgstatramdisksize" rel="alternate" type="text/html" title="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations" /><published>2016-09-25T00:00:00-03:00</published><updated>2016-09-25T00:00:00-03:00</updated><id>http://www.3manuek.com/RDS-pg-stat-ramdisk-size-on-RDS</id><content type="html" xml:base="http://www.3manuek.com/pgstatramdisksize">&lt;h2 id=&quot;what-does-it-change-and-why-is-so-important&quot;&gt;What does it change and why is so important?&lt;/h2&gt;
 
 &lt;p&gt;Tracking databases and &lt;em&gt;not just tables&lt;/em&gt; counters in Postgres isn’t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by &lt;code class=&quot;highlighter-rouge&quot;&gt;stat_temp_directory&lt;/code&gt; GUC variable. That directory places a &lt;code class=&quot;highlighter-rouge&quot;&gt;global.stat&lt;/code&gt; and a per-database stat files called like &lt;code class=&quot;highlighter-rouge&quot;&gt;db_&amp;lt;oidOfDB&amp;gt;.stat&lt;/code&gt;. Although the mechanism for writing into these files avoids extra or unnecessary flushes, it is very write intensive.&lt;/p&gt;
 
@@ -556,17 +517,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</content>
- </entry>
- 
- <entry>
-   <title>Verificando descargas a traves de hashes y firmas</title>
-   <link href="/pgp-bitcoint-sha"/>
-   <updated>2016-08-18T00:00:00-03:00</updated>
-   <id>/verificar-hashes-y-firmas-en-binarios</id>
-   <content type="html">&lt;h2 id=&quot;la-razón&quot;&gt;La razón&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name></name></author><category term="blog" /><category term="PostgreSQL" /><category term="RDS" /><summary type="html">What does it change and why is so important?</summary></entry><entry><title type="html">Verificando descargas a traves de hashes y firmas</title><link href="http://www.3manuek.com/pgp-bitcoint-sha" rel="alternate" type="text/html" title="Verificando descargas a traves de hashes y firmas" /><published>2016-08-18T00:00:00-03:00</published><updated>2016-08-18T00:00:00-03:00</updated><id>http://www.3manuek.com/verificar-hashes-y-firmas-en-binarios</id><content type="html" xml:base="http://www.3manuek.com/pgp-bitcoint-sha">&lt;h2 id=&quot;la-razón&quot;&gt;La razón&lt;/h2&gt;
 
 &lt;p&gt;Bitcoin es en mi opinión, la más reciente y revolucionaria tecnología, que permite
 monetizar la capacidad de computo. No voy a entrar en detalles con respecto a
@@ -734,17 +685,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</content>
- </entry>
- 
- <entry>
-   <title>HOWTO Percona Server with docker</title>
-   <link href="/perconaserverbasichowto"/>
-   <updated>2016-07-02T00:00:00-03:00</updated>
-   <id>/percona-docker</id>
-   <content type="html">&lt;h2 id=&quot;before-starting-the-container&quot;&gt;Before starting the container&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name></name></author><category term="blog" /><category term="PGP" /><category term="SHA" /><category term="Bitcoin" /><summary type="html">La razón</summary></entry><entry><title type="html">HOWTO Percona Server with docker</title><link href="http://www.3manuek.com/perconaserverbasichowto" rel="alternate" type="text/html" title="HOWTO Percona Server with docker" /><published>2016-07-02T00:00:00-03:00</published><updated>2016-07-02T00:00:00-03:00</updated><id>http://www.3manuek.com/percona-docker</id><content type="html" xml:base="http://www.3manuek.com/perconaserverbasichowto">&lt;h2 id=&quot;before-starting-the-container&quot;&gt;Before starting the container&lt;/h2&gt;
 
 &lt;p&gt;This article is not an introductory explanation of docker,however it’s scope if for docker’s beginners. You can consider it as an extension of the well documented &lt;a href=&quot;https://hub.docker.com/_/percona/&quot;&gt;Percona docker hub doc&lt;/a&gt;. For the source code of the image, the repository is at &lt;a href=&quot;https://github.com/dockerfile/percona&quot;&gt;github&lt;/a&gt;.&lt;/p&gt;
 
@@ -854,17 +795,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</content>
- </entry>
- 
- <entry>
-   <title>Random data for PostgreSQL</title>
-   <link href="/random-databases-postgres/"/>
-   <updated>2016-05-01T22:10:00-03:00</updated>
-   <id>/random-databases-postgres</id>
-   <content type="html">&lt;p&gt;Usually, you want to test code, try new features or just need decent content when
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name></name></author><category term="blog" /><category term="MySQL" /><category term="docker" /><summary type="html">Before starting the container</summary></entry><entry><title type="html">Random data for PostgreSQL</title><link href="http://www.3manuek.com/random-databases-postgres/" rel="alternate" type="text/html" title="Random data for PostgreSQL" /><published>2016-05-01T22:10:00-03:00</published><updated>2016-05-01T22:10:00-03:00</updated><id>http://www.3manuek.com/random-databases-postgres</id><content type="html" xml:base="http://www.3manuek.com/random-databases-postgres/">&lt;p&gt;Usually, you want to test code, try new features or just need decent content when
 generating random data. &lt;a href=&quot;https://github.com/3manuek/Random-database-for-Postgres&quot;&gt;Random databases for Postgres&lt;/a&gt; addresses this need by
 simple SQL scripts that can be entirely generated inside your database.&lt;/p&gt;
 
@@ -880,17 +811,7 @@ simple SQL scripts that can be entirely generated inside your database.&lt;/p&gt
 
 &lt;hr /&gt;
 
-&lt;p&gt;If you want to indicate issues, go for it at &lt;a href=&quot;https://github.com/3manuek/Random-database-for-Postgres/issues&quot;&gt;report issues&lt;/a&gt;.&lt;/p&gt;
-
-</content>
- </entry>
- 
- <entry>
-   <title>MySQL 5.7 InnoDB's Full Text Search overview.</title>
-   <link href="/fts-innodb"/>
-   <updated>2016-04-20T00:00:00-03:00</updated>
-   <id>/FTS-in-MySQL-5-7-with-InnoDB</id>
-   <content type="html">&lt;p&gt;Main application:
+&lt;p&gt;If you want to indicate issues, go for it at &lt;a href=&quot;https://github.com/3manuek/Random-database-for-Postgres/issues&quot;&gt;report issues&lt;/a&gt;.&lt;/p&gt;</content><author><name>3manuek</name></author><category term="project" /><category term="scripts" /><summary type="html">Usually, you want to test code, try new features or just need decent content when generating random data. Random databases for Postgres addresses this need by simple SQL scripts that can be entirely generated inside your database.</summary></entry><entry><title type="html">MySQL 5.7 InnoDB’s Full Text Search overview.</title><link href="http://www.3manuek.com/fts-innodb" rel="alternate" type="text/html" title="MySQL 5.7 InnoDB's Full Text Search overview." /><published>2016-04-20T00:00:00-03:00</published><updated>2016-04-20T00:00:00-03:00</updated><id>http://www.3manuek.com/FTS-in-MySQL-5-7-with-InnoDB</id><content type="html" xml:base="http://www.3manuek.com/fts-innodb">&lt;p&gt;Main application:
 &lt;a href=&quot;https://3manuek.shinyapps.io/FTS_Innodb/&quot;&gt;InnoDB’s Full Text Search overview (with Shiny/R)&lt;/a&gt;&lt;/p&gt;
 
 &lt;h2 id=&quot;credits&quot;&gt;Credits&lt;/h2&gt;
@@ -1324,17 +1245,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</content>
- </entry>
- 
- <entry>
-   <title>Multi source data injection to Postgres RDS with encryption and FTS support</title>
-   <link href="/rds-hipaa-fts"/>
-   <updated>2016-03-23T00:00:00-03:00</updated>
-   <id>/Multi-source-data-injection-to-Postgres-RDS-with-encryption-and-local-FTS-support</id>
-   <content type="html">&lt;p&gt;Sponsored: &lt;a href=&quot;http://pythian.com&quot;&gt;Pythian Inc.&lt;/a&gt;&lt;/p&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name></name></author><category term="blog" /><category term="FTS" /><category term="MySQL" /><category term="InnoDB" /><summary type="html">Main application: InnoDB’s Full Text Search overview (with Shiny/R)</summary></entry><entry><title type="html">Multi source data injection to Postgres RDS with encryption and FTS support</title><link href="http://www.3manuek.com/rds-hipaa-fts" rel="alternate" type="text/html" title="Multi source data injection to Postgres RDS with encryption and FTS support" /><published>2016-03-23T00:00:00-03:00</published><updated>2016-03-23T00:00:00-03:00</updated><id>http://www.3manuek.com/Multi-source-data-injection-to-Postgres-RDS-with-encryption-and-local-FTS-support</id><content type="html" xml:base="http://www.3manuek.com/rds-hipaa-fts">&lt;p&gt;Sponsored: &lt;a href=&quot;http://pythian.com&quot;&gt;Pythian Inc.&lt;/a&gt;&lt;/p&gt;
 
 &lt;blockquote&gt;
   &lt;p&gt;Note 1:
@@ -1988,17 +1899,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</content>
- </entry>
- 
- <entry>
-   <title>binlogtop</title>
-   <link href="/binlogtop/"/>
-   <updated>2016-01-23T22:10:00-03:00</updated>
-   <id>/binlogtop</id>
-   <content type="html">&lt;p&gt;Currently &lt;code class=&quot;highlighter-rouge&quot;&gt;binlogtop&lt;/code&gt; is in status &lt;em&gt;WIP&lt;/em&gt; and very alpha state, although there is a python
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name></name></author><category term="blog" /><category term="AWS" /><category term="RDS" /><category term="PostgreSQL" /><summary type="html">Sponsored: Pythian Inc.</summary></entry><entry><title type="html">binlogtop</title><link href="http://www.3manuek.com/binlogtop/" rel="alternate" type="text/html" title="binlogtop" /><published>2016-01-23T22:10:00-03:00</published><updated>2016-01-23T22:10:00-03:00</updated><id>http://www.3manuek.com/binlogtop</id><content type="html" xml:base="http://www.3manuek.com/binlogtop/">&lt;p&gt;Currently &lt;code class=&quot;highlighter-rouge&quot;&gt;binlogtop&lt;/code&gt; is in status &lt;em&gt;WIP&lt;/em&gt; and very alpha state, although there is a python
 script doing sort of the same thing is: &lt;a href=&quot;https://github.com/3manuek/binlogEventStats&quot;&gt;binlogEventStats&lt;/a&gt;.&lt;/p&gt;
 
 &lt;ul&gt;
@@ -2017,16 +1918,7 @@ script doing sort of the same thing is: &lt;a href=&quot;https://github.com/3man
 
 &lt;hr /&gt;
 
-&lt;p&gt;If you want to indicate issues, go for it at &lt;a href=&quot;https://github.com/3manuek/binlogTop/issues&quot;&gt;report issues&lt;/a&gt;.&lt;/p&gt;
-</content>
- </entry>
- 
- <entry>
-   <title>Alambre, ugly scripts to save time of your day</title>
-   <link href="/alambre-project/"/>
-   <updated>2016-01-23T22:10:00-03:00</updated>
-   <id>/alambre-project</id>
-   <content type="html">&lt;p&gt;As a DBA we usually have to do dirty things under a running clock. Using that moto, I started a repository
+&lt;p&gt;If you want to indicate issues, go for it at &lt;a href=&quot;https://github.com/3manuek/binlogTop/issues&quot;&gt;report issues&lt;/a&gt;.&lt;/p&gt;</content><author><name>3manuek</name></author><category term="project" /><category term="scripts" /><summary type="html">Currently binlogtop is in status WIP and very alpha state, although there is a python script doing sort of the same thing is: binlogEventStats.</summary></entry><entry><title type="html">Alambre, ugly scripts to save time of your day</title><link href="http://www.3manuek.com/alambre-project/" rel="alternate" type="text/html" title="Alambre, ugly scripts to save time of your day" /><published>2016-01-23T22:10:00-03:00</published><updated>2016-01-23T22:10:00-03:00</updated><id>http://www.3manuek.com/alambre-project</id><content type="html" xml:base="http://www.3manuek.com/alambre-project/">&lt;p&gt;As a DBA we usually have to do dirty things under a running clock. Using that moto, I started a repository
 to start collecting those nasty things that save time a day. That’s what &lt;a href=&quot;https://github.com/ayresdata/alambre&quot;&gt;alambre&lt;/a&gt; does: small and complex things.&lt;/p&gt;
 
 &lt;hr /&gt;
@@ -2041,66 +1933,4 @@ to start collecting those nasty things that save time a day. That’s what &lt;a
 
 &lt;hr /&gt;
 
-&lt;p&gt;If you want to indicate issues, go for it at &lt;a href=&quot;https://github.com/ayresdata/alambre/issues&quot;&gt;report issues&lt;/a&gt;.&lt;/p&gt;
-</content>
- </entry>
- 
- <entry>
-   <title>Ser anónimo, el derecho del futuro.</title>
-   <link href="/anonimato"/>
-   <updated>2015-04-03T00:00:00-03:00</updated>
-   <id>/anonimato</id>
-   <content type="html">&lt;blockquote&gt;
-  &lt;p&gt;Agradecimiento a Guido Vilariño por la revisión del artículo.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Hace unos días me topé con un artículo acerca del &lt;a href=&quot;http://www.avclub.com/article/facebook-tinkered-users-feeds-massive-psychology-e-206324&quot;&gt;Experimental evidence of massive-scale emotional contagion through social networks&lt;/a&gt; (Evidencia experimental del contagio emocional a gran escala a través de las redes sociales) llevado a cabo por científicos de Facebook. Este programa manipuló el contenido visualizado por 600,000 usuarios de esta red social, a fin de determinar como se influye en el estado de ánimo, utilizando las publicaciones posteriores para el análisis. Si deseas leer el paper completo, tal como se publicó en la Academia Nacional de Ciencias de USA, puedes verlo &lt;a href=&quot;http://www.pnas.org/content/111/24/8788.full.pdf?sid=d23bc81f-4f3c-4abb-9d0c-ed7416577b2a&quot;&gt;aquí&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;Se hace evidente, que alguien al que le preocupe en cierto grado la privacidad, este artículo es como leer IT de Stephen King a los 10 años.&lt;/p&gt;
-
-&lt;p&gt;Este experimento -aplicable a cualquier red social-, podría ser el futuro de la propaganda política. Tan efectivo como la televisión, mucho más métrico y rápido. Este constante “feedback”, permite modificar las reglas en plena aplicación e incluso desviar el objetivo final, si hay otros intereses en juego. La manipulación de los medios con un fin negativo, está a la altura de ser tan repudiada como la censura.&lt;/p&gt;
-
-&lt;p&gt;Piensa que tu vida, indefectiblemente se verá afectada. Por más que no uses redes sociales, la gente que te rodea habrá sido influenciada. ¿No sigues la corriente? Pues, estás fuera. Imagínate esta herramienta en manos de gobiernos populistas o dictatoriales. Me tiembla la espinilla. Incluso, podría crear ídolos o talentos falsos, políticos con doble cara (&lt;em&gt;ejem…&lt;/em&gt;) o incluso recobrar modas del pasado (xenofobia, intolerancia a la homosexualidad, etc).&lt;/p&gt;
-
-&lt;p&gt;Ya no será necesaria una costumbre para hacerla ley. Ya podrían influir, para crear una costumbre y luego hacerla ley.&lt;/p&gt;
-
-&lt;p&gt;Hasta ahora no hay nada nuevo. ¡Claro que ya lo sabías, campeón! Eso es bueno, porque la principal herramienta de combatirlo es justamente eso: sabiéndolo. Es un buen paso, aunque no el último. Quizás, el siguiente sea no ser fatalista.&lt;/p&gt;
-
-&lt;p&gt;De ahí que radique la importancia de educar a las próximas generaciones, con respecto a como y cuando permanecer anónimos. La práctica de este derecho podría llegar a ser la máxima representación de la libre expresión. Esta libertad por si sola, no garantiza la protección contra las represalias. Sin embargo, el anonimato, es una forma colaborativa de recepción y emisión de información.&lt;/p&gt;
-
-&lt;p&gt;Para mantener la libertad de expresión en un estado saludable, hay que entrenar en las próximas generaciones el sentido común y la objetividad.&lt;/p&gt;
-
-&lt;p&gt;El aprender a ser anónimos ya no por miedo, sino por derecho, nos permite compartir y recibir información sin prejuicios acerca de quienes fuimos hasta ese momento.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Aprende a ser anónimo, por que es el derecho del futuro.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;¿Que cosas tengo que tener en cuenta?&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Internet es una herramienta, que intenta ser libre -en principio-. Esa libertad trae aparejado tanto lo bueno como lo malo. No todo es cierto, no todo es falso. Hay muchos gatos, de todo tipo.&lt;/li&gt;
-  &lt;li&gt;Buscar en internet es uno de los tantos verbos que esta permite. Y en la mayor parte
-de las búsquedas no son anónimas.&lt;/li&gt;
-  &lt;li&gt;No sabes quién está del otro lado ni eres quien el otro cree que eres. Partiendo de esa base, trata a todos por igual.&lt;/li&gt;
-  &lt;li&gt;Muchos sitios te muestran lo que ellos quieren que veas. Trata de que esto pase lo menos posible.&lt;/li&gt;
-  &lt;li&gt;La pornografía legal es casi inevitable, pero ten en cuenta que es igual de cuestionable ver imágenes y noticias explícitas de muerte, corrupción y guerras alrededor del mundo.&lt;/li&gt;
-  &lt;li&gt;Enséñales y enséñate como funciona internet. Tener una vaga idea de las piezas que la componen, se considerará en breve tiempo tan importante como saber leer y escribir.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;donde-puedo-empezar&quot;&gt;¿Donde puedo empezar?&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://www.vialibre.org.ar/&quot;&gt;Fundación Via Libre&lt;/a&gt; es conocida en Argentina por promover el conocimiento libre, te recomiendo pegarte una vuelta al sitio.&lt;/p&gt;
-
-&lt;p&gt;También puedes empezar leyendo:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://www.vialibre.org.ar/2013/07/17/programas-para-proteger-la-privacidad-en-la-red/&quot;&gt;Programas para proteger la privacidad en la red&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://es.wikipedia.org/wiki/Privacidad_en_Internet&quot;&gt;Privacidad en internet&lt;/a&gt;.&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://es.wikibooks.org/wiki/Anonimato_y_privacidad_en_internet&quot;&gt;Anonimato y privacidad en internet&lt;/a&gt;. Este es un “wikilibro” y aún está en desarrollo, pero es un buen punto de partida.&lt;/li&gt;
-&lt;/ul&gt;
-</content>
- </entry>
- 
- 
-</feed>
+&lt;p&gt;If you want to indicate issues, go for it at &lt;a href=&quot;https://github.com/ayresdata/alambre/issues&quot;&gt;report issues&lt;/a&gt;.&lt;/p&gt;</content><author><name>3manuek</name></author><category term="project" /><category term="scripts" /><summary type="html">As a DBA we usually have to do dirty things under a running clock. Using that moto, I started a repository to start collecting those nasty things that save time a day. That’s what alambre does: small and complex things.</summary></entry></feed>

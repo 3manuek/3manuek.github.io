@@ -1,14 +1,14 @@
 ---
 layout: post
 title:  "Playing with Postgres and Kafka."
-date:   2017-02-20
+date:   2017-02-28
 description: Using the dirty way.
 tags : [PostgreSQL, Kafka]
 categories:
 - PostgreSQL
 category: blog
 comments: true
-permalink: kafkaandcopypg
+permalink: kafkacatandcopypg
 ---
 
 *This article is WIP*

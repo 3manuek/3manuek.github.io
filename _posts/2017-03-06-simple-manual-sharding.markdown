@@ -1,14 +1,14 @@
 ---
 layout: post
 title:  "Simple and manual sharding on PostgreSQL."
-date:   2017-01-31
+date:   2017-03-06
 description: _Foreign Data Wrappers_ inheritance.
 tags : [PostgreSQL, Sharding, cosasAtadasConAlambre]
 categories:
 - PostgreSQL
 category: blog
 comments: true
-permalink: poorsmansharding
+permalink: postgresmanualsharding
 ---
 
 

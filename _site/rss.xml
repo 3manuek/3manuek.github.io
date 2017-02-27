@@ -5,194 +5,36 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Sun, 26 Feb 2017 19:59:23 -0300</lastBuildDate>
-        <pubDate>Sun, 26 Feb 2017 19:59:23 -0300</pubDate>
+        <lastBuildDate>Mon, 27 Feb 2017 16:29:32 -0300</lastBuildDate>
+        <pubDate>Mon, 27 Feb 2017 16:29:32 -0300</pubDate>
         <ttl>60</ttl>
 
 
         <item>
-                <title>Playing with Postgres and Kafka.</title>
-                <description>&lt;p&gt;&lt;em&gt;This article is WIP&lt;/em&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/dosequis.jpg&quot; alt=&quot;POC Image&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;copy-and-kafkacat&quot;&gt;COPY and kafkacat&lt;/h2&gt;
-
-&lt;p&gt;Obviously, integrations as &lt;a href=&quot;https://www.confluent.io/blog/bottled-water-real-time-integration-of-postgresql-and-kafka/&quot;&gt;bottlewater&lt;/a&gt; allows a more elegant solution for
-producing changes from a Postgres instance to a kafka broker.&lt;/p&gt;
-
-&lt;p&gt;Althuogh, the exposed technique in the current post could be used for more
-simplistic implementations.&lt;/p&gt;
-
-&lt;h3 id=&quot;kafkacat-and-librdkafka&quot;&gt;kafkacat and librdkafka&lt;/h3&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://github.com/edenhill/kafkacat&quot;&gt;kafkacat&lt;/a&gt; is a tool based on the same author’s library &lt;a href=&quot;https://github.com/edenhill/librdkafka&quot;&gt;librdkafka&lt;/a&gt; which
-does exactly what its name propose: produce and consume from a Kafka broker.&lt;/p&gt;
-
-&lt;h3 id=&quot;producing-to-kafka-broker&quot;&gt;Producing to Kafka broker&lt;/h3&gt;
-
-&lt;p&gt;Producing fake data to the Kafka broker, composed by &lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;payload&lt;/code&gt;:&lt;/p&gt;
-
-&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;randtext&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;cat /dev/urandom | tr -dc &lt;span class=&quot;s1&quot;&gt;'a-zA-Z0-9'&lt;/span&gt; | fold -w 32 | head -n 1&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; ;
-  &lt;span class=&quot;k&quot;&gt;do
-    for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 50&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;  
-      &lt;span class=&quot;k&quot;&gt;do &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;uuidgen&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;randtext&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
-     &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;  | kafkacat -P -b localhost:9092 -qe -K &lt;span class=&quot;s1&quot;&gt;';'&lt;/span&gt; -t PGSHARD
-     sleep 10
-  &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h3 id=&quot;consuming-topics-incrementally-inside-postgres&quot;&gt;Consuming topics incrementally inside Postgres&lt;/h3&gt;
-
-&lt;p&gt;Inside Postgres:&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PROGRAM&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk &lt;/span&gt;&lt;span class=&quot;se&quot;&gt;''&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;{print &quot;P0&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\t&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&quot; $0 }&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;''&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt; '&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Consuming the topic partitionins from the &lt;code class=&quot;highlighter-rouge&quot;&gt;beginning&lt;/code&gt; and setting a limit of &lt;code class=&quot;highlighter-rouge&quot;&gt;100&lt;/code&gt; documents:&lt;/p&gt;
-
-&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/psql -p7777 -Upostgres master &lt;span class=&quot;sh&quot;&gt;&amp;lt;&amp;lt;EOF
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print &quot;P0\t&quot; \$0 }'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 1 | awk ''{print &quot;P1\t&quot; \$0 }'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 2 | awk ''{print &quot;P2\t&quot; \$0 }'' ';
-EOF
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;And then using &lt;code class=&quot;highlighter-rouge&quot;&gt;stored&lt;/code&gt;, in order to consume from the last offset left by the consumer on the group:&lt;/p&gt;
-
-&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/psql -p7777 -Upostgres master &lt;span class=&quot;sh&quot;&gt;&amp;lt;&amp;lt;EOF
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 0 | awk ''{print &quot;P0\t&quot; \$0 }'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 1 | awk ''{print &quot;P1\t&quot; \$0 }'' ';
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 2 | awk ''{print &quot;P2\t&quot; \$0 }'' ';
-EOF
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h3 id=&quot;producing-messages-with-copy&quot;&gt;Producing messages with COPY&lt;/h3&gt;
-
-&lt;p&gt;The same way is possible to consume changes, it is possible to do the same for producing
-data to the broker.&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;master=# COPY (select row_to_json(row(now() ,group_id , count(*))) from main group by group_id) TO PROGRAM 'kafkacat -P -b localhost:9092 -qe  -t AGGREGATIONS';
-COPY 3
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;If you have a farm of servers and want to search the topic contents using a key,
-you can do the following tweak:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;COPY (select inet_server_addr() || ';', row_to_json(row(now() ,group_id , count(*))) from main group by group_id) TO PROGRAM 'kafkacat -P -K '';'' -b localhost:9092 -qe  -t AGGREGATIONS';
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Taking a look to the topic contents:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;➜  PG10 kafkacat -C -b localhost:9092 -qeJ -t AGGREGATIONS -X group.id=1  -o beginning
-{&quot;topic&quot;:&quot;AGGREGATIONS&quot;,&quot;partition&quot;:0,&quot;offset&quot;:0,&quot;key&quot;:&quot;&quot;,&quot;payload&quot;:&quot;{\&quot;f1\&quot;:\&quot;2017-02-24T12:34:13.711732-03:00\&quot;,\&quot;f2\&quot;:\&quot;P1\&quot;,\&quot;f3\&quot;:172}&quot;}
-{&quot;topic&quot;:&quot;AGGREGATIONS&quot;,&quot;partition&quot;:0,&quot;offset&quot;:1,&quot;key&quot;:&quot;&quot;,&quot;payload&quot;:&quot;{\&quot;f1\&quot;:\&quot;2017-02-24T12:34:13.711732-03:00\&quot;,\&quot;f2\&quot;:\&quot;P0\&quot;,\&quot;f3\&quot;:140}&quot;}
-{&quot;topic&quot;:&quot;AGGREGATIONS&quot;,&quot;partition&quot;:0,&quot;offset&quot;:2,&quot;key&quot;:&quot;&quot;,&quot;payload&quot;:&quot;{\&quot;f1\&quot;:\&quot;2017-02-24T12:34:13.711732-03:00\&quot;,\&quot;f2\&quot;:\&quot;P2\&quot;,\&quot;f3\&quot;:155}&quot;}
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;With key set:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;topic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AGGREGATIONS&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;partition&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;offset&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;key&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;127.0.0.1/32&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;payload&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;\t{\&quot;f1\&quot;:\&quot;2017-02-24T12:40:39.017644-03:00\&quot;,\&quot;f2\&quot;:\&quot;P1\&quot;,\&quot;f3\&quot;:733}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;topic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AGGREGATIONS&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;partition&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;offset&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;key&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;127.0.0.1/32&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;payload&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;\t{\&quot;f1\&quot;:\&quot;2017-02-24T12:40:39.017644-03:00\&quot;,\&quot;f2\&quot;:\&quot;P0\&quot;,\&quot;f3\&quot;:994}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;topic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AGGREGATIONS&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;partition&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;offset&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;key&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;127.0.0.1/32&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;payload&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;\t{\&quot;f1\&quot;:\&quot;2017-02-24T12:40:39.017644-03:00\&quot;,\&quot;f2\&quot;:\&quot;P2\&quot;,\&quot;f3\&quot;:716}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h3 id=&quot;basic-topic-manipulation&quot;&gt;Basic topic manipulation&lt;/h3&gt;
-
-&lt;p&gt;The bellow commands are useful when using a fresh intalled Apache Kafka version.&lt;/p&gt;
-
-&lt;p&gt;Starting everything:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/zookeeper-server-start.sh config/zookeeper.properties 2&amp;gt; zookeper.log &amp;amp;
-bin/kafka-server-start.sh config/server.properties 2&amp;gt; kafka.log &amp;amp;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Creating topics and others:&lt;/p&gt;
-
-&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/kafka-topics.sh --list --zookeeper localhost:2181
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 3 --topic PGSHARD
-bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic PGSHARD
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic AGGREGATIONS
-bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic AGGREGATIONS
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;NOTE: For deleting topics, you need to enable the &lt;code class=&quot;highlighter-rouge&quot;&gt;delete.topic.enable=true&lt;/code&gt; in
-server.properties file.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Consuming with &lt;code class=&quot;highlighter-rouge&quot;&gt;kafkacat&lt;/code&gt;:&lt;/p&gt;
-
-&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;kafkacat -C -b localhost:9092 -qeJ -t PGSHARD -X group.id&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1  -o beginning
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;There is something useul and is that you can format the output on the fly as needed
-with the &lt;code class=&quot;highlighter-rouge&quot;&gt;-f&lt;/code&gt; option instead the &lt;code class=&quot;highlighter-rouge&quot;&gt;-J&lt;/code&gt; (JSON output format). This could be pretty
-useful for generating rows with specific column definitions.&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;Hope this post its useful!&lt;/p&gt;
-
-&lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
-&lt;script&gt;
-
-
-var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = Playing with Postgres and Kafka.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = '//3manuek.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-&lt;/script&gt;
-
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</description>
-                <link>/kafkaandcopypg</link>
-                <guid>/kafka-and-copy-in-pg</guid>
-                <pubDate>Mon, 20 Feb 2017 00:00:00 -0300</pubDate>
-        </item>
-
-        <item>
                 <title>Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title>
-                <description>&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in 
-the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to 
-say that these features aren’t yet available in the stable release, so they are prune
-to change or extended.&lt;/p&gt;
+                <description>&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in
+the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to
+say that these features &lt;strong&gt;aren’t yet available in the stable release, so they are prune
+to change or extended.&lt;/strong&gt;&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;The current article is just a sneak peak of the upcoming talk &lt;em&gt;Demystifying Logical
+  &lt;p&gt;&lt;strong&gt;Advertising warning!&lt;/strong&gt;
+The current article is just a sneak peak of the upcoming talk &lt;em&gt;Demystifying Logical
 Replication on PostgreSQL&lt;/em&gt; at &lt;a href=&quot;https://www.percona.com/live/17/sessions/demystifying-postgres-logical-replication&quot;&gt;Percona Live Santa Clara 2017&lt;/a&gt;. Get your tickets!&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;h2 id=&quot;logical-replication&quot;&gt;Logical Replication&lt;/h2&gt;
 
 &lt;p&gt;The current logical replication mechanism is only &lt;em&gt;row based&lt;/em&gt;. If you are around MySQL
-world, &lt;em&gt;statement&lt;/em&gt; mode is not supported. If you are not familiar with the difference
-between the modes, TL;DR no matter how many rows are involved
-on the source query, they will be shipped as individual rows into the slaves ( a multi
-row single statement as an INSERT with a lot of values input).&lt;/p&gt;
+world you will notice that &lt;em&gt;statement&lt;/em&gt; mode is not supported. If you are not familiar
+with the difference between the modes, &lt;strong&gt;TL;DR&lt;/strong&gt; no matter how many rows are involved
+on the source query, they will be shipped as individual rows into the slaves. That is,
+a multi-row single statement as an INSERT in the source will produce an entry per modified
+row.&lt;/p&gt;
 
 &lt;p&gt;This is something you may want to have in consideration when doing bulk loads, as there
-are other tools which can be a better fit than streaming everything from the master.&lt;/p&gt;
+are other tools/techniques that could be a better fit other than streaming everything
+from the master using the logical replication stream.&lt;/p&gt;
 
 &lt;p&gt;Generally speaking, it consist in three &lt;em&gt;visible&lt;/em&gt; elements, also detailed on the image
 bellow:&lt;/p&gt;
@@ -206,17 +48,18 @@ bellow:&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/logicalrepinternals.jpg&quot; alt=&quot;POC Image&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;Basic elements of the Logical Replication.&lt;/figcaption&gt;
 
-&lt;p&gt;The most important and yet probably the more complex is the Logical Replication Slot. 
+&lt;p&gt;The most important and yet probably the most complex is the Logical Replication Slot.
 The magic is done internally through the &lt;code class=&quot;highlighter-rouge&quot;&gt;pgoutput&lt;/code&gt; plugin, which is the piece of code in charge
 of translate the WAL records (&lt;code class=&quot;highlighter-rouge&quot;&gt;pg_wal&lt;/code&gt;) into  entries in the &lt;em&gt;logical log&lt;/em&gt; (&lt;code class=&quot;highlighter-rouge&quot;&gt;pg_logical&lt;/code&gt;).&lt;/p&gt;
 
-&lt;p&gt;Is simple: Consumers subscribe to a single Publisher using a slot, which contains the snapshot of the
-database (the given &lt;em&gt;point in time&lt;/em&gt; of the cluster). The slot will provide the information
-to the engine about the point in time since the changes must be replicated.&lt;/p&gt;
+&lt;p&gt;The whole picture can be briefed like this: Consumers subscribe to a single Publisher
+using a slot, which contains the snapshot (LSN) of the database (the given &lt;em&gt;point in time&lt;/em&gt;
+of the cluster). The slot will provide the information to the engine about the point in time
+since the changes must be replicated.&lt;/p&gt;
 
-&lt;p&gt;The full feature is not entirely commited and is expected to count with a &lt;code class=&quot;highlighter-rouge&quot;&gt;WITH COPY DATA&lt;/code&gt;
-option at subscription event creation in order to synchronize data from source. Currently,
-the &lt;a href=&quot;https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl&quot;&gt;patch has some bugs and is in process of review&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;At this point, is important to note that the full feature is not entirely commited
+and is expected to count with a &lt;code class=&quot;highlighter-rouge&quot;&gt;WITH COPY DATA&lt;/code&gt; option at subscription event creation
+in order to synchronize data from source. Currently, the &lt;a href=&quot;https://www.postgresql.org/message-id/56f3ec6f1989c738a0fa865b13d25761@xs4all.nl&quot;&gt;patch has some bugs and is in process of review&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;Although the whole topic is interesting, everything related to Logical Decoding will be ommited
 on this article. You can do more than just Postgres-to-Postgres &lt;em&gt;replication&lt;/em&gt;.&lt;/p&gt;
@@ -224,16 +67,18 @@ on this article. You can do more than just Postgres-to-Postgres &lt;em&gt;replic
 &lt;h2 id=&quot;partitioning&quot;&gt;Partitioning&lt;/h2&gt;
 
 &lt;p&gt;In the past versions, it was possible to reach a very flexible partitioning approach by combining
-inheritance and multi-language based triggers. The current implementation does not allow to mix 
-inheritance and partitioning but still has some flexibility for detaching and attaching partitions.&lt;/p&gt;
+inheritance and multi-language based triggers. The current implementation does not allow to mix
+inheritance and partitioning but still has some flexibility for detaching and attaching partitions,
+using an explicit syntax.&lt;/p&gt;
 
 &lt;p&gt;In the current example, we are going to create three partitions with no data, just for keep focus
 only on the &lt;em&gt;POC&lt;/em&gt;.&lt;/p&gt;
 
 &lt;h2 id=&quot;poc&quot;&gt;POC&lt;/h2&gt;
 
-&lt;p&gt;The concept works around on having slaves with a different retention policy of each partitioning by
-replicating each on different destinations. As an addition, we are able to create a dummy structure,
+&lt;p&gt;The current concept works around on having slaves with a different retention policy
+of each partitioning by replicating each on different destinations and filtering
+the DELETE operations. As an addition, we are able to create a dummy structure,
 to point to each external partitioning for reporting or querying historic data.&lt;/p&gt;
 
 &lt;p&gt;The concept has three types of nodes/databases:&lt;/p&gt;
@@ -249,30 +94,38 @@ to point to each external partitioning for reporting or querying historic data.&
 &lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/logreppart.jpg&quot; alt=&quot;POC Image&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;Flight view of the POC.&lt;/figcaption&gt;
 
-&lt;h3 id=&quot;partitioning-on-the-master-database&quot;&gt;Partitioning on the master database&lt;/h3&gt;
+&lt;p&gt;As you probably notice, by removing rows on the source database and filtering DELETE
+events at publishing time, you will end up with slaves holding more data, allowing larger timeframe queries. This is particularly useful for splitting BI queries in different layers depending on the date ranges specs, saving storage purposes on the source or  keeping also a more maintenable table size.
+Queries against archiving can be done directly on the nodes or through the proxy implementation
+mentioned forward.&lt;/p&gt;
 
-&lt;p&gt;The master database will hold the definitions and the most recent data. The current concept, feeds 
+&lt;h3 id=&quot;partitioning-on-the-source-databaseentrypoint&quot;&gt;Partitioning on the source database/entrypoint&lt;/h3&gt;
+
+&lt;p&gt;The master database will hold the definitions and the most recent data. The current concept, feeds
 from a Apache Kafka broker’s topic which is partitioned in three. We are going to feed this table
 with streams using COPY command. The article explaining how this was done is &lt;a href=&quot;http://www.3manuek.com/kafkaandcopypg&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;The current master database tables DDL is:&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;timestamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;without&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;zone&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DEFAULT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;now&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jsonb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LIST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;VALUES&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'P0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;VALUES&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'P1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard2&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard2&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OF&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;VALUES&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;IN&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'P2'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  
+
 &lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ix_main_shard_p0_key&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ix_main_shard_p1_key&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ix_main_shard_p2_key&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;p&gt;Now, it is time to publish them. At this point no slot is associated with the
-publications:&lt;/p&gt;
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;group_id&lt;/code&gt; column holds the topic’s partition number from which the data has
+been consumed from the Kafka broker.&lt;/p&gt;
+
+&lt;p&gt;Now, it is time to publish them within the corresponding event filtering. At this
+point, there isn’t associated any replication slot with the publications:&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PUBLICATION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P0&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NOPUBLISH&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DELETE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PUBLICATION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NOPUBLISH&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DELETE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
@@ -280,46 +133,43 @@ publications:&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;p&gt;By not publishing DELETE events, it allows to the administrator the capability of having
-different retention policies between nodes and the source database. This is pretty useful
-for saving storage purposes on the master, keeping also a more maintenable table size.
-Queries against archiving can be done directly on the nodes or through the proxy implementation
-mentioned forward.&lt;/p&gt;
-
-&lt;p&gt;By the current state of the last commits on PostgreSQL, Logical Replication does not support 
-filtering by column content as &lt;a href=&quot;https://2ndquadrant.com/es/resources/pglogical/&quot;&gt;pglogical&lt;/a&gt; tool does. Even tho is possible to filter by 
-event statement, which still quite useful for our purpose (&lt;code class=&quot;highlighter-rouge&quot;&gt;NOPUBLISH|PUBLISH&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;By the current state of the last commits on PostgreSQL, Logical Replication does not support
+filtering by column value as &lt;a href=&quot;https://2ndquadrant.com/es/resources/pglogical/&quot;&gt;pglogical&lt;/a&gt; tool does. Even tho is possible to filter by
+event statement, which still quite useful for our purpose (&lt;code class=&quot;highlighter-rouge&quot;&gt;NOPUBLISH|PUBLISH&lt;/code&gt;) as
+described above.&lt;/p&gt;
 
 &lt;h3 id=&quot;creating-the-nodes&quot;&gt;Creating the nodes&lt;/h3&gt;
+
+&lt;p&gt;The table definition on the nodes should be straightforward:&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;timestamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;without&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;zone&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jsonb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;p&gt;We now create the SUBSCRIPTION to feed from the corresponding PUBLICATION on the master database.
+&lt;p&gt;We now need to create the SUBSCRIPTION to feed from the corresponding PUBLICATION on the master database.
 As the current implementation of the SUBSCRIPTION event does not support with copy data and the
-partitions are empty, we are going to create a logical replication slot on the source. This is 
+partitions are empty, we are going to create a logical replication slot on the source. This is
 easily done by using the &lt;code class=&quot;highlighter-rouge&quot;&gt;CREATE SLOT&lt;/code&gt; clause. This means that it will set the LSN position from
 which the changes must be applied to the destination:&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SUBSCRIPTION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P0&lt;/span&gt; 
-  &lt;span class=&quot;k&quot;&gt;CONNECTION&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'port=7777 user=postgres dbname=master'&lt;/span&gt; 
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SUBSCRIPTION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P0&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;CONNECTION&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'port=7777 user=postgres dbname=master'&lt;/span&gt;
   &lt;span class=&quot;n&quot;&gt;PUBLICATION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;P_main_P0&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SLOT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;p&gt;It is remarkable to note, that after subscription creation you will notice new  &lt;em&gt;workers&lt;/em&gt; in charge 
+&lt;p&gt;It is remarkable to note, that after subscription creation you will notice new  &lt;em&gt;workers&lt;/em&gt; in charge
 of sending and receiving those changes, as described in the image above.&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;As it is not the scope of this article, I’m going to skip the explanation of the 
-&lt;em&gt;[logical|streaming] replication slots&lt;/em&gt; in order to keep this readable. 
+  &lt;p&gt;As it is not the scope of this article, I’m going to skip the explanation of the
+&lt;em&gt;[logical|streaming] replication slots&lt;/em&gt; in order to keep this readable.
 Although, it is a core concept of the replication feature.&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;h3 id=&quot;querying-from-an-external-database&quot;&gt;Querying from an external database&lt;/h3&gt;
 
-&lt;p&gt;This example has no other purpose than to show an already existent feature (although improved 
+&lt;p&gt;This example has no other purpose than to show an already existent feature (although improved
 in recent versions) in action. But very specially I’m going to highlight the INHERIT on a
 FOREIGN TABLE.&lt;/p&gt;
 
@@ -350,14 +200,17 @@ for avoiding queries to remote tables that do not match the &lt;code class=&quot
 an EXPLAIN as proof that none of the other foreign tables have been examined.&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'847f5dd2-f892-4f56-b04a-b106063cfe0d'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'P0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
- &lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;                                                                     &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;                                                                      
-&lt;span class=&quot;c1&quot;&gt;----------+--------------------------------------------------------------------------------------------------------------------------------------------------&lt;/span&gt;
+ &lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;                &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;                                                                      
+&lt;span class=&quot;c1&quot;&gt;----------+--------------------------------------------------------------------&lt;/span&gt;
  &lt;span class=&quot;n&quot;&gt;P0&lt;/span&gt;       &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;&quot;key&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;847f5dd2-f892-4f56-b04a-b106063cfe0d&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;topic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;PGSHARD&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;offset&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;47&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;payload&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;PXdmzb3EhEeNDdn5surg2VNmEdJoIys9&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;partition&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 
-&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;EXPLAIN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'847f5dd2-f892-4f56-b04a-b106063cfe0d'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'P0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-                                                         &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PLAN&lt;/span&gt;                                                         
-&lt;span class=&quot;c1&quot;&gt;----------------------------------------------------------------------------------------------------------------------------&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;EXPLAIN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
+                &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;
+                &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'847f5dd2-f892-4f56-b04a-b106063cfe0d'&lt;/span&gt;
+                   &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'P0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+                    &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PLAN&lt;/span&gt;          
+&lt;span class=&quot;c1&quot;&gt;--------------------------------------------------------------------------------&lt;/span&gt;
  &lt;span class=&quot;n&quot;&gt;Append&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;135&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;07&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;44&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
    &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;Seq&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;44&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
          &lt;span class=&quot;n&quot;&gt;Filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'P0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bpchar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'key'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'847f5dd2-f892-4f56-b04a-b106063cfe0d'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
@@ -392,256 +245,6 @@ s.setAttribute('data-timestamp', +new Date());
                 <link>/postgres10logrepypart</link>
                 <guid>/postgres-10-logrep-y-part</guid>
                 <pubDate>Sat, 18 Feb 2017 00:00:00 -0300</pubDate>
-        </item>
-
-        <item>
-                <title>Simple and manual sharding on PostgreSQL.</title>
-                <description>&lt;h2 id=&quot;concept&quot;&gt;Concept&lt;/h2&gt;
-
-&lt;p&gt;In the current concept, we are going to combine &lt;em&gt;Foreign tables inheritance&lt;/em&gt; with
-the &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; extension, both being already available features since 9.5 version.&lt;/p&gt;
-
-&lt;p&gt;Cross-node partitioning allows a better data locality and a more scalable model
-than keeping local partitions. Being said, the data will be split into several
-nodes and organized using a particular key, which will determine in which &lt;em&gt;shard&lt;/em&gt;
-data will be allocated. For the current POC, we are going to specify the &lt;code class=&quot;highlighter-rouge&quot;&gt;shardKey&lt;/code&gt;
-, which is a simple &lt;code class=&quot;highlighter-rouge&quot;&gt;char(2)&lt;/code&gt; type.&lt;/p&gt;
-
-&lt;h3 id=&quot;how-this-was-done-before&quot;&gt;How this was done before&lt;/h3&gt;
-
-&lt;p&gt;Until today, the only way to perform findings over this method, was from the application
-layer, by issuing queries directly to the nodes by keeping certain deterministic way
-as [1] or using a catalog table as [2] (&lt;em&gt;NOTE: the bellow examples are using pseudo code&lt;/em&gt;).&lt;/p&gt;
-
-&lt;p&gt;[1]&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;query = &quot;SELECT name,lastname FROM &quot; + relation + partition &quot; WHERE &quot; id =&quot; + person_id
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;[2]:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;shard = query(&quot;SELECT shard FROM catalog WHERE key = &quot; + person_id)
-query = &quot;SELECT name,lastname FROM &quot; + relation + shard &quot; WHERE &quot; id =&quot; + person_id
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h3 id=&quot;how-we-are-going-to-implement-this-now&quot;&gt;How we are going to implement this now&lt;/h3&gt;
-
-&lt;p&gt;As &lt;em&gt;foreign tables&lt;/em&gt; (FT) does not hold any data, it is possible to keep copies
-aroud all the databases involved and also in separated instances if this is
-necessary.&lt;/p&gt;
-
-&lt;p&gt;All the operations against the table will be done through the parent table of
-the FT tree tables and Postgres itself will determine the destination FT using
-the &lt;em&gt;constraint exclusion&lt;/em&gt; feature, which will be detailed further.&lt;/p&gt;
-
-&lt;p&gt;For HA, you are limited on the data nodes to implement any other replication
-solution available in the core version. To be fair, 9.6 supports &lt;em&gt;streaming replication&lt;/em&gt;
-and logical decoding, which is used by the &lt;code class=&quot;highlighter-rouge&quot;&gt;pglogical&lt;/code&gt; tool for providing advanced
-logical replication per table basis.&lt;/p&gt;
-
-&lt;h2 id=&quot;foreign-tables&quot;&gt;Foreign tables&lt;/h2&gt;
-
-&lt;p&gt;Foreign tables do not contain data by itselves and they only reference to a external
-table  on a different Postgres database. There are plenty of different extensions
-allowing external tables on different data store solutions, but in this particular
-article we are going to focus on &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; as we want to explore more about
-condition pushdowns, which makes queries against these tables more performant
-on more complex queries.&lt;/p&gt;
-
-&lt;p&gt;The framework underlying for the Foreign Data Wrappers, support both reads and
-write operations. &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; is not the exception and does also support condition
-pushdown for avoiding large scans on the source tables.&lt;/p&gt;
-
-&lt;p&gt;On each database holding the FT, you need to invoke the extension creation:&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;EXTENSION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;FT have two main elements,necessary to point correctly both in source as in user
-privileges. If you are paranoic enough, you’ll prefer to use unprivileged users
-with limited grants over the tables that you use.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Server&lt;/li&gt;
-  &lt;li&gt;User Mapping&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;[1]&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'5434'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'shard1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'5435'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'shard2'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;-- Slaves&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main_replica&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'7777'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'shard1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main_replica&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'8888'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'shard2'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;[2]&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;-- User mapping&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main_replica&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main_replica&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;The FT definition is indeed pretty straightforward if we don’t want to do any further
-collumn filtering:&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bigint&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;CHECK&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;INHERITS&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard02&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;CHECK&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'02'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;INHERITS&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h3 id=&quot;writable-fdws&quot;&gt;Writable FDWs&lt;/h3&gt;
-
-&lt;p&gt;Even if I don’t recommend the following approach, it can be very easy to centralize
-the writes &lt;em&gt;to&lt;/em&gt; the shards through the FT. Although, it requires to code a trigger
-for managing this.&lt;/p&gt;
-
-&lt;p&gt;This methodology is not very performant, as for bulk writes you may ending up to
-do this on each node locally.&lt;/p&gt;
-
-&lt;p&gt;A very simplistic approach for an INSERT trigger will be:&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;REPLACE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FUNCTION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f_main_part&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;RETURNS&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TRIGGER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AS&lt;/span&gt;
-&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FMAINPART&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;DECLARE&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;partition_name&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;BEGIN&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;partition_name&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'main_shard'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NEW&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-            &lt;span class=&quot;k&quot;&gt;EXECUTE&lt;/span&gt;  &lt;span class=&quot;s1&quot;&gt;'INSERT INTO '&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;quote_ident&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;partition_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt;  &lt;span class=&quot;s1&quot;&gt;' SELECT ($1).*'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NEW&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-            &lt;span class=&quot;k&quot;&gt;RETURN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;END&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FMAINPART&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;LANGUAGE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plpgsql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TRIGGER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;t_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BEFORE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INSERT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;EACH&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ROW&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;EXECUTE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;PROCEDURE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f_main_part&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h2 id=&quot;data-on-shards&quot;&gt;Data on shards&lt;/h2&gt;
-
-&lt;p&gt;As shards contain data, the declaration ends up to be a  common table within
-the necessary suffix for localization:&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bigint&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;CHECK&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;A simple test could be done by issuing:&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INSERT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INTO&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'0'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;round&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;random&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;random&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;text&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;generate_series&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;INSERT&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;As you may intuing right now, the above statement inserts data on both nodes,
-and the trigger will derive the row accordingly to the corresponding shard.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;NOTE: the shard number is generated by &lt;code class=&quot;highlighter-rouge&quot;&gt;random()*1+1&lt;/code&gt; which output rounds between
-1 and 2.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;h2 id=&quot;grab-them-from-the-hidden-columns&quot;&gt;&lt;em&gt;Grab them from the hidden columns&lt;/em&gt;&lt;/h2&gt;
-
-&lt;p&gt;Querying data can be nicely transparent, as shown bellow:&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tableoid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;group&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tableoid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
- &lt;span class=&quot;n&quot;&gt;tableoid&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;----------+-------&lt;/span&gt;
-    &lt;span class=&quot;mi&quot;&gt;33226&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;   &lt;span class=&quot;mi&quot;&gt;104&lt;/span&gt;
-    &lt;span class=&quot;mi&quot;&gt;33222&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;    &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;For example, retrieving a single row is easy as:&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;       
-&lt;span class=&quot;c1&quot;&gt;-------------------&lt;/span&gt;
- &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;971926014870405&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;row&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Behind the scenes, the query pushed to the remote servers contains the corresponding
-filters for the columns explicited in the query.&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;explain&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;VERBOSE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
-                               &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;
-                                                &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-                                 &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PLAN&lt;/span&gt;                                                    
-&lt;span class=&quot;c1&quot;&gt;--------------------------------------------------------------------------------&lt;/span&gt;
- &lt;span class=&quot;n&quot;&gt;Append&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;131&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;95&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;Seq&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
-         &lt;span class=&quot;n&quot;&gt;Filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardkey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bpchar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;Foreign&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;131&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;95&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
-         &lt;span class=&quot;n&quot;&gt;Remote&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SQL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-             &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardkey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bpchar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Even if we don’t want to provide the shardKey, the &lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt; filter will be pushed across
-all the shards.&lt;/p&gt;
-
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;explain&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;VERBOSE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-                                    &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PLAN&lt;/span&gt;                                    
-&lt;span class=&quot;c1&quot;&gt;--------------------------------------------------------------------------------&lt;/span&gt;
- &lt;span class=&quot;n&quot;&gt;Append&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;256&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;83&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;Seq&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
-         &lt;span class=&quot;n&quot;&gt;Filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;Foreign&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
-         &lt;span class=&quot;n&quot;&gt;Remote&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SQL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;Foreign&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard02&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard02&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
-         &lt;span class=&quot;n&quot;&gt;Remote&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SQL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard02&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Hope you liked the article!&lt;/p&gt;
-
-&lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
-&lt;script&gt;
-
-
-var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = Simple and manual sharding on PostgreSQL.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = '//3manuek.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-&lt;/script&gt;
-
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
-
-</description>
-                <link>/poorsmansharding</link>
-                <guid>/simple-manual-sharding</guid>
-                <pubDate>Tue, 31 Jan 2017 00:00:00 -0300</pubDate>
         </item>
 
         <item>

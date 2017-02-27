@@ -19,7 +19,16 @@ For professional contact, you can send a contact request or message through my
 - Although I've played with Windows in the past, I consider that at least 98% of the servers that I have played with, run Linux, Unix BSD or Solaris.
 - Postgres and MySQL/MariaDB are my most known database systems. However, I've hands on others DB/DS experience in Oracle, Vertica, MongoDB, Redis, Greenplum, among others.
 - Good AWS experience.
-- I also have some experience on Elasticsearch, Docker, Sphinx, Rabbitmq, Zeromq, Ansible, HDFS/hadoop, Cassandra and others.
+
+My current technology stack is:
+- PostgreSQL and extensions, MySQL/MariaDB, XtraDB Cluster, Sphinx, MongoDB, Elasticsearch, Cassandra, etcd
+- Vertica and Redshift
+- Ansible
+- Rabbitmq, ZeroMQ and PQ(Python implementation)
+- Apache Kafka
+- Linux and Unix
+- Bash, Python, Golang
+- lxc and Docker
 
 
 As a previous and totally unrelated experience, I worked at Federal Penitentiary Argentinian Force,

@@ -3,7 +3,7 @@ name: Emanuel Calvo
 bio: Open Source Data Engineering and Hidden Reptilian
 
 # twitter summary info
-description: A few experiments and articles on OSDB 
+description: A few experiments and articles on OSDB
 
 # if it's an external image, update below for true
 # better with square images
@@ -22,7 +22,7 @@ url: http://www.3manuek.com #www.3manuek.com
 permalink: /:title/
 
 # To enable google analytics, supply your token below
-analytics-google: 'UA-76884172-1'
+analytics-google: 'UA-79505389-1'
 
 
 # To enable piwik tracking, supply your url & site ID below
@@ -103,6 +103,7 @@ animation: true
 gems:
   - jekyll-seo-tag
   - jekyll-gist
+  - jekyll-feed
 
 jekyll-mentions:
     base_url: https://github.com
