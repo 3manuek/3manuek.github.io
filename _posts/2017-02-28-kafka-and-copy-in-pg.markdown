@@ -13,30 +13,41 @@ permalink: kafkacatandcopypg
 
 *This article is WIP*
 
-![POC Image][4]
+![Dosequis][4]
 
 
-## COPY and kafkacat
+## The introduction
 
-Obviously, integrations as [bottlewater][3] allows a more elegant solution for
-producing changes from a Postgres instance to a kafka broker.
+[Apache Kafka][5] is a well known distributed streaming platform for data processing
+and consistent messaging. It allows you to consistently centralize data streams for
+several purposes. I found interesting [Mozilla's Data pipeline implementation][6],
+particularly as it shows Kafka as an entry point of the flow.
 
-Althuogh, the exposed technique in the current post could be used for more
-simplistic implementations.
+[Postgres Bottled water][3] is a different approach that deserves a mention. In this
+case, Postgres instances are the producers and brokers consume the streams for
+propagating to other platforms. The advantage here is the well known Postgres'
+ACID capabilities combined with a advance SQL features. As it comes as an extension,
+it can run within other existing features.
+
+It is possible also, to consume and produce data to a broker by using a new feature
+that extended the COPY tool for executing shell commands for input/output operations.
+A nice highlight of this feature can be read [here][7].
 
 
-### kafkacat and librdkafka
+## kafkacat and librdkafka
 
 [kafkacat][1] is a tool based on the same author's library [librdkafka][2] which
-does exactly what its name propose: produce and consume from a Kafka broker.
+does exactly what its name says: produce and consume from a Kafka broker like `cat`
+command.
 
 
-
-### Producing to Kafka broker
+## Producing to Kafka broker
 
 Producing fake data to the Kafka broker, composed by `key` and `payload`:
 
 ```sh
+
+# Random text
 randtext() {cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1}
 while (true) ;
   do
@@ -47,18 +58,39 @@ while (true) ;
   done
 ```
 
+`-K` option defines the delimiter between the _key_ and the _payload_, `-t` defines
+the topic you want to produce for. Originally, this topic has been created with 3
+partitions (0-2), which will allow us to consume data in different channels, opening
+the door for parallelization.  
 
-### Consuming topics incrementally inside Postgres
+_Keys_ aren't mandatory when producing to a broker, and actually for certain solutions
+you can omit it.
 
+## Consuming and Producing inside a Postgres instance
 
-Inside Postgres:
+The general syntax will be something close as:
 
 ```sql
-COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print "P0\t" $0 }'' ';
+COPY main(group_id,payload)
+  FROM PROGRAM
+  'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print "P0\t" $0 }'' ';
 ```
 
+Code piping to an `awk` is not strictly necessary and it is only for showing the
+flexibility of the feature. When using the option `-J`, the output will be printed
+in json format, containing all the message information, including partition, key and
+message.
 
-Consuming the topic partitionins from the `beginning` and setting a limit of `100` documents:
+`-c` option will limit the amount of rows in the operation. As COPY is transactional,
+be aware that the higher is the amount of rows, the larger will be the transaction and
+COMMIT times will be affected.
+
+
+### Consuming topics incrementally
+
+
+Consuming the topic partitions from the `beginning` and setting a limit of `100`
+documents is easy as:
 
 ```sh
 bin/psql -p7777 -Upostgres master <<EOF
@@ -68,7 +100,8 @@ COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -q
 EOF
 ```
 
-And then using `stored`, in order to consume from the last offset left by the consumer on the group:
+And then using `stored`, in order to consume from the last offset consumed by the
+consumer on the group:
 
 ```sh
 bin/psql -p7777 -Upostgres master <<EOF
@@ -78,14 +111,27 @@ COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -q
 EOF
 ```
 
-### Producing messages with COPY
+Each COPY line, can be executed in parallel in different Postgres instances, making
+this approach flexible and easy scalable across a board of servers.
+
+This is not entirely consistent, as once the offset is consumed, will be marked
+in the broker, wether if transaction fails at Postgres side can potentially lead
+to data missing.
+
+
+### Producing messages out the Postgres instances
 
 The same way is possible to consume changes, it is possible to do the same for producing
-data to the broker.
+data to the broker. This can be incredibly useful for micro aggregations, done over the
+consumed raw data from the broker.
+
+The bellow example shows how to run a simple query with a very simplistic aggregation
+and publish it in JSON format to the broker:
 
 
 ```
-master=# COPY (select row_to_json(row(now() ,group_id , count(*))) from main group by group_id) TO PROGRAM 'kafkacat -P -b localhost:9092 -qe  -t AGGREGATIONS';
+master=# COPY (select row_to_json(row(now() ,group_id , count(*))) from main group by group_id)
+         TO PROGRAM 'kafkacat -P -b localhost:9092 -qe  -t AGGREGATIONS';
 COPY 3
 ```
 
@@ -93,12 +139,12 @@ If you have a farm of servers and want to search the topic contents using a key,
 you can do the following tweak:
 
 ```
-COPY (select inet_server_addr() || ';', row_to_json(row(now() ,group_id , count(*))) from main group by group_id) TO PROGRAM 'kafkacat -P -K '';'' -b localhost:9092 -qe  -t AGGREGATIONS';
+COPY (select inet_server_addr() || ';', row_to_json(row(now() ,group_id , count(*))) from main group by group_id)
+   TO PROGRAM 'kafkacat -P -K '';'' -b localhost:9092 -qe  -t AGGREGATIONS';
 ```
 
 
-Taking a look to the topic contents:
-
+This is how the published payloads look like (without _key_):
 
 ```
 ➜  PG10 kafkacat -C -b localhost:9092 -qeJ -t AGGREGATIONS -X group.id=1  -o beginning
@@ -107,7 +153,7 @@ Taking a look to the topic contents:
 {"topic":"AGGREGATIONS","partition":0,"offset":2,"key":"","payload":"{\"f1\":\"2017-02-24T12:34:13.711732-03:00\",\"f2\":\"P2\",\"f3\":155}"}
 ```
 
-With key set:
+... and with _key_:
 
 ```
 {"topic":"AGGREGATIONS","partition":0,"offset":3,"key":"127.0.0.1/32","payload":"\t{\"f1\":\"2017-02-24T12:40:39.017644-03:00\",\"f2\":\"P1\",\"f3\":733}"}
@@ -116,13 +162,14 @@ With key set:
 ```
 
 
-### Basic topic manipulation
+## Basic topic manipulation
 
-The bellow commands are useful when using a fresh intalled Apache Kafka version.
+If you are new into Kafka, you will find useful to count with a few command examples
+to play with your local broker.
 
 Starting everything:
 
-```
+```sh
 bin/zookeeper-server-start.sh config/zookeeper.properties 2> zookeper.log &
 bin/kafka-server-start.sh config/server.properties 2> kafka.log &
 ```
@@ -140,20 +187,8 @@ bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic AGGREGATIONS
 > NOTE: For deleting topics, you need to enable the `delete.topic.enable=true` in
 > server.properties file.
 
-Consuming with `kafkacat`:
 
-```sh
-kafkacat -C -b localhost:9092 -qeJ -t PGSHARD -X group.id=1  -o beginning
-```
-
-There is something useul and is that you can format the output on the fly as needed
-with the `-f` option instead the `-J` (JSON output format). This could be pretty
-useful for generating rows with specific column definitions.
-
-
----
-
-Hope this post its useful!
+Hope you find this useful!
 
 
 {% if page.comments %}
@@ -180,3 +215,6 @@ s.setAttribute('data-timestamp', +new Date());
 [2]: https://github.com/edenhill/librdkafka
 [3]: https://www.confluent.io/blog/bottled-water-real-time-integration-of-postgresql-and-kafka/
 [4]: http://www.3manuek.com/assets/posts/dosequis.jpg
+[5]: https://kafka.apache.org/
+[6]: https://robertovitillo.com/2017/01/23/an-overview-of-mozillas-data-pipeline/
+[7]: http://paquier.xyz/postgresql-2/postgres-9-6-feature-highlight-copy-dml-statements/

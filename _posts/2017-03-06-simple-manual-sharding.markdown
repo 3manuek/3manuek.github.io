@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Simple and manual sharding on PostgreSQL."
+title:  "[WIP] Simple and manual sharding on PostgreSQL."
 date:   2017-03-06
 description: _Foreign Data Wrappers_ inheritance.
 tags : [PostgreSQL, Sharding, cosasAtadasConAlambre]
@@ -10,6 +10,10 @@ category: blog
 comments: true
 permalink: postgresmanualsharding
 ---
+
+*This article is WIP*
+
+![Dosequis][4]
 
 
 ## Concept
@@ -255,3 +259,5 @@ s.setAttribute('data-timestamp', +new Date());
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 {% endif %}
+
+[4]: http://www.3manuek.com/assets/posts/dosequis.jpg

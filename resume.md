@@ -3,8 +3,6 @@ title: Resume
 layout: post
 ---
 
-![Profile Image]({{ site.url }}/{{ site.picture }})
-
 
 For professional contact, you can send a contact request or message through my
 [LinkedIn Profile](https://www.linkedin.com/in/ecbcbcb).
