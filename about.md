@@ -23,7 +23,6 @@ do not represent those of my employer.
 	<li>Ansible</li>
 	<li>Rabbitmq, ZeroMQ and PQ(Python implementation)</li>
 	<li>Git/Others</li>
-	<li></li>
 	<li>Linux/Unix based OS/LXC/Docker</li>
 </ul>
 
