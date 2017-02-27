@@ -12,10 +12,6 @@ permalink: kafkacatandcopypg
 author: 3manuek
 ---
 
-*This article is WIP*
-
-![Dosequis][4]
-
 
 ## The introduction
 
