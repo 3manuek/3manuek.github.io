@@ -11,6 +11,7 @@ categories:
 category: blog
 comments: true
 permalink: pgp-bitcoint-sha
+author: 3manuek
 ---
 
 ## La razón
@@ -185,4 +186,3 @@ s.setAttribute('data-timestamp', +new Date());
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 {% endif %}
-

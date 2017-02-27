@@ -5,8 +5,8 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Mon, 27 Feb 2017 19:21:20 -0300</lastBuildDate>
-        <pubDate>Mon, 27 Feb 2017 19:21:20 -0300</pubDate>
+        <lastBuildDate>Mon, 27 Feb 2017 19:34:28 -0300</lastBuildDate>
+        <pubDate>Mon, 27 Feb 2017 19:34:28 -0300</pubDate>
         <ttl>60</ttl>
 
 
@@ -368,7 +368,7 @@ s.setAttribute('data-timestamp', +new Date());
 &lt;p&gt;First of all, as it’ll explained later, not all the tables, indexes and functions are written on the &lt;em&gt;db statsfile&lt;/em&gt;. Basically, a basic formula will be:&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;&lt;em&gt;SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + 
+  &lt;p&gt;&lt;em&gt;SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers +
                     (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) +
                     closingChar&lt;/em&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
@@ -377,8 +377,8 @@ s.setAttribute('data-timestamp', +new Date());
 in mind that this considers all tables flushed on file), there is a query you can execute
 safely on &lt;em&gt;each database in your PostgreSQL instance&lt;/em&gt; (statfile is one &lt;em&gt;per database&lt;/em&gt;):&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;164&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;size in bytes&quot;&lt;/span&gt; 
-  &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pg_class&lt;/span&gt; 
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;164&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;size in bytes&quot;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pg_class&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;relkind&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'r'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'i'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'S'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
@@ -421,7 +421,7 @@ of runtime statistics can be found &lt;a href=&quot;https://www.postgresql.org/d
 &lt;p&gt;The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to:&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;&lt;em&gt;PGSTAT_FILE_FORMAT_ID + describer + PgStat_GlobalStats + 
+  &lt;p&gt;&lt;em&gt;PGSTAT_FILE_FORMAT_ID + describer + PgStat_GlobalStats +
 PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt;.&lt;/p&gt;
 &lt;/blockquote&gt;
 

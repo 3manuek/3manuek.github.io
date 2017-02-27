@@ -7,6 +7,8 @@ tags : [Anonimato, General]
 categories:
 - General
 permalink: anonimato
+author: 3manuek
+category: blog
 ---
 
 > Agradecimiento a Guido Vilariño por la revisión del artículo.

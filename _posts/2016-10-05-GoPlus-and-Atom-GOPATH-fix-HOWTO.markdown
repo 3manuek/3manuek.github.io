@@ -11,6 +11,7 @@ category: blog
 comments: true
 tagline: A fix for the unloaded GOPATH.
 permalink: goplusatomcopath
+author: 3manuek
 ---
 
 ## The background

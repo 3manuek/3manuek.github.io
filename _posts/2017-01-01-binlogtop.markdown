@@ -15,7 +15,7 @@ externalLink: false
 ---
 
 Currently `binlogtop` is in status *WIP* and very alpha state, although there is a python
-script doing sort of the same thing is: [binlogEventStats](https://github.com/3manuek/binlogEventStats). 
+script doing sort of the same thing is: [binlogEventStats](https://github.com/3manuek/binlogEventStats).
 
 
 

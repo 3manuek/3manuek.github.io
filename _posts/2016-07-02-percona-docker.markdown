@@ -10,6 +10,7 @@ category: blog
 comments: true
 tagline: A simple addition to current docs.
 permalink: perconaserverbasichowto
+author: 3manuek
 ---
 
 ## Before starting the container

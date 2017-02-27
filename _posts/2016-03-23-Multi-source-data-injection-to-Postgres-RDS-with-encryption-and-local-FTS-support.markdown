@@ -9,7 +9,8 @@ categories:
 permalink: rds-hipaa-fts
 star: true
 category: blog
-comments: true 
+comments: true
+author: 3manuek 
 ---
 
 
@@ -90,7 +91,7 @@ A simple flight view of the idea can be observed in the image bellow.
 
 ![Implemented POC][1]{: class="bigger-image" }
 <figcaption class="caption">POC image, detailing each part of the examples.</figcaption>
-[Source][2] 
+[Source][2]
 
 
 
@@ -687,5 +688,3 @@ s.setAttribute('data-timestamp', +new Date());
 [3]: http://www.drugs.com/drug_information.html
 [4]: https://simple.wikipedia.org/wiki/List_of_diseases
 [5]: http://www.sai.msu.su/~megera/postgres/fts/doc/appendixes.html
-
-

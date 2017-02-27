@@ -11,6 +11,7 @@ category: blog
 comments: true
 tagline: If you are using RDS, you want to read this.
 permalink: pgstatramdisksize
+author: 3manuek
 ---
 
 ## What does it change and why is so important?
@@ -47,7 +48,7 @@ Before move forward, lets detail the structure of the entries for the stat file:
 
 First of all, as it'll explained later, not all the tables, indexes and functions are written on the _db statsfile_. Basically, a basic formula will be:
 
-> _SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers + 
+> _SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers +
 >                     (tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) +
 >                     closingChar_
 
@@ -57,8 +58,8 @@ safely on _each database in your PostgreSQL instance_ (statfile is one _per data
 
 
 ```sql
-SELECT count(*) * 164 "size in bytes" 
-  FROM pg_class 
+SELECT count(*) * 164 "size in bytes"
+  FROM pg_class
   WHERE relkind ('r','i','S');
 ```
 
@@ -80,7 +81,7 @@ Structure of the global stats:
 
 The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to:
 
-> _PGSTAT_FILE_FORMAT_ID + describer + PgStat_GlobalStats + 
+> _PGSTAT_FILE_FORMAT_ID + describer + PgStat_GlobalStats +
 > PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases_.
 
 So, as you can see, the limitation imposed by AWS in regarding is way above the amount of data held on this directory in most of the databases that can run inside RDS expectations.

@@ -9,6 +9,7 @@ categories:
 category: blog
 comments: true
 permalink: postgres10logrepypart
+author: 3manuek
 ---
 
 

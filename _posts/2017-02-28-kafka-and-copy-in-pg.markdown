@@ -9,6 +9,7 @@ categories:
 category: blog
 comments: true
 permalink: kafkacatandcopypg
+author: 3manuek
 ---
 
 *This article is WIP*
