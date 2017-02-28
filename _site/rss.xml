@@ -5,10 +5,204 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Mon, 27 Feb 2017 19:41:26 -0300</lastBuildDate>
-        <pubDate>Mon, 27 Feb 2017 19:41:26 -0300</pubDate>
+        <lastBuildDate>Tue, 28 Feb 2017 13:40:55 -0300</lastBuildDate>
+        <pubDate>Tue, 28 Feb 2017 13:40:55 -0300</pubDate>
         <ttl>60</ttl>
 
+
+        <item>
+                <title>Playing with Postgres and Kafka.</title>
+                <description>&lt;h2 id=&quot;the-introduction&quot;&gt;The introduction&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://kafka.apache.org/&quot;&gt;Apache Kafka&lt;/a&gt; is a well known distributed streaming platform for data processing
+and consistent messaging. It allows you to consistently centralize data streams for
+several purposes. I found interesting &lt;a href=&quot;https://robertovitillo.com/2017/01/23/an-overview-of-mozillas-data-pipeline/&quot;&gt;Mozilla’s Data pipeline implementation&lt;/a&gt;,
+particularly as it shows Kafka as an entry point of the flow.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.confluent.io/blog/bottled-water-real-time-integration-of-postgresql-and-kafka/&quot;&gt;Postgres Bottled water&lt;/a&gt; is a different approach that deserves a mention. In this
+case, Postgres instances are the producers and brokers consume the streams for
+propagating to other platforms. The advantage here is the well known Postgres’
+ACID capabilities combined with a advance SQL features. As it comes as an extension,
+it can run within other existing features.&lt;/p&gt;
+
+&lt;p&gt;It is possible also, to consume and produce data to a broker by using a new feature
+that extended the COPY tool for executing shell commands for input/output operations.
+A nice highlight of this feature can be read &lt;a href=&quot;http://paquier.xyz/postgresql-2/postgres-9-6-feature-highlight-copy-dml-statements/&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;kafkacat-and-librdkafka&quot;&gt;kafkacat and librdkafka&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/edenhill/kafkacat&quot;&gt;kafkacat&lt;/a&gt; is a tool based on the same author’s library &lt;a href=&quot;https://github.com/edenhill/librdkafka&quot;&gt;librdkafka&lt;/a&gt; which
+does exactly what its name says: produce and consume from a Kafka broker like &lt;code class=&quot;highlighter-rouge&quot;&gt;cat&lt;/code&gt;
+command.&lt;/p&gt;
+
+&lt;h2 id=&quot;producing-to-kafka-broker&quot;&gt;Producing to Kafka broker&lt;/h2&gt;
+
+&lt;p&gt;Producing fake data to the Kafka broker, composed by &lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;payload&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+&lt;span class=&quot;c&quot;&gt;# Random text&lt;/span&gt;
+randtext&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;cat /dev/urandom | tr -dc &lt;span class=&quot;s1&quot;&gt;'a-zA-Z0-9'&lt;/span&gt; | fold -w 32 | head -n 1&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; ;
+  &lt;span class=&quot;k&quot;&gt;do
+    for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 50&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;  
+      &lt;span class=&quot;k&quot;&gt;do &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;uuidgen&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;randtext&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;
+     &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;  | kafkacat -P -b localhost:9092 -qe -K &lt;span class=&quot;s1&quot;&gt;';'&lt;/span&gt; -t PGSHARD
+     sleep 10
+  &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;-K&lt;/code&gt; option defines the delimiter between the &lt;em&gt;key&lt;/em&gt; and the &lt;em&gt;payload&lt;/em&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;-t&lt;/code&gt; defines
+the topic you want to produce for. Originally, this topic has been created with 3
+partitions (0-2), which will allow us to consume data in different channels, opening
+the door for parallelization.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Keys&lt;/em&gt; aren’t mandatory when producing to a broker, and actually for certain solutions
+you can omit it.&lt;/p&gt;
+
+&lt;h2 id=&quot;consuming-and-producing-inside-a-postgres-instance&quot;&gt;Consuming and Producing inside a Postgres instance&lt;/h2&gt;
+
+&lt;p&gt;The general syntax will be something close as:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;group_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PROGRAM&lt;/span&gt;
+  &lt;span class=&quot;s1&quot;&gt;'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk &lt;/span&gt;&lt;span class=&quot;se&quot;&gt;''&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;{print &quot;P0&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\t&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&quot; $0 }&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;''&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt; '&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Code piping to an &lt;code class=&quot;highlighter-rouge&quot;&gt;awk&lt;/code&gt; is not strictly necessary and it is only for showing the
+flexibility of the feature. When using the option &lt;code class=&quot;highlighter-rouge&quot;&gt;-J&lt;/code&gt;, the output will be printed
+in json format, containing all the message information, including partition, key and
+message.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;-c&lt;/code&gt; option will limit the amount of rows in the operation. As COPY is transactional,
+be aware that the higher is the amount of rows, the larger will be the transaction and
+COMMIT times will be affected.&lt;/p&gt;
+
+&lt;h3 id=&quot;consuming-topics-incrementally&quot;&gt;Consuming topics incrementally&lt;/h3&gt;
+
+&lt;p&gt;Consuming the topic partitions from the &lt;code class=&quot;highlighter-rouge&quot;&gt;beginning&lt;/code&gt; and setting a limit of &lt;code class=&quot;highlighter-rouge&quot;&gt;100&lt;/code&gt;
+documents is easy as:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/psql -p7777 -Upostgres master &lt;span class=&quot;sh&quot;&gt;&amp;lt;&amp;lt;EOF
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 0 | awk ''{print &quot;P0\t&quot; \$0 }'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 1 | awk ''{print &quot;P1\t&quot; \$0 }'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o beginning  -p 2 | awk ''{print &quot;P2\t&quot; \$0 }'' ';
+EOF
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;And then using &lt;code class=&quot;highlighter-rouge&quot;&gt;stored&lt;/code&gt;, in order to consume from the last offset consumed by the
+consumer on the group:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/psql -p7777 -Upostgres master &lt;span class=&quot;sh&quot;&gt;&amp;lt;&amp;lt;EOF
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 0 | awk ''{print &quot;P0\t&quot; \$0 }'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 1 | awk ''{print &quot;P1\t&quot; \$0 }'' ';
+COPY main(group_id,payload) FROM PROGRAM 'kafkacat -C -b localhost:9092 -c100 -qeJ -t PGSHARD  -X group.id=1  -o stored  -p 2 | awk ''{print &quot;P2\t&quot; \$0 }'' ';
+EOF
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Each COPY line, can be executed in parallel in different Postgres instances, making
+this approach flexible and easy scalable across a board of servers.&lt;/p&gt;
+
+&lt;p&gt;This is not entirely consistent, as once the offset is consumed, will be marked
+in the broker, wether if transaction fails at Postgres side can potentially lead
+to data missing.&lt;/p&gt;
+
+&lt;h3 id=&quot;producing-messages-out-the-postgres-instances&quot;&gt;Producing messages out the Postgres instances&lt;/h3&gt;
+
+&lt;p&gt;The same way is possible to consume changes, it is possible to do the same for producing
+data to the broker. This can be incredibly useful for micro aggregations, done over the
+consumed raw data from the broker.&lt;/p&gt;
+
+&lt;p&gt;The bellow example shows how to run a simple query with a very simplistic aggregation
+and publish it in JSON format to the broker:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;master=# COPY (select row_to_json(row(now() ,group_id , count(*))) from main group by group_id)
+         TO PROGRAM 'kafkacat -P -b localhost:9092 -qe  -t AGGREGATIONS';
+COPY 3
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;If you have a farm of servers and want to search the topic contents using a key,
+you can do the following tweak:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;COPY (select inet_server_addr() || ';', row_to_json(row(now() ,group_id , count(*))) from main group by group_id)
+   TO PROGRAM 'kafkacat -P -K '';'' -b localhost:9092 -qe  -t AGGREGATIONS';
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;This is how the published payloads look like (without &lt;em&gt;key&lt;/em&gt;):&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;➜  PG10 kafkacat -C -b localhost:9092 -qeJ -t AGGREGATIONS -X group.id=1  -o beginning
+{&quot;topic&quot;:&quot;AGGREGATIONS&quot;,&quot;partition&quot;:0,&quot;offset&quot;:0,&quot;key&quot;:&quot;&quot;,&quot;payload&quot;:&quot;{\&quot;f1\&quot;:\&quot;2017-02-24T12:34:13.711732-03:00\&quot;,\&quot;f2\&quot;:\&quot;P1\&quot;,\&quot;f3\&quot;:172}&quot;}
+{&quot;topic&quot;:&quot;AGGREGATIONS&quot;,&quot;partition&quot;:0,&quot;offset&quot;:1,&quot;key&quot;:&quot;&quot;,&quot;payload&quot;:&quot;{\&quot;f1\&quot;:\&quot;2017-02-24T12:34:13.711732-03:00\&quot;,\&quot;f2\&quot;:\&quot;P0\&quot;,\&quot;f3\&quot;:140}&quot;}
+{&quot;topic&quot;:&quot;AGGREGATIONS&quot;,&quot;partition&quot;:0,&quot;offset&quot;:2,&quot;key&quot;:&quot;&quot;,&quot;payload&quot;:&quot;{\&quot;f1\&quot;:\&quot;2017-02-24T12:34:13.711732-03:00\&quot;,\&quot;f2\&quot;:\&quot;P2\&quot;,\&quot;f3\&quot;:155}&quot;}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;… and with &lt;em&gt;key&lt;/em&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;topic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AGGREGATIONS&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;partition&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;offset&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;key&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;127.0.0.1/32&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;payload&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;\t{\&quot;f1\&quot;:\&quot;2017-02-24T12:40:39.017644-03:00\&quot;,\&quot;f2\&quot;:\&quot;P1\&quot;,\&quot;f3\&quot;:733}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;topic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AGGREGATIONS&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;partition&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;offset&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;key&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;127.0.0.1/32&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;payload&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;\t{\&quot;f1\&quot;:\&quot;2017-02-24T12:40:39.017644-03:00\&quot;,\&quot;f2\&quot;:\&quot;P0\&quot;,\&quot;f3\&quot;:994}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;topic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;AGGREGATIONS&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;partition&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;offset&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;key&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;127.0.0.1/32&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;payload&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;\t{\&quot;f1\&quot;:\&quot;2017-02-24T12:40:39.017644-03:00\&quot;,\&quot;f2\&quot;:\&quot;P2\&quot;,\&quot;f3\&quot;:716}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;basic-topic-manipulation&quot;&gt;Basic topic manipulation&lt;/h2&gt;
+
+&lt;p&gt;If you are new into Kafka, you will find useful to count with a few command examples
+to play with your local broker.&lt;/p&gt;
+
+&lt;p&gt;Starting everything:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/zookeeper-server-start.sh config/zookeeper.properties 2&amp;gt; zookeper.log &amp;amp;
+bin/kafka-server-start.sh config/server.properties 2&amp;gt; kafka.log &amp;amp;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Creating topics and others:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bin/kafka-topics.sh --list --zookeeper localhost:2181
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 3 --topic PGSHARD
+bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic PGSHARD
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic AGGREGATIONS
+bin/kafka-topics.sh --delete  --zookeeper localhost:2181 --topic AGGREGATIONS
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;NOTE: For deleting topics, you need to enable the &lt;code class=&quot;highlighter-rouge&quot;&gt;delete.topic.enable=true&lt;/code&gt; in
+server.properties file.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Hope you find this useful!&lt;/p&gt;
+
+&lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+
+
+var disqus_config = function () {
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = Playing with Postgres and Kafka.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = '//3manuek.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+&lt;/script&gt;
+
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
+
+</description>
+                <link>/kafkacatandcopypg</link>
+                <guid>/kafka-and-copy-in-pg</guid>
+                <pubDate>Tue, 28 Feb 2017 00:00:00 -0300</pubDate>
+        </item>
 
         <item>
                 <title>Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title>
@@ -245,6 +439,33 @@ s.setAttribute('data-timestamp', +new Date());
                 <link>/postgres10logrepypart</link>
                 <guid>/postgres-10-logrep-y-part</guid>
                 <pubDate>Sat, 18 Feb 2017 00:00:00 -0300</pubDate>
+        </item>
+
+        <item>
+                <title>MyRocks Views</title>
+                <description>&lt;p&gt;&lt;a href=&quot;http://myrocks.io/&quot;&gt;MyRocks&lt;/a&gt; is an storage engine available also in MongoDB, focused on performance
+and space saving. It is a LSM tree, with Bloom filtering for unique keys, providing
+steady performance in limited amount of cache. Installing can be done through
+a 5.6 fork, &lt;a href=&quot;https://github.com/facebook/mysql-5.6&quot;&gt;repository here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Installing is easy as importing the sql file into your database.&lt;/p&gt;
+
+&lt;p&gt;Repository can be found &lt;a href=&quot;https://github.com/3manuek/myrocks_views&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;What has inside?&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;SQL&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+</description>
+                <link>/myrocks-views/</link>
+                <guid>/myrocks-views</guid>
+                <pubDate>Sun, 01 Jan 2017 22:10:00 -0300</pubDate>
         </item>
 
         <item>
