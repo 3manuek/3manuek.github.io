@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2017-02-28T14:46:50-03:00</updated>
+ <updated>2017-03-01T10:31:02-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -18,6 +18,8 @@
    <updated>2017-02-28T00:00:00-03:00</updated>
    <id>/kafka-and-copy-in-pg</id>
    <content type="html">&lt;h2 id=&quot;the-introduction&quot;&gt;The introduction&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/kafka.jpg&quot; alt=&quot;POC Image&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://kafka.apache.org/&quot;&gt;Apache Kafka&lt;/a&gt; is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for

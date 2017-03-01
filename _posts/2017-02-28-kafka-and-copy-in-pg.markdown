@@ -13,7 +13,10 @@ author: 3manuek
 ---
 
 
+
 ## The introduction
+
+![POC Image][9]
 
 [Apache Kafka][5] is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for
@@ -215,3 +218,4 @@ s.setAttribute('data-timestamp', +new Date());
 [5]: https://kafka.apache.org/
 [6]: https://robertovitillo.com/2017/01/23/an-overview-of-mozillas-data-pipeline/
 [7]: http://paquier.xyz/postgresql-2/postgres-9-6-feature-highlight-copy-dml-statements/
+[9]: http://www.3manuek.com/assets/posts/kafka.jpg

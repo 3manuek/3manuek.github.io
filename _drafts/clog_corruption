@@ -1,0 +1,313 @@
+http://www.postgresql-archive.org/files-under-pg-clog-directories-are-missing-td2844464.html
+
+
+Could not open file "pg_clog/02AE": No such file or directory.
+
+https://wiki.postgresql.org/wiki/Hint_Bits
+
+XMIN_COMMITTED -- creating transaction is known committed
+XMIN_ABORTED -- creating transaction is known aborted
+XMAX_COMMITTED -- same, for the deleting transaction
+XMAX_ABORTED -- ditto
+
+00
+
+125 octal
+01010101
+
+
+0101 0101 0101 0101  <-nibles
+5    5    5    5     <-hexadigit
+     1 byte
+
+total size 256K (max file per clog)
+
+Ubicación:
+
+postgres=# select (floor(txid_current() / 4 / 8192) + 1) * 8192;
+?column?
+----------
+  163840
+(1 row)
+
+emanuel=# select txid_current();
+ txid_current
+--------------
+          867
+(1 row)
+
+
+/Users/emanuel/Library/Application Support/Postgres/var-9.6
+
+
+
+-rw-------  1 emanuel  staff  8192 Feb 28 22:30 0000
+
+emanuel=# SELECT txid_current();
+ txid_current
+--------------
+          871
+(1 row)
+
+emanuel=# select (floor(txid_current() / 4 / 8192) + 1) * 8192;
+ ?column?
+----------
+     8192
+(1 row)
+
+
+txid_current es un bigint que apunta a un bloque del clog
+
+typedef struct XLogRecord
+{
+   uint32          xl_tot_len;   /* total len of entire record */
+   TransactionId   xl_xid;       /* xact id */
+   uint32          xl_len;       /* total len of rmgr data */
+   uint8           xl_info;      /* flag bits, see below */
+   RmgrId          xl_rmid;      /* resource manager for this record */
+   /* 2 bytes of padding here, initialize to zero */
+   XLogRecPtr      xl_prev;      /* ptr to previous record in log */
+   pg_crc32        xl_crc;       /* CRC for this record */
+} XLogRecord;
+
+
+
+Monitor:
+
+emanuel=# begin;
+BEGIN
+emanuel=# SELECT txid_current();
+ txid_current
+--------------
+          877
+(1 row)
+
+emanuel=# select txid_current_snapshot();
+ txid_current_snapshot
+-----------------------
+ 877:877:
+(1 row)
+
+emanuel=# select txid_current_snapshot();
+ txid_current_snapshot
+-----------------------
+ 877:877:
+(1 row)
+
+emanuel=# select txid_current_snapshot();
+ txid_current_snapshot
+-----------------------
+ 877:879:
+(1 row)
+
+
+
+emanuel=# begin;
+BEGIN
+emanuel=# INSERT INTO randTableII
+emanuel-# SELECT
+emanuel-# d.datein as datein,
+emanuel-# i.anumber as anumber,
+emanuel-# ('{Gandalf,Dumbledore,Theodore,Clarkson,Crawley,Fernandez,Aquamenti,Cicerus,Tiffany,Polka,Beer,Glasses,Cigar}'::text[])[round(random()*12+1)] as arandomtext
+emanuel-# FROM generate_series(now() - '5 month'::interval, now(), '1 day'::interval) as d(datein),
+emanuel-#      generate_series(1,1000) i(anumber);
+INSERT 0 154000
+emanuel=# select txid_current();
+ txid_current
+--------------
+          879
+(1 row)
+emanuel=# select pg_current_xlog_flush_location(), pg_current_xlog_insert_location(),pg_current_xlog_location();
+ pg_current_xlog_flush_location | pg_current_xlog_insert_location | pg_current_xlog_location
+--------------------------------+---------------------------------+--------------------------
+ 0/3840000                      | 0/3840708                       | 0/3840000
+(1 row)
+
+emanuel=# BEGIN; select pg_current_xlog_flush_location(), pg_current_xlog_insert_location(),pg_current_xlog_location(), txid_current(),txid_current_snapshot(); select max(xmin::text::bigint),max(xmax::text::bigint) from randTableII; select (floor(txid_current() / 4 / 8192) + 1) * 8192; END;
+BEGIN
+ pg_current_xlog_flush_location | pg_current_xlog_insert_location | pg_current_xlog_location | txid_current | txid_current_snapshot
+--------------------------------+---------------------------------+--------------------------+--------------+-----------------------
+ 0/8974188                      | 0/8974188                       | 0/8974188                |        10381 | 10381:10381:
+(1 row)
+
+  max  | max
+-------+-----
+ 10380 |   0
+(1 row)
+
+ ?column?
+----------
+     8192
+(1 row)
+
+
+
+MacBook-Pro:var-9.6 root# ls -l pg_clog/ ; ls -l pg_xlog/
+total 32
+-rw-------  1 emanuel  staff  16384 Feb 28 23:50 0000
+total 196608
+-rw-------  1 emanuel  staff  16777216 Feb 28 23:45 000000010000000000000008
+-rw-------  1 emanuel  staff  16777216 Mar  1 00:13 000000010000000000000009
+-rw-------  1 emanuel  staff  16777216 Feb 28 23:34 00000001000000000000000A
+-rw-------  1 emanuel  staff  16777216 Feb 28 23:35 00000001000000000000000B
+-rw-------  1 emanuel  staff  16777216 Feb 28 23:36 00000001000000000000000C
+-rw-------  1 emanuel  staff  16777216 Feb 28 23:39 00000001000000000000000D
+drwx------  2 emanuel  staff        68 Feb 28 22:25 archive_status
+
+emanuel=# BEGIN; select pg_current_xlog_flush_location(), pg_current_xlog_insert_location(),pg_current_xlog_location(), txid_current(),txid_current_snapshot(); select max(xmin::text::bigint),max(xmax::text::bigint) from randTableII; select (floor(txid_current() / 4 / 8192) + 1) * 8192; SELECT pg_xlogfile_name(pg_current_xlog_insert_location()); END;
+BEGIN
+ pg_current_xlog_flush_location | pg_current_xlog_insert_location | pg_current_xlog_location | txid_current | txid_current_snapshot
+--------------------------------+---------------------------------+--------------------------+--------------+-----------------------
+ 0/963EF10                      | 0/963EF10                       | 0/963EF10                |        63423 | 63423:63423:
+(1 row)
+
+  max  | max
+-------+-----
+ 63417 |   0
+(1 row)
+
+ ?column?
+----------
+    16384
+(1 row)
+
+     pg_xlogfile_name WAL segment file name = timelineId + (uint32)((LSN-1)/(16M*256))  + (uint32)((LSN-1) % 16M)
+--------------------------
+ 000000010000000000000009
+(1 row)
+
+COMMIT
+
+
+emanuel=# BEGIN; select pg_current_xlog_flush_location(), pg_current_xlog_insert_location(),pg_current_xlog_location(), txid_current(),txid_current_snapshot(); select max(xmin::text::bigint),max(xmax::text::bigint) from randTableII; select (floor(txid_current() / 4 / 8192) + 1) * 8192; SELECT pg_xlogfile_name(pg_current_xlog_insert_location()); END;
+BEGIN
+ pg_current_xlog_flush_location | pg_current_xlog_insert_location | pg_current_xlog_location | txid_current | txid_current_snapshot
+--------------------------------+---------------------------------+--------------------------+--------------+-----------------------
+ 0/A000110                      | 0/A000110                       | 0/A000110                |        63428 | 63428:63428:
+(1 row)
+
+  max  | max
+-------+-----
+ 63417 |   0
+(1 row)
+
+ ?column?
+----------
+    16384
+(1 row)
+
+     pg_xlogfile_name
+--------------------------
+ 00000001000000000000000A
+(1 row)
+
+
+
+
+XLOG location determines the clog file name:
+
+0/3840000
+     ****
+      +---- clog name
+
+
+emanuel=# select max(xmin::text::bigint),max(xmax::text::bigint) from randTableII;
+       max | max
+      -----+-----
+       873 |   0
+
+
+https://doxygen.postgresql.org/clog_8c_source.html
+
+       44 /*
+          45  * Defines for CLOG page sizes.  A page is the same BLCKSZ as is used
+          46  * everywhere else in Postgres.
+          47  *
+          48  * Note: because TransactionIds are 32 bits and wrap around at 0xFFFFFFFF,
+          49  * CLOG page numbering also wraps around at 0xFFFFFFFF/CLOG_XACTS_PER_PAGE,
+          50  * and CLOG segment numbering at
+          51  * 0xFFFFFFFF/CLOG_XACTS_PER_PAGE/SLRU_PAGES_PER_SEGMENT.  We need take no
+          52  * explicit notice of that fact in this module, except when comparing segment
+          53  * and page numbers in TruncateCLOG (see CLOGPagePrecedes).
+          54  */
+          55
+          56 /* We need two bits per xact, so four xacts fit in a byte */
+
+
+          emanuel=# BEGIN; select pg_current_xlog_flush_location(), pg_current_xlog_insert_location(),pg_current_xlog_location(), txid_current(),txid_current_snapshot(); select max(xmin::text::bigint),max(xmax::text::bigint) from randTableII; END;
+          BEGIN
+           pg_current_xlog_flush_location | pg_current_xlog_insert_location | pg_current_xlog_location | txid_current | txid_current_snapshot
+          --------------------------------+---------------------------------+--------------------------+--------------+-----------------------
+           0/7A8B870                      | 0/7A8B870                       | 0/7A8B870                |         3080 | 3080:3080:
+          (1 row)
+
+           max  | max
+          ------+------
+           3078 | 3082
+          (1 row)
+
+
+
+
+Verás: en pg_clog se usan 2 bits (4 posibles estados) para cada transacción.
+Entonces pensaba yo "tal vez no hay *ningún sitio* en la página o visibility map
+o nada donde se apunte a en qué fichero de clog está la info de commit de dicha tupla,
+basta con mapearlo al txid!!!!"
+
+[9:49]
+En otras palabras: si divido el txid por 4, me da la posición en el pg_clog. Así de fácil
+
+[9:49]
+Demo: en mi ordenador, tengo:
+
+[9:50]
+postgres@ushuaia:~/9.6/main/pg_clog$ ls -la 0000
+
+[9:50]
+-rw------- 1 postgres postgres 163840 mar  1 01:48 0000
+
+[9:50]
+El clog, como casi todo, se reserva en bloques de 8K
+
+[9:51]
+postgres=# select (floor(txid_current() / 4 / 8192) + 1) * 8192;
+?column?
+----------
+  163840
+(1 row)
+
+[9:51]
+Como ves, coinciden
+
+3manuek [9:51 PM]
+vale, pero ese es el current
+
+aht [9:51 PM]
+Con esto quiero decir que sabiendo el txid, sé en qué posición del clog se busca
+
+[9:52]
+O en mi caso, al revés: dado que sé el fichero fallado, puedo saber qué (rango) de txids están siendo buscado
+
+3manuek [9:52 PM]
+Espera
+
+[9:52]
+puedes usar el xmin
+
+aht [9:52 PM]
+Así que buscando en toda  la bbdd por xmin o xmax en dicho rango, sabré las tuplas "ofensivas"
+
+3manuek [9:52 PM]
+Bien ahí!
+
+aht [9:53 PM]
+Y luego a lo mejor se puede hacer una búsqueda binaria, aunque esto debo pensar exactamente cómo
+
+[9:53]
+Bien, con esto sí me doy muy por satisfecho :)))
+
+[9:53]
+Ahora sí me voy a la cama :slightly_smiling_face:
+
+3manuek [9:53 PM]
+quiero seguir el caso! por ahora descansa, ya tienes al menos un plan ^_^

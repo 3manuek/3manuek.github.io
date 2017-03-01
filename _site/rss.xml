@@ -5,14 +5,16 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Tue, 28 Feb 2017 14:46:50 -0300</lastBuildDate>
-        <pubDate>Tue, 28 Feb 2017 14:46:50 -0300</pubDate>
+        <lastBuildDate>Wed, 01 Mar 2017 10:31:02 -0300</lastBuildDate>
+        <pubDate>Wed, 01 Mar 2017 10:31:02 -0300</pubDate>
         <ttl>60</ttl>
 
 
         <item>
                 <title>Playing with Postgres and Kafka.</title>
                 <description>&lt;h2 id=&quot;the-introduction&quot;&gt;The introduction&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/kafka.jpg&quot; alt=&quot;POC Image&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://kafka.apache.org/&quot;&gt;Apache Kafka&lt;/a&gt; is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for
