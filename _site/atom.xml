@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2017-03-01T10:31:13-03:00</updated>
+ <updated>2017-03-01T10:35:09-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -17,9 +17,7 @@
    <link href="/kafkacatandcopypg"/>
    <updated>2017-02-28T00:00:00-03:00</updated>
    <id>/kafka-and-copy-in-pg</id>
-   <content type="html">&lt;h2 id=&quot;the-introduction&quot;&gt;The introduction&lt;/h2&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/kafka.jpg&quot; alt=&quot;POC Image&quot; /&gt;&lt;/p&gt;
+   <content type="html">&lt;h2 id=&quot;apache-kafka-and-postgres-transaction-and-reporting-capabilities&quot;&gt;Apache Kafka and Postgres: Transaction and reporting capabilities&lt;/h2&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://kafka.apache.org/&quot;&gt;Apache Kafka&lt;/a&gt; is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for
@@ -35,6 +33,9 @@ it can run within other existing features.&lt;/p&gt;
 &lt;p&gt;It is possible also, to consume and produce data to a broker by using a new feature
 that extended the COPY tool for executing shell commands for input/output operations.
 A nice highlight of this feature can be read &lt;a href=&quot;http://paquier.xyz/postgresql-2/postgres-9-6-feature-highlight-copy-dml-statements/&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/kafka.jpg&quot; alt=&quot;POC Image&quot; /&gt;&lt;/p&gt;
+&lt;figcaption class=&quot;caption&quot;&gt;Apache Kafka logo.&lt;/figcaption&gt;
 
 &lt;h2 id=&quot;kafkacat-and-librdkafka&quot;&gt;kafkacat and librdkafka&lt;/h2&gt;
 

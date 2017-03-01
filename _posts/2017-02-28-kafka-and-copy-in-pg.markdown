@@ -14,9 +14,8 @@ author: 3manuek
 
 
 
-## The introduction
+## Apache Kafka and Postgres: Transaction and reporting capabilities
 
-![POC Image][9]
 
 [Apache Kafka][5] is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for
@@ -32,6 +31,10 @@ it can run within other existing features.
 It is possible also, to consume and produce data to a broker by using a new feature
 that extended the COPY tool for executing shell commands for input/output operations.
 A nice highlight of this feature can be read [here][7].
+
+
+![POC Image][9]
+<figcaption class="caption">Apache Kafka logo.</figcaption>
 
 
 ## kafkacat and librdkafka
