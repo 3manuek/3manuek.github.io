@@ -1,4 +1,101 @@
+
+
+
+## CLOG
+
+
+The Commit Log folder (`pg_clog`) contains the key data for making the MVCC happens.
+Before jumping in into the internals, there are certain components that we need
+to make explicit in order to understand how this works.
+
+### XACTs
+
+XMIN (in) and XMAX (out) are the "actions" on each transaction, each of those
+can be either committed or aborted. Each XACT holds the information either it
+has been committed or aborted  represented using [_Hint Bits_][1] over 1 hexadecimal digit.
+
+```
+0101 0101 0101 0101  <-nibles
+5    5    5    5     <-hexadigit
+     1 byte
+```
+
+Begin said, each transaction needs 4 bits.
+
+### TXID
+
+The _Transactoin ID_ is 32 bit (bigint) that identifies each transaction.
+
+1 byte in clog holds 2 transaction information (4 bits each)
+
+## CLOG block
+
+8K
+
+## CLOG segment
+
+256K
+
+https://github.com/postgres/postgres/blob/master/src/backend/access/transam/clog.c
+
+```
+44 /*
+45  * Defines for CLOG page sizes.  A page is the same BLCKSZ as is used
+46  * everywhere else in Postgres.
+47  *
+48  * Note: because TransactionIds are 32 bits and wrap around at 0xFFFFFFFF,
+49  * CLOG page numbering also wraps around at 0xFFFFFFFF/CLOG_XACTS_PER_PAGE,
+50  * and CLOG segment numbering at
+51  * 0xFFFFFFFF/CLOG_XACTS_PER_PAGE/SLRU_PAGES_PER_SEGMENT.  We need take no
+52  * explicit notice of that fact in this module, except when comparing segment
+53  * and page numbers in TruncateCLOG (see CLOGPagePrecedes).
+54  */
+55
+56 /* We need two bits per xact, so four xacts fit in a byte */
+```
+
+
 http://www.postgresql-archive.org/files-under-pg-clog-directories-are-missing-td2844464.html
+
+
+emanuel=# BEGIN; select pg_current_xlog_flush_location(), pg_current_xlog_insert_location(),pg_current_xlog_location(),
+ txid_current(),txid_current_snapshot(); select max(xmin::text::bigint),max(xmax::text::bigint) from randTableII;
+
+  select (floor(txid_current() / 4 / 8192) + 1) * 8192;
+  SELECT pg_xlogfile_name(pg_current_xlog_insert_location());
+
+  select ceil(((txid_current()/4)/8192::float)) as "Number of CLOG blocks", txid_current()/4
+   as "Position in bytes in the CLOG file"; END;
+BEGIN
+ pg_current_xlog_flush_location | pg_current_xlog_insert_location | pg_current_xlog_location | txid_current | txid_current_snapshot
+--------------------------------+---------------------------------+--------------------------+--------------+-----------------------
+ 0/A039578                      | 0/A039578                       | 0/A039578                |        69253 | 69253:69253:
+(1 row)
+
+  max  | max
+-------+-----
+ 63417 |   0
+(1 row)
+
+ ?column?
+----------
+    24576
+(1 row)
+
+     pg_xlogfile_name
+--------------------------
+ 00000001000000000000000A
+(1 row)
+
+ Number of CLOG blocks | Position in bytes in the CLOG file
+-----------------------+------------------------------------
+                     3 |                              17313
+(1 row)
+
+COMMIT
+
+
+
 
 
 Could not open file "pg_clog/02AE": No such file or directory.
@@ -15,6 +112,11 @@ XMAX_ABORTED -- ditto
 125 octal
 01010101
 
+32 bits per txid
+8k 8192 bytes 65536 bits ->  16384 txs per clog BLOCK
+
+, 2048 txid per block . Size max is 256k , 65536 transactions per
+clog file.
 
 0101 0101 0101 0101  <-nibles
 5    5    5    5     <-hexadigit
@@ -311,3 +413,6 @@ Ahora sí me voy a la cama :slightly_smiling_face:
 
 3manuek [9:53 PM]
 quiero seguir el caso! por ahora descansa, ya tienes al menos un plan ^_^
+
+
+[1]: https://wiki.postgresql.org/wiki/Hint_Bits
