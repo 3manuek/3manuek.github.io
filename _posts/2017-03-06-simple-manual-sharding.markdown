@@ -29,14 +29,14 @@ data will be allocated. For the current POC, we are going to specify the `shardK
 
 Until today, the only way to perform findings over this method, was from the application
 layer, by issuing queries directly to the nodes by keeping certain deterministic way
-as [1] or using a catalog table as [2] (_NOTE: the bellow examples are using pseudo code_).
+as {1} or using a catalog table as {2} (_NOTE: the bellow examples are using pseudo code_).
 
-[1]
+{1}
 ```
 query = "SELECT name,lastname FROM " + relation + partition " WHERE " id =" + person_id
 ```
 
-[2]:
+{2}:
 ```
 shard = query("SELECT shard FROM catalog WHERE key = " + person_id)
 query = "SELECT name,lastname FROM " + relation + shard " WHERE " id =" + person_id
