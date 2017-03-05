@@ -34,6 +34,7 @@ colnames(byBenchLAT) <- c("Bench","Type","Target","Max","Min", "Mean")
 dodge <- position_dodge(width = 0.9)
 
 limitsTPS <- aes(ymax = byBenchTPS$Max, ymin = byBenchTPS$Min )
+#limitsTPS_ro <- aes(ymax = byBenchTPS$Max, ymin = byBenchTPS$Min + byBenchTPS$Mean )
 limitsLAT <- aes(ymax = byBenchLAT$Max,ymin = byBenchLAT$Min)
 
 png("../../assets/posts/tpsfdw.png")
@@ -51,6 +52,7 @@ png("../../assets/posts/tpsfdwro.png")
 TPSplot <- ggplot(data = byBenchTPS, aes(x = Target, y = Mean,fill = Bench )) #
 TPSplot + geom_bar(stat = "identity", position = dodge) + #, aes(fill=Bench)
       geom_errorbar(limitsTPS, position = dodge, width = 0.25) +
+      coord_cartesian(ylim=c(byBenchTPS$Min ,byBenchTPS$Max)) + 
       labs(x = "Target", y = "TPS") +
       ggtitle("TPS including connections") +
       facet_grid(Type~., scales = "free") +
