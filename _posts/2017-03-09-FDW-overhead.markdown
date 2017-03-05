@@ -2,7 +2,7 @@
 layout: post
 title:  "[WIP] FDW overhead."
 date:   2017-03-06
-description: _Foreign Data Wrappers_ inheritance.
+description: How much overhead is added by using Foreign Data Wrappers?
 tags : [PostgreSQL, Sharding]
 categories:
 - PostgreSQL
