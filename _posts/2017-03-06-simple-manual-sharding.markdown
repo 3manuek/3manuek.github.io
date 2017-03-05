@@ -3,7 +3,7 @@ layout: post
 title:  "[WIP] Simple and manual sharding on PostgreSQL."
 date:   2017-03-06
 description: _Foreign Data Wrappers_ inheritance.
-tags : [PostgreSQL, Sharding, cosasAtadasConAlambre]
+tags : [PostgreSQL, Sharding]
 categories:
 - PostgreSQL
 category: blog
@@ -236,70 +236,11 @@ proxy=# explain (VERBOSE true)SELECT avalue FROM main WHERE key = 1500;
 (10 rows)
 ```
 
-## Performance impact on intensive transaction workloads
+## Considerations
 
-Something to keep in mind is that the current implementation of postgres_fdw
-under 9.6 (This was tested over 9.6.2 to be exact), has a considerable overhead
-in the overall execution time.
+Foreign Data Wrappers for Postgres are such a great extension, but it comes at
+a price. There is a visible overhead in high intensive transactional workloads.
 
-The test I've done won't give you much details, although a rough idea of the ratio
-is visible on a basic localhost test. This will need a more extensive test, but
-all the executions gave mearound the same throughput.
-
-Keep also in mind, that `pgbench` does intensive transaction workload, which generally
-is not suitable for foreign tables.
-
-
-Populating pgbench tables:
-```sh
-/usr/lib/postgresql/9.6/bin/pgbench -p5434 -i -s20 source
-```
-
-Creating the schema on the destination:
-
-```sql
-
-CREATE SERVER source_server FOREIGN DATA WRAPPER postgres_fdw
-  OPTIONS(host '127.0.0.1',port '5434',dbname 'source');
-
-CREATE USER MAPPING FOR postgres SERVER source_server OPTIONS(user 'postgres');
-
-IMPORT FOREIGN SCHEMA public LIMIT TO (pgbench_accounts,pgbench_history,
-pgbench_branches,pgbench_tellers) FROM SERVER source_server INTO public ;
-```
-
-Standard benchmark with reads and writes:
-
-```
-/usr/lib/postgresql/9.6/bin/pgbench -p5434 -n -T10 source
-number of transactions actually processed: 2193
-latency average = 4.563 ms
-tps = 219.166615 (including connections establishing)
-tps = 219.282194 (excluding connections establishing)
-
-/usr/lib/postgresql/9.6/bin/pgbench -p5435 -n -T10 dest
-number of transactions actually processed: 1230
-latency average = 8.138 ms
-tps = 122.885434 (including connections establishing)
-tps = 122.924733 (excluding connections establishing)
-```
-
-
-Only reads (`-S` option):
-
-```
-$ /usr/lib/postgresql/9.6/bin/pgbench -p5435 -nS -c20 -T5 dest
-number of transactions actually processed: 46567
-latency average = 2.150 ms
-tps = 9301.419771 (including connections establishing)
-tps = 9308.405668 (excluding connections establishing)
-
-$ /usr/lib/postgresql/9.6/bin/pgbench -p5434 -nS -c20 -T5 source
-number of transactions actually processed: 285466
-latency average = 0.350 ms
-tps = 57088.290407 (including connections establishing)
-tps = 57137.386055 (excluding connections establishing)
-```
 
 Hope you liked the article!
 
