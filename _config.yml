@@ -8,7 +8,7 @@ description: A few experiments and articles on OSDB
 # if it's an external image, update below for true
 # better with square images
 external-image: false
-picture: assets/images/profile.jpg
+picture: assets/images/profile2.jpg
 
 # If you want to include your resume, set to true
 # and specify source (external or local).
@@ -56,7 +56,7 @@ authors:
         name: Emanuel Calvo
         bio: Open Source Data Engineering and Reptilian
         external-image: false
-        picture: assets/images/profile.jpg
+        picture: assets/images/profile2.jpg
         twitter: 3manuek
         #    jamesfoster:
         # name: James Foster
