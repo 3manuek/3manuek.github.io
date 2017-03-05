@@ -85,7 +85,7 @@ with limited grants over the tables that you use.
 - Server
 - User Mapping
 
-[1]
+{1}
 
 ```sql
 CREATE SERVER shard1_main FOREIGN DATA WRAPPER postgres_fdw
@@ -99,7 +99,7 @@ CREATE SERVER shard2_main_replica FOREIGN DATA WRAPPER postgres_fdw
     OPTIONS(host '127.0.0.1',port '8888',dbname 'shard2');
 ```
 
-[2]
+{2}
 
 ```sql
 -- User mapping
@@ -197,8 +197,8 @@ proxy=# SELECT avalue FROM main WHERE key = 1500 and shardKey = '01';
 (1 row)
 ```
 
-Behind the scenes, the query pushed to the remote servers contains the corresponding
-filters for the columns explicited in the query.
+Behind the scenes, the pushed query to the remote servers contains the corresponding
+filters.
 
 ```sql
 proxy=# explain (VERBOSE true)SELECT avalue
