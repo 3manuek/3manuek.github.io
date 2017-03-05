@@ -37,8 +37,17 @@ limitsTPS <- aes(ymax = byBenchTPS$Max, ymin = byBenchTPS$Min )
 limitsLAT <- aes(ymax = byBenchLAT$Max,ymin = byBenchLAT$Min)
 
 png("../../assets/posts/tpsfdw.png")
+TPSplot <- ggplot(data = byBenchTPS, aes(x = Target, y = Mean,fill = Bench )) #
+TPSplot + geom_bar(stat = "identity", position = dodge) + #, aes(fill=Bench)
+      geom_errorbar(limitsTPS, position = dodge, width = 0.25) +
+      labs(x = "Target", y = "TPS") +
+      ggtitle("TPS including connections") +
+      facet_grid(Type~., scales = "free") +
+      theme(legend.background = element_rect(fill="gray90", size=.5, linetype="dotted"))
+dev.off()
 
-#png("../../assets/posts/tpsfdwro.png")
+byBenchTPS <- subset(byBenchTPS, Type == "RO" & grepl("ext", Bench))
+png("../../assets/posts/tpsfdwro.png")
 TPSplot <- ggplot(data = byBenchTPS, aes(x = Target, y = Mean,fill = Bench )) #
 TPSplot + geom_bar(stat = "identity", position = dodge) + #, aes(fill=Bench)
       geom_errorbar(limitsTPS, position = dodge, width = 0.25) +

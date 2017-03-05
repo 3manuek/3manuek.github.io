@@ -5,10 +5,541 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Sat, 04 Mar 2017 23:11:37 -0300</lastBuildDate>
-        <pubDate>Sat, 04 Mar 2017 23:11:37 -0300</pubDate>
+        <lastBuildDate>Sat, 04 Mar 2017 23:48:42 -0300</lastBuildDate>
+        <pubDate>Sat, 04 Mar 2017 23:48:42 -0300</pubDate>
         <ttl>60</ttl>
 
+
+        <item>
+                <title>[WIP] FDW overhead.</title>
+                <description>&lt;p&gt;&lt;em&gt;This article is WIP&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/dosequis.jpg&quot; alt=&quot;Dosequis&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;performance-analysis-of-fdw-overhead-on-intensive-transaction-workloads&quot;&gt;Performance analysis of FDW overhead on intensive transaction workloads&lt;/h2&gt;
+
+&lt;p&gt;Something to keep in mind is that the current implementation of &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt;
+under 9.6 (This was tested over &lt;strong&gt;9.6.2&lt;/strong&gt; to be exact), has a considerable overhead
+in the overall execution time.&lt;/p&gt;
+
+&lt;p&gt;The test was done exclusively on the same machine in two different instances,
+for discarding any network biasing. One of the FDW connects from the same instance
+(FDW_local) and the other from a different instance (FDW_external).&lt;/p&gt;
+
+&lt;p&gt;Keep also in mind, that &lt;code class=&quot;highlighter-rouge&quot;&gt;pgbench&lt;/code&gt; does intensive transaction workload, which generally
+is not well suitable for foreign tables.&lt;/p&gt;
+
+&lt;p&gt;From the tests taken, &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; show approximately a &lt;code class=&quot;highlighter-rouge&quot;&gt;.65x&lt;/code&gt; of overhead compared with a
+local table. Although, for read only transactions the overhead is higher, probably
+related to the default transaction level used (&lt;code class=&quot;highlighter-rouge&quot;&gt;repeatable read&lt;/code&gt;) as detailed in &lt;a href=&quot;https://www.postgresql.org/docs/9.6/static/postgres-fdw.html&quot;&gt;FDW F.33.3&lt;/a&gt;.
+For this reason, all the conducted tests have been done using this isolation level of
+transaction, to make comparison fair (specially for read only workloads, wether
+more scans are needed for keeping result consistency).&lt;/p&gt;
+
+&lt;p&gt;Also, I considered the TPS stats &lt;em&gt;including&lt;/em&gt; connections, as we are trying to consider
+all the extension phases.&lt;/p&gt;
+
+&lt;h2 id=&quot;rw-overhead-by-tps-throughput&quot;&gt;RW overhead by TPS throughput&lt;/h2&gt;
+
+&lt;p&gt;The estimated overhead between FDW and straight RW operations is a factor of &lt;code class=&quot;highlighter-rouge&quot;&gt;.65x&lt;/code&gt;.
+Considering that the tests were intensive, it is a very good number ([Fig. 1]).&lt;/p&gt;
+
+&lt;h2 id=&quot;ro-overhead-by-tps-throughput&quot;&gt;RO overhead by TPS throughput&lt;/h2&gt;
+
+&lt;p&gt;The overhead for intensive read only workloads is significantly higher than RW: &lt;code class=&quot;highlighter-rouge&quot;&gt;6.7x&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;By executing FDW locally and externally, I observed that the external FDW had
+more unstable TPS throughput, although the mean does no show a significant difference.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/tpsfdw.png&quot; alt=&quot;TPS&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
+&lt;figcaption class=&quot;caption&quot;&gt;[Fig. 1] TPS throughput.&lt;/figcaption&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;updatable&lt;/code&gt; does not help at performance, as it only adds slightly more overhead
+due the permissions check. &lt;code class=&quot;highlighter-rouge&quot;&gt;RO.FDW_ext_ro&lt;/code&gt; adds the options at [Snippet 2] to each
+FDW table.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/tpsfdwro.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
+&lt;figcaption class=&quot;caption&quot;&gt;[Fig. 1] RO TPS throughput with/without updatable option.&lt;/figcaption&gt;
+
+&lt;h2 id=&quot;latency-inspection&quot;&gt;Latency inspection&lt;/h2&gt;
+
+&lt;p&gt;Is not a surprise to see a correlation when looking at the latency in milliseconds.
+This can be seen clearly on the [Fig.2].&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/latfdw.png&quot; alt=&quot;TPS&quot; /&gt;&lt;/p&gt;
+&lt;figcaption class=&quot;caption&quot;&gt;[Fig.2] Latency in ms.&lt;/figcaption&gt;
+
+&lt;h2 id=&quot;aggregated-data-of-the-benchmarks&quot;&gt;Aggregated data of the benchmarks&lt;/h2&gt;
+
+&lt;p&gt;TPS:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Bench&lt;/th&gt;
+      &lt;th&gt;Type&lt;/th&gt;
+      &lt;th&gt;Target&lt;/th&gt;
+      &lt;th&gt;Max&lt;/th&gt;
+      &lt;th&gt;Min&lt;/th&gt;
+      &lt;th&gt;Mean&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RO.FDW_external&lt;/td&gt;
+      &lt;td&gt;RO&lt;/td&gt;
+      &lt;td&gt;FDW_external&lt;/td&gt;
+      &lt;td&gt;1713.57&lt;/td&gt;
+      &lt;td&gt;1387.70&lt;/td&gt;
+      &lt;td&gt;1511.04&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RO.FDW_local&lt;/td&gt;
+      &lt;td&gt;RO&lt;/td&gt;
+      &lt;td&gt;FDW_local&lt;/td&gt;
+      &lt;td&gt;1557.38&lt;/td&gt;
+      &lt;td&gt;1445.34&lt;/td&gt;
+      &lt;td&gt;1482.65&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RO.local&lt;/td&gt;
+      &lt;td&gt;RO&lt;/td&gt;
+      &lt;td&gt;local&lt;/td&gt;
+      &lt;td&gt;11717.88&lt;/td&gt;
+      &lt;td&gt;11131.27&lt;/td&gt;
+      &lt;td&gt;11512.79&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RW.FDW_external&lt;/td&gt;
+      &lt;td&gt;RW&lt;/td&gt;
+      &lt;td&gt;FDW_external&lt;/td&gt;
+      &lt;td&gt;128.12&lt;/td&gt;
+      &lt;td&gt;102.21&lt;/td&gt;
+      &lt;td&gt;113.79&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RW.FDW_local&lt;/td&gt;
+      &lt;td&gt;RW&lt;/td&gt;
+      &lt;td&gt;FDW_local&lt;/td&gt;
+      &lt;td&gt;146.00&lt;/td&gt;
+      &lt;td&gt;135.73&lt;/td&gt;
+      &lt;td&gt;139.72&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RW.local&lt;/td&gt;
+      &lt;td&gt;RW&lt;/td&gt;
+      &lt;td&gt;local&lt;/td&gt;
+      &lt;td&gt;217.21&lt;/td&gt;
+      &lt;td&gt;203.58&lt;/td&gt;
+      &lt;td&gt;209.49&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Latency in ms:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Bench&lt;/th&gt;
+      &lt;th&gt;Type&lt;/th&gt;
+      &lt;th&gt;Target&lt;/th&gt;
+      &lt;th&gt;Max&lt;/th&gt;
+      &lt;th&gt;Min&lt;/th&gt;
+      &lt;th&gt;Mean&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RO.FDW_external&lt;/td&gt;
+      &lt;td&gt;RO&lt;/td&gt;
+      &lt;td&gt;FDW_external&lt;/td&gt;
+      &lt;td&gt;0.721&lt;/td&gt;
+      &lt;td&gt;0.584&lt;/td&gt;
+      &lt;td&gt;0.6642&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RO.FDW_local&lt;/td&gt;
+      &lt;td&gt;RO&lt;/td&gt;
+      &lt;td&gt;FDW_local&lt;/td&gt;
+      &lt;td&gt;0.692&lt;/td&gt;
+      &lt;td&gt;0.642&lt;/td&gt;
+      &lt;td&gt;0.6748&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RO.local&lt;/td&gt;
+      &lt;td&gt;RO&lt;/td&gt;
+      &lt;td&gt;local&lt;/td&gt;
+      &lt;td&gt;0.090&lt;/td&gt;
+      &lt;td&gt;0.085&lt;/td&gt;
+      &lt;td&gt;0.0869&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RW.FDW_external&lt;/td&gt;
+      &lt;td&gt;RW&lt;/td&gt;
+      &lt;td&gt;FDW_external&lt;/td&gt;
+      &lt;td&gt;9.784&lt;/td&gt;
+      &lt;td&gt;7.805&lt;/td&gt;
+      &lt;td&gt;8.8521&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RW.FDW_local&lt;/td&gt;
+      &lt;td&gt;RW&lt;/td&gt;
+      &lt;td&gt;FDW_local&lt;/td&gt;
+      &lt;td&gt;7.367&lt;/td&gt;
+      &lt;td&gt;6.849&lt;/td&gt;
+      &lt;td&gt;7.1598&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;RW.local&lt;/td&gt;
+      &lt;td&gt;RW&lt;/td&gt;
+      &lt;td&gt;local&lt;/td&gt;
+      &lt;td&gt;4.912&lt;/td&gt;
+      &lt;td&gt;4.604&lt;/td&gt;
+      &lt;td&gt;4.7748&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h2 id=&quot;reproducing-the-test&quot;&gt;Reproducing the test&lt;/h2&gt;
+
+&lt;p&gt;Populating &lt;em&gt;pgbench&lt;/em&gt; tables within an scale of 100:&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/usr/lib/postgresql/9.6/bin/pgbench -p5434 -i -s100 &lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Creating the schema on the databases from which the FDW are called (external, external_ro and localfdw):&lt;/p&gt;
+
+&lt;p&gt;[Snippet 1]&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;source_server&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'5434'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'source'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;source_server&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;-- New 9.6 feature!&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;IMPORT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SCHEMA&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;LIMIT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TO&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgbench_accounts&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgbench_history&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;pgbench_branches&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgbench_tellers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;source_server&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INTO&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;[Snippet 2] applied into &lt;code class=&quot;highlighter-rouge&quot;&gt;external_ro&lt;/code&gt; database:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pgbench_accounts&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;updatable&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'false'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pgbench_branches&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;updatable&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'false'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pgbench_history&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;updatable&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'false'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pgbench_tellers&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;updatable&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'false'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Automating benchmarks and putting everything into CSV (Latency Average, TPS including connections
+and TPS excluding connections):&lt;/p&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;PGBENCHBIN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;/usr/lib/postgresql/9.6/bin/pgbench&quot;&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;PGVACUUM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;/usr/lib/postgresql/9.6/bin/vacuumdb -p5434 source&quot;&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;$PGVACUUM&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 10&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; ; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;  &lt;span class=&quot;nv&quot;&gt;$PGBENCHBIN&lt;/span&gt; -p5434  -n -T10 &lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt;     | grep -Po &lt;span class=&quot;s1&quot;&gt;'= \K[\d]+\.[\d]+'&lt;/span&gt; | paste -sd &lt;span class=&quot;s2&quot;&gt;&quot;,&quot;&lt;/span&gt; - ; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &amp;gt; benchRW.local
+&lt;span class=&quot;nv&quot;&gt;$PGVACUUM&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 10&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; ; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;  &lt;span class=&quot;nv&quot;&gt;$PGBENCHBIN&lt;/span&gt; -p5434  -n -T10 localfdw   | grep -Po &lt;span class=&quot;s1&quot;&gt;'= \K[\d]+\.[\d]+'&lt;/span&gt; | paste -sd &lt;span class=&quot;s2&quot;&gt;&quot;,&quot;&lt;/span&gt; - ; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &amp;gt; benchRW.FDW_local
+&lt;span class=&quot;nv&quot;&gt;$PGVACUUM&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 10&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; ; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;  &lt;span class=&quot;nv&quot;&gt;$PGBENCHBIN&lt;/span&gt; -p5435  -n -T10 external   | grep -Po &lt;span class=&quot;s1&quot;&gt;'= \K[\d]+\.[\d]+'&lt;/span&gt; | paste -sd &lt;span class=&quot;s2&quot;&gt;&quot;,&quot;&lt;/span&gt; - ; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &amp;gt; benchRW.FDW_external
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 10&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; ; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;  &lt;span class=&quot;nv&quot;&gt;$PGBENCHBIN&lt;/span&gt; -p5434 -Sn -T10 &lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt;     | grep -Po &lt;span class=&quot;s1&quot;&gt;'= \K[\d]+\.[\d]+'&lt;/span&gt; | paste -sd &lt;span class=&quot;s2&quot;&gt;&quot;,&quot;&lt;/span&gt; - ; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &amp;gt; benchRO.local
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 10&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; ; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;  &lt;span class=&quot;nv&quot;&gt;$PGBENCHBIN&lt;/span&gt; -p5434 -Sn -T10 localfdw   | grep -Po &lt;span class=&quot;s1&quot;&gt;'= \K[\d]+\.[\d]+'&lt;/span&gt; | paste -sd &lt;span class=&quot;s2&quot;&gt;&quot;,&quot;&lt;/span&gt; - ; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &amp;gt; benchRO.FDW_local
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 10&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; ; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;  &lt;span class=&quot;nv&quot;&gt;$PGBENCHBIN&lt;/span&gt; -p5435 -Sn -T10 external   | grep -Po &lt;span class=&quot;s1&quot;&gt;'= \K[\d]+\.[\d]+'&lt;/span&gt; | paste -sd &lt;span class=&quot;s2&quot;&gt;&quot;,&quot;&lt;/span&gt; - ; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &amp;gt; benchRO.FDW_external
+&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;i &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;seq 1 10&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; ; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;  &lt;span class=&quot;nv&quot;&gt;$PGBENCHBIN&lt;/span&gt; -p5435 -Sn -T10 external_ro   | grep -Po &lt;span class=&quot;s1&quot;&gt;'= \K[\d]+\.[\d]+'&lt;/span&gt; | paste -sd &lt;span class=&quot;s2&quot;&gt;&quot;,&quot;&lt;/span&gt; - ; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &amp;gt; benchRO.FDW_ext_ro
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Hope you enjoyed the article!&lt;/p&gt;
+
+&lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+
+
+var disqus_config = function () {
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = [WIP] FDW overhead.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = '//3manuek.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+&lt;/script&gt;
+
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
+
+</description>
+                <link>/fdwoverhead</link>
+                <guid>/FDW-overhead</guid>
+                <pubDate>Mon, 06 Mar 2017 00:00:00 -0300</pubDate>
+        </item>
+
+        <item>
+                <title>[WIP] Simple and manual sharding on PostgreSQL.</title>
+                <description>&lt;p&gt;&lt;em&gt;This article is WIP&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/dosequis.jpg&quot; alt=&quot;Dosequis&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;concept&quot;&gt;Concept&lt;/h2&gt;
+
+&lt;p&gt;In the current concept, we are going to combine &lt;em&gt;Foreign tables inheritance&lt;/em&gt; with
+the &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; extension, both being already available features since 9.5 version.&lt;/p&gt;
+
+&lt;p&gt;Cross-node partitioning allows a better data locality and a more scalable model
+than keeping local partitions. Being said, the data will be split into several
+nodes and organized using a particular key, which will determine in which &lt;em&gt;shard&lt;/em&gt;
+data will be allocated. For the current POC, we are going to specify the &lt;code class=&quot;highlighter-rouge&quot;&gt;shardKey&lt;/code&gt;
+, which is a simple &lt;code class=&quot;highlighter-rouge&quot;&gt;char(2)&lt;/code&gt; type.&lt;/p&gt;
+
+&lt;h3 id=&quot;how-this-was-done-before&quot;&gt;How this was done before&lt;/h3&gt;
+
+&lt;p&gt;Until today, the only way to perform findings over this method, was from the application
+layer, by issuing queries directly to the nodes by keeping certain deterministic way
+as &lt;a href=&quot;http://www.3manuek.com/fdwoverhead&quot;&gt;1&lt;/a&gt; or using a catalog table as [2] (&lt;em&gt;NOTE: the bellow examples are using pseudo code&lt;/em&gt;).&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.3manuek.com/fdwoverhead&quot;&gt;1&lt;/a&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;query = &quot;SELECT name,lastname FROM &quot; + relation + partition &quot; WHERE &quot; id =&quot; + person_id
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;[2]:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;shard = query(&quot;SELECT shard FROM catalog WHERE key = &quot; + person_id)
+query = &quot;SELECT name,lastname FROM &quot; + relation + shard &quot; WHERE &quot; id =&quot; + person_id
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;how-we-are-going-to-implement-this-now&quot;&gt;How we are going to implement this now&lt;/h3&gt;
+
+&lt;p&gt;As &lt;em&gt;foreign tables&lt;/em&gt; (FT) does not hold any data, it is possible to keep copies
+aroud all the databases involved and also in separated instances if this is
+necessary.&lt;/p&gt;
+
+&lt;p&gt;All the operations against the table will be done through the parent table of
+the FT tree tables and Postgres itself will determine the destination FT using
+the &lt;em&gt;constraint exclusion&lt;/em&gt; feature, which will be detailed further.&lt;/p&gt;
+
+&lt;p&gt;For HA, you are limited on the data nodes to implement any other replication
+solution available in the core version. To be fair, 9.6 supports &lt;em&gt;streaming replication&lt;/em&gt;
+and logical decoding, which is used by the &lt;code class=&quot;highlighter-rouge&quot;&gt;pglogical&lt;/code&gt; tool for providing advanced
+logical replication per table basis.&lt;/p&gt;
+
+&lt;h2 id=&quot;foreign-tables&quot;&gt;Foreign tables&lt;/h2&gt;
+
+&lt;p&gt;Foreign tables do not contain data by itselves and they only reference to a external
+table  on a different Postgres database. There are plenty of different extensions
+allowing external tables on different data store solutions, but in this particular
+article we are going to focus on &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; as we want to explore more about
+condition pushdowns, which makes queries against these tables more performant
+on more complex queries.&lt;/p&gt;
+
+&lt;p&gt;A more extensive benchmark can be found at my &lt;a href=&quot;http://www.3manuek.com/fdwoverhead&quot;&gt;next article&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The framework underlying for the Foreign Data Wrappers, support both reads and
+write operations. &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; is not the exception and does also support condition
+pushdown for avoiding large scans on the source tables.&lt;/p&gt;
+
+&lt;p&gt;On each database holding the FT, you need to invoke the extension creation:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;EXTENSION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;FT have two main elements,necessary to point correctly both in source as in user
+privileges. If you are paranoic enough, you’ll prefer to use unprivileged users
+with limited grants over the tables that you use.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Server&lt;/li&gt;
+  &lt;li&gt;User Mapping&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.3manuek.com/fdwoverhead&quot;&gt;1&lt;/a&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'5434'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'shard1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'5435'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'shard2'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;-- Slaves&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main_replica&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'7777'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'shard1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main_replica&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DATA&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WRAPPER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres_fdw&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;host&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'127.0.0.1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;port&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'8888'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbname&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'shard2'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;[2]&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;-- User mapping&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main_replica&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAPPING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;postgres&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main_replica&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OPTIONS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'postgres'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The FT definition is indeed pretty straightforward if we don’t want to do any further
+column filtering:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bigint&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;CHECK&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;INHERITS&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard1_main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FOREIGN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard02&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;CHECK&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'02'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;INHERITS&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SERVER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shard2_main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;writable-fdws&quot;&gt;Writable FDWs&lt;/h3&gt;
+
+&lt;p&gt;Even if I don’t recommend the following approach, it can be very easy to centralize
+the writes &lt;em&gt;to&lt;/em&gt; the shards through the FT. Although, it requires to code a trigger
+for managing this.&lt;/p&gt;
+
+&lt;p&gt;The minimum transaction level for foreign tables is REPEATABLE READ.&lt;/p&gt;
+
+&lt;p&gt;This methodology is not very performant, as for bulk writes you may ending up to
+do this on each node locally.&lt;/p&gt;
+
+&lt;p&gt;A very simplistic approach for an INSERT trigger will be like bellow:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;OR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;REPLACE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FUNCTION&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f_main_part&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;RETURNS&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TRIGGER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AS&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FMAINPART&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;DECLARE&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;partition_name&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;BEGIN&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;partition_name&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'main_shard'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NEW&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;EXECUTE&lt;/span&gt;  &lt;span class=&quot;s1&quot;&gt;'INSERT INTO '&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;quote_ident&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;partition_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt;  &lt;span class=&quot;s1&quot;&gt;' SELECT ($1).*'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;USING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NEW&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;RETURN&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;END&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FMAINPART&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;$&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;LANGUAGE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plpgsql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TRIGGER&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;t_main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BEFORE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INSERT&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;FOR&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;EACH&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ROW&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;EXECUTE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;PROCEDURE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f_main_part&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;data-on-shards&quot;&gt;Data on shards&lt;/h2&gt;
+
+&lt;p&gt;As shards contain data, the declaration ends up to be a  common table within
+the necessary suffix for localization:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bigint&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;CHECK&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INDEX&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;ON&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;A simple test could be done by issuing:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INSERT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INTO&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'0'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;round&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;random&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;random&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;text&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;generate_series&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;INSERT&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;You probably are intuiting that the above statement inserts data on both nodes,
+and the trigger will derive the row accordingly to the corresponding shard.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;NOTE: the shard number is generated by &lt;code class=&quot;highlighter-rouge&quot;&gt;random()*1+1&lt;/code&gt; which output rounds between
+1 and 2.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;grab-them-from-the-hidden-columns&quot;&gt;&lt;em&gt;Grab them from the hidden columns&lt;/em&gt;&lt;/h2&gt;
+
+&lt;p&gt;Querying data can be nicely transparent, as shown bellow:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tableoid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;group&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tableoid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+ &lt;span class=&quot;n&quot;&gt;tableoid&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;----------+-------&lt;/span&gt;
+    &lt;span class=&quot;mi&quot;&gt;33226&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;   &lt;span class=&quot;mi&quot;&gt;104&lt;/span&gt;
+    &lt;span class=&quot;mi&quot;&gt;33222&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;    &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;For example, retrieving a single row is easy as:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;       
+&lt;span class=&quot;c1&quot;&gt;-------------------&lt;/span&gt;
+ &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;971926014870405&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;row&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Behind the scenes, the query pushed to the remote servers contains the corresponding
+filters for the columns explicited in the query.&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;explain&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;VERBOSE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
+                               &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;
+                                                &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shardKey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+                                 &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PLAN&lt;/span&gt;                                                    
+&lt;span class=&quot;c1&quot;&gt;--------------------------------------------------------------------------------&lt;/span&gt;
+ &lt;span class=&quot;n&quot;&gt;Append&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;131&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;95&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;Seq&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
+         &lt;span class=&quot;n&quot;&gt;Filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardkey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bpchar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;Foreign&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;131&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;95&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
+         &lt;span class=&quot;n&quot;&gt;Remote&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SQL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+             &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shardkey&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bpchar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Even if we don’t want to provide the shardKey, the &lt;code class=&quot;highlighter-rouge&quot;&gt;key&lt;/code&gt; filter will be pushed across
+all the shards.&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=#&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;explain&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;VERBOSE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+                                    &lt;span class=&quot;n&quot;&gt;QUERY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PLAN&lt;/span&gt;                                    
+&lt;span class=&quot;c1&quot;&gt;--------------------------------------------------------------------------------&lt;/span&gt;
+ &lt;span class=&quot;n&quot;&gt;Append&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;256&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;83&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;Seq&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
+         &lt;span class=&quot;n&quot;&gt;Filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;Foreign&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
+         &lt;span class=&quot;n&quot;&gt;Remote&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SQL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard01&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+   &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;Foreign&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard02&lt;/span&gt;  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;128&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;width&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+         &lt;span class=&quot;k&quot;&gt;Output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;main_shard02&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt;
+         &lt;span class=&quot;n&quot;&gt;Remote&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SQL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;avalue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main_shard02&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1500&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;considerations&quot;&gt;Considerations&lt;/h2&gt;
+
+&lt;p&gt;Foreign Data Wrappers for Postgres are such a great extension, but it comes at
+a price. There is a visible overhead in high intensive transactional workloads.&lt;/p&gt;
+
+&lt;p&gt;Hope you liked the article!&lt;/p&gt;
+
+&lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
+&lt;script&gt;
+
+
+var disqus_config = function () {
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = [WIP] Simple and manual sharding on PostgreSQL.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = '//3manuek.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+&lt;/script&gt;
+
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;
+
+</description>
+                <link>/postgresmanualsharding</link>
+                <guid>/simple-manual-sharding</guid>
+                <pubDate>Mon, 06 Mar 2017 00:00:00 -0300</pubDate>
+        </item>
 
         <item>
                 <title>Playing with Postgres and Kafka.</title>
@@ -187,7 +718,7 @@ server.properties file.&lt;/p&gt;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Playing with Postgres and Kafka.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -424,7 +955,7 @@ an EXPLAIN as proof that none of the other foreign tables have been examined.&lt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Highlighting Postgres 10 new features: Logical Replication and Partitioning.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -513,7 +1044,7 @@ nohup atom &amp;amp;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Go-Plus and Atom GOPATH fix; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -763,7 +1294,7 @@ PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -941,7 +1472,7 @@ esas cosas que descargamos, en especial aquellas que están en la mira.&lt;/p&gt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Verificando descargas a traves de hashes y firmas; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1061,7 +1592,7 @@ mysql&amp;gt;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = HOWTO Percona Server with docker; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1531,7 +2062,7 @@ To learn more, see &lt;a href=&quot;http://rmarkdown.rstudio.com/authoring_shiny
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = MySQL 5.7 InnoDB's Full Text Search overview.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -2195,7 +2726,7 @@ Zoloft'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span clas
 &lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
 &lt;script&gt;
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Multi source data injection to Postgres RDS with encryption and FTS support; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 

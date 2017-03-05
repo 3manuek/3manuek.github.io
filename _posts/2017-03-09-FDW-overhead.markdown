@@ -33,7 +33,14 @@ is not well suitable for foreign tables.
 
 From the tests taken, `postgres_fdw` show approximately a `.65x` of overhead compared with a
 local table. Although, for read only transactions the overhead is higher, probably
-related to the default transaction level used for [FDW F.33.3][3].
+related to the default transaction level used (`repeatable read`) as detailed in [FDW F.33.3][3].
+For this reason, all the conducted tests have been done using this isolation level of
+transaction, to make comparison fair (specially for read only workloads, wether
+more scans are needed for keeping result consistency).
+
+Also, I considered the TPS stats _including_ connections, as we are trying to consider
+all the extension phases.
+
 
 ## RW overhead by TPS throughput
 
@@ -41,7 +48,7 @@ The estimated overhead between FDW and straight RW operations is a factor of `.6
 Considering that the tests were intensive, it is a very good number ([Fig. 1]).
 
 
-## RO overhead
+## RO overhead by TPS throughput
 
 The overhead for intensive read only workloads is significantly higher than RW: `6.7x`.
 
@@ -51,12 +58,12 @@ more unstable TPS throughput, although the mean does no show a significant diffe
 ![TPS][1]{: class="bigger-image" }
 <figcaption class="caption">[Fig. 1] TPS throughput.</figcaption>
 
-`updatable` does not help at transaction level , as it only adds slightly more overhead.
-`RO.FDW_ext_ro` adds the options at [Snippet 2].
+`updatable` does not help at performance, as it only adds slightly more overhead
+due the permissions check. `RO.FDW_ext_ro` adds the options at [Snippet 2] to each
+FDW table.
 
-![RO TPS][4]{: class="bigger-image" }
+![RO TPS][4]
 <figcaption class="caption">[Fig. 1] RO TPS throughput with/without updatable option.</figcaption>
-
 
 
 ## Latency inspection
@@ -98,12 +105,15 @@ Latency in ms:
 
 ## Reproducing the test
 
-Populating _pgbench_ tables:
+Populating _pgbench_ tables within an scale of 100:
+
 ```sh
 /usr/lib/postgresql/9.6/bin/pgbench -p5434 -i -s100 source
 ```
 
-Creating the schema on the databases from which the FDW are called (external and localfdw):
+Creating the schema on the databases from which the FDW are called (external, external_ro and localfdw):
+
+[Snippet 1]
 
 ```sql
 CREATE SERVER source_server FOREIGN DATA WRAPPER postgres_fdw
@@ -116,7 +126,7 @@ IMPORT FOREIGN SCHEMA public LIMIT TO (pgbench_accounts,pgbench_history,
 pgbench_branches,pgbench_tellers) FROM SERVER source_server INTO public ;
 ```
 
-[Snippet 2]:
+[Snippet 2] applied into `external_ro` database:
 
 ```sql
 ALTER FOREIGN TABLE pgbench_accounts OPTIONS (updatable 'false');
