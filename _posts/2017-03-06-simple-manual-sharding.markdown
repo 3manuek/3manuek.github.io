@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[WIP] Simple and manual sharding on PostgreSQL."
+title:  "Simple and manual sharding on PostgreSQL."
 date:   2017-03-06
 description: _Foreign Data Wrappers_ inheritance.
 tags : [PostgreSQL, Sharding]
@@ -11,10 +11,6 @@ comments: true
 permalink: postgresmanualsharding
 author: 3manuek
 ---
-
-*This article is WIP*
-
-![Dosequis][4]
 
 
 ## Concept
@@ -130,7 +126,7 @@ Even if I don't recommend the following approach, it can be very easy to central
 the writes _to_ the shards through the FT. Although, it requires to code a trigger
 for managing this.
 
-The minimum transaction level for foreign tables is REPEATABLE READ. 
+The minimum transaction level for foreign tables is REPEATABLE READ.
 
 This methodology is not very performant, as for bulk writes you may ending up to
 do this on each node locally.
