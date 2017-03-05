@@ -5,8 +5,8 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Sat, 04 Mar 2017 21:08:44 -0300</lastBuildDate>
-        <pubDate>Sat, 04 Mar 2017 21:08:44 -0300</pubDate>
+        <lastBuildDate>Sat, 04 Mar 2017 21:11:43 -0300</lastBuildDate>
+        <pubDate>Sat, 04 Mar 2017 21:11:43 -0300</pubDate>
         <ttl>60</ttl>
 
 
@@ -187,7 +187,7 @@ server.properties file.&lt;/p&gt;
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Playing with Postgres and Kafka.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -424,7 +424,7 @@ an EXPLAIN as proof that none of the other foreign tables have been examined.&lt
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Highlighting Postgres 10 new features: Logical Replication and Partitioning.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -513,7 +513,7 @@ nohup atom &amp;amp;
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Go-Plus and Atom GOPATH fix; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -763,7 +763,7 @@ PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -941,7 +941,7 @@ esas cosas que descargamos, en especial aquellas que están en la mira.&lt;/p&gt
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Verificando descargas a traves de hashes y firmas; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1061,7 +1061,7 @@ mysql&amp;gt;
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = HOWTO Percona Server with docker; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1531,7 +1531,7 @@ To learn more, see &lt;a href=&quot;http://rmarkdown.rstudio.com/authoring_shiny
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = MySQL 5.7 InnoDB's Full Text Search overview.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -2195,7 +2195,7 @@ Zoloft'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span clas
 &lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
 &lt;script&gt;
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Multi source data injection to Postgres RDS with encryption and FTS support; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
