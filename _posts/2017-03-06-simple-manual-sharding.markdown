@@ -57,6 +57,10 @@ solution available in the core version. To be fair, 9.6 supports _streaming repl
 and logical decoding, which is used by the `pglogical` tool for providing advanced
 logical replication per table basis.
 
+
+![TPS][2]
+<figcaption class="caption">[Fig. 1] Manual sharding with FDW current implementation.</figcaption>
+
 ## Foreign tables
 
 Foreign tables do not contain data by itselves and they only reference to a external
@@ -92,6 +96,7 @@ CREATE SERVER shard1_main FOREIGN DATA WRAPPER postgres_fdw
   OPTIONS(host '127.0.0.1',port '5434',dbname 'shard1');
 CREATE SERVER shard2_main FOREIGN DATA WRAPPER postgres_fdw
   OPTIONS(host '127.0.0.1',port '5435',dbname 'shard2');
+
 -- Slaves
 CREATE SERVER shard1_main_replica FOREIGN DATA WRAPPER postgres_fdw
   OPTIONS(host '127.0.0.1',port '7777',dbname 'shard1');
@@ -115,8 +120,16 @@ column filtering:
 
 ```sql
 CREATE TABLE main (shardKey char(2), key bigint, avalue text);
-CREATE FOREIGN TABLE main_shard01 (CHECK (shardKey = '01'))INHERITS (main) SERVER shard1_main;
-CREATE FOREIGN TABLE main_shard02 (CHECK (shardKey = '02'))INHERITS (main) SERVER shard2_main;
+
+CREATE FOREIGN TABLE main_shard01
+       (CHECK (shardKey = '01'))
+       INHERITS (main)
+       SERVER shard1_main;
+
+CREATE FOREIGN TABLE main_shard02
+       (CHECK (shardKey = '02'))
+       INHERITS (main)
+       SERVER shard2_main;
 ```
 
 
@@ -124,12 +137,8 @@ CREATE FOREIGN TABLE main_shard02 (CHECK (shardKey = '02'))INHERITS (main) SERVE
 
 Even if I don't recommend the following approach, it can be very easy to centralize
 the writes _to_ the shards through the FT. Although, it requires to code a trigger
-for managing this.
-
-The minimum transaction level for foreign tables is REPEATABLE READ.
-
-This methodology is not very performant, as for bulk writes you may ending up to
-do this on each node locally.
+for managing this. Currently, the minimum transaction level for foreign tables is REPEATABLE READ,
+but it will probably change in future versions.
 
 A very simplistic approach for an INSERT trigger will be like bellow:
 
@@ -157,14 +166,19 @@ As shards contain data, the declaration ends up to be a  common table within
 the necessary suffix for localization:
 
 ```sql
-CREATE TABLE main_shard01(shardKey char(2), key bigint, avalue text, CHECK(shardKey='01'));
+CREATE TABLE main_shard01(  shardKey char(2),
+                            key bigint,
+                            avalue text,
+                            CHECK(shardKey='01'));
 CREATE INDEX ON main_shard01(key);
 ```
 
 A simple test could be done by issuing:
 
 ```sql
-proxy=# INSERT INTO main SELECT '0' || round(random()*1+1),i.i,random()::text FROM generate_series(1,20000) i(i) ;
+proxy=# INSERT INTO main
+        SELECT '0' || round(random()*1+1),i.i,random()::text
+        FROM generate_series(1,20000) i(i) ;
 INSERT 0 0
 ```
 
@@ -176,7 +190,10 @@ and the trigger will derive the row accordingly to the corresponding shard.
 
 ## _Grab them from the hidden columns_
 
-Querying data can be nicely transparent, as shown bellow:
+Querying data can be nicely transparent, as shown bellow. The `tableoid` in this
+particular case can be misleading, as the `oid` reported are those from the nodes,
+not the local machine. It is used just to show that they're effectively different
+tables:
 
 ```sql
 proxy=# select tableoid,count(*) from main group by tableoid;
@@ -198,7 +215,8 @@ proxy=# SELECT avalue FROM main WHERE key = 1500 and shardKey = '01';
 ```
 
 Behind the scenes, the pushed query to the remote servers contains the corresponding
-filters.
+filter (`(key = 1500)`) and locally, the constraint exclusion allows to avoid further
+scans into the other child FT.
 
 ```sql
 proxy=# explain (VERBOSE true)SELECT avalue
@@ -218,7 +236,8 @@ proxy=# explain (VERBOSE true)SELECT avalue
 ```
 
 Even if we don't want to provide the shardKey, the `key` filter will be pushed across
-all the shards.
+all the shard nodes. If your keys aren't unique across shards, you'll get a multi-row
+result set.
 
 ```sql
 proxy=# explain (VERBOSE true)SELECT avalue FROM main WHERE key = 1500;
@@ -240,7 +259,7 @@ proxy=# explain (VERBOSE true)SELECT avalue FROM main WHERE key = 1500;
 ## Considerations
 
 Foreign Data Wrappers for Postgres are such a great extension, but it comes at
-a price. There is a visible overhead in high intensive transactional workloads.
+a price with a visible [overhead in high intensive transactional workloads][1].
 
 
 Hope you liked the article!
@@ -268,3 +287,4 @@ s.setAttribute('data-timestamp', +new Date());
 
 [4]: http://www.3manuek.com/assets/posts/dosequis.jpg
 [1]: http://www.3manuek.com/fdwoverhead
+[2]: {{ site.url }}/assets/posts/fdwsharding1.jpg

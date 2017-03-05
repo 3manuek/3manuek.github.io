@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  "[WIP] FDW overhead."
+title:  "postgres_fdw estimated overhead."
 date:   2017-03-06
-description: How much overhead is added by using Foreign Data Wrappers?
+description: How much overhead is added by using postgres_fdw Foreign Data Wrappers?
 tags : [PostgreSQL, Sharding]
 categories:
 - PostgreSQL
@@ -12,35 +12,32 @@ permalink: fdwoverhead
 author: 3manuek
 ---
 
-*This article is WIP*
-
-![Dosequis][10]
-
 
 ## Performance analysis of FDW overhead on intensive transaction workloads
 
 The current benchmarks were run under PostgreSQL 9.6.2, in order to persuit an
 estimation of the overhead of the `postgres_fdw` extension. For doing so I'd set
 four databases in two different schemas in which `source` is the only database
-holding the data. Rest of the databases only hold the DDL of the foreign tables.
+storing pgbench's the data. Rest of the databases only hold the DDL of the foreign tables.
 Both instances reside on the same machine in order to discard any network biasing
-on the final numbers. One of the FDW connects from the same instance
-(FDW_local) and the other from a different instance (FDW_external).
+on the final results. One of the FDW connects from the same instance
+(FDW_local) and the others from a different instance (FDW_external and FDW_ext_ro),
+description at  the [reference anex](#Benchmark-reference).
 
 Keep also in mind, that `pgbench` does intensive transaction workload, which generally
 is not well suitable for foreign tables. So, the overhead is something expected
 at this point.
 
 From the tests taken, `postgres_fdw` show approximately a `.70x` of overhead compared with a
-local table. Although, for read only transactions the overhead is higher, mostly
-probably due to the transaction isolation used (`repeatable read`) as detailed in [FDW F.33.3][3].
-For this reason, all the conducted tests have been done using REPEATABLE READ isolation
-, to make comparison fair (specially for read only workloads, wether
+local table. Although, for read only transactions the overhead is much higher,
+probably due to the effects of the forced transaction isolation used (`repeatable read`)
+on FDW as detailed in [FDW F.33.3][3]. For this reason, **all the conducted tests have been
+done using REPEATABLE READ isolation**, to make comparison fair (specially for read only workloads, wether
 more scans are needed for keeping result consistency).
 
 Also, I considered the TPS stats _including_ connections, as we are trying to consider
-all the execution phases. It is important to note that postgres_fdw recycles connections
-over the same session.  
+all the execution phases. It is important to note that `postgres_fdw` recycles connections
+over the same session for each user mapping.  
 
 ## Notes
 
@@ -89,7 +86,7 @@ This can be seen clearly on the [Fig.2].
 
 ## Aggregated data of the benchmarks
 
-TPS:
+TPS by RO and RW:
 
 ```
 > subset(byBenchTPS, Type == "RO")
@@ -109,7 +106,7 @@ TPS:
 
 ## Reproducing the test
 
-Populating _pgbench_ tables within an scale of 100:
+Populating _pgbench_ tables within a scale of 100:
 
 ```sh
 /usr/lib/postgresql/9.6/bin/pgbench -p5434 -i -s100 source
@@ -158,6 +155,21 @@ $PGVACUUM
 ```
 
 Hope you enjoyed the article!
+
+
+
+## Benchmark reference
+
+| Keyword | Description
+|-----|-----
+|RO | Read only tests
+|RW | Read/writes tests
+|FDW_ext_ro | External Foreign tables with `updatable` option.
+|FDW_external | External Foreign tables
+|FDW_local  | Local Foreign Tables (same postgres instance)
+
+
+
 
 
 {% if page.comments %}
