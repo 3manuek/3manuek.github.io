@@ -9,12 +9,12 @@ rm(allfiles)
 allfiles = NULL
 
 for (filename in dir(pattern = "^bench*")) {
+#for (filename in dir(pattern = "^benchRO.*ext.*")) {
    #typecols <- strsplit(filename,"[.]")[[1]]
    typecols <- rbind(strsplit(gsub("bench","",filename),"[.]")[[1]])
    typecols <- cbind(gsub("bench","",filename),typecols)
    allfiles <- rbind(allfiles,cbind(typecols,read.csv(filename, header = FALSE,sep = "," ,
                  colClasses = c("numeric","numeric","numeric")) ))
-   #allfiles <- readLines(filename)
 }
 
 colnames(allfiles) <- c("Bench","Type","Target","Latency", "TPSi", "TPSe")
@@ -38,6 +38,7 @@ limitsLAT <- aes(ymax = byBenchLAT$Max,ymin = byBenchLAT$Min)
 
 png("../../assets/posts/tpsfdw.png")
 
+#png("../../assets/posts/tpsfdwro.png")
 TPSplot <- ggplot(data = byBenchTPS, aes(x = Target, y = Mean,fill = Bench )) #
 TPSplot + geom_bar(stat = "identity", position = dodge) + #, aes(fill=Bench)
       geom_errorbar(limitsTPS, position = dodge, width = 0.25) +
