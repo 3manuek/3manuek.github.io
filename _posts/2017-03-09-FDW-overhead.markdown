@@ -19,47 +19,59 @@ author: 3manuek
 
 ## Performance analysis of FDW overhead on intensive transaction workloads
 
-
-Something to keep in mind is that the current implementation of `postgres_fdw`
-under 9.6 (This was tested over **9.6.2** to be exact), has a considerable overhead
-in the overall execution time.
-
-The test was done exclusively on the same machine in two different instances,
-for discarding any network biasing. One of the FDW connects from the same instance
+The current benchmarks were run under PostgreSQL 9.6.2, in order to persuit an
+estimation of the overhead of the `postgres_fdw` extension. For doing so I'd set
+four databases in two different schemas in which `source` is the only database
+holding the data. Rest of the databases only hold the DDL of the foreign tables.
+Both instances reside on the same machine in order to discard any network biasing
+on the final numbers. One of the FDW connects from the same instance
 (FDW_local) and the other from a different instance (FDW_external).
 
 Keep also in mind, that `pgbench` does intensive transaction workload, which generally
-is not well suitable for foreign tables.
+is not well suitable for foreign tables. So, the overhead is something expected
+at this point.
 
-From the tests taken, `postgres_fdw` show approximately a `.65x` of overhead compared with a
-local table. Although, for read only transactions the overhead is higher, probably
-related to the default transaction level used (`repeatable read`) as detailed in [FDW F.33.3][3].
-For this reason, all the conducted tests have been done using this isolation level of
-transaction, to make comparison fair (specially for read only workloads, wether
+From the tests taken, `postgres_fdw` show approximately a `.70x` of overhead compared with a
+local table. Although, for read only transactions the overhead is higher, mostly
+probably due to the transaction isolation used (`repeatable read`) as detailed in [FDW F.33.3][3].
+For this reason, all the conducted tests have been done using REPEATABLE READ isolation
+, to make comparison fair (specially for read only workloads, wether
 more scans are needed for keeping result consistency).
 
 Also, I considered the TPS stats _including_ connections, as we are trying to consider
-all the extension phases.
+all the execution phases. It is important to note that postgres_fdw recycles connections
+over the same session.  
+
+## Notes
+
+- If you are going to have intensive reads for key lookups, you may prefer to connect directly to
+  the nodes.
+- Consider the limitations at transaction isolation, as using FDW has a different
+  behavior than the standard Postgres default (read committed).
+- Network can add a considerable latency. If possible, database servers should
+  communicate in fast and closed networks, in order to avoid any other extra noise.
 
 
 ## RW overhead by TPS throughput
 
-The estimated overhead between FDW and straight RW operations is a factor of `.65x`.
+The estimated overhead between FDW and straight RW operations is a factor of `.70x`.
 Considering that the tests were intensive, it is a very good number ([Fig. 1]).
 
 
 ## RO overhead by TPS throughput
 
-The overhead for intensive read only workloads is significantly higher than RW: `6.7x`.
+The overhead for intensive read only workloads is significantly higher than RW: `6.5x`.
 
 By executing FDW locally and externally, I observed that the external FDW had
-more unstable TPS throughput, although the mean does no show a significant difference.
+more unstable TPS throughput, although the mean does not show a significant difference.
+In fact, through all the benchmarks I've done, there is a slightly more throughput
+in the TPS mean when using FDW on a different instance over using the FDW locally.
 
 ![TPS][1]{: class="bigger-image" }
 <figcaption class="caption">[Fig. 1] TPS throughput.</figcaption>
 
 `updatable` does not help at performance, as it only adds slightly more overhead
-due the permissions check. `RO.FDW_ext_ro` adds the options at [Snippet 2] to each
+due the permissions check. `RO.FDW_ext_ro` adds the options shown at [Snippet 2] to each
 FDW table.
 
 ![RO TPS][4]
@@ -75,32 +87,24 @@ This can be seen clearly on the [Fig.2].
 <figcaption class="caption">[Fig.2] Latency in ms.</figcaption>
 
 
-
 ## Aggregated data of the benchmarks
 
 TPS:
 
-|Bench  | Type   |    Target    |    Max   |     Min  |     Mean  
-|-----|------|---|---|---|
-|RO.FDW_external   |  RO |FDW_external | 1713.57 | 1387.70 | 1511.04
-|RO.FDW_local   |  RO  |  FDW_local | 1557.38 | 1445.34 | 1482.65
-|RO.local   |  RO    |   local |11717.88 |11131.27 | 11512.79
-|RW.FDW_external   |  RW |FDW_external |  128.12 |  102.21  | 113.79
-|RW.FDW_local  |   RW  |  FDW_local  | 146.00 |  135.73 |  139.72
-|RW.local  |   RW     |   local  | 217.21|   203.58 |  209.49
+```
+> subset(byBenchTPS, Type == "RO")
+            Bench   Type       Target       Max       Min      Mean
+1   RO.FDW_ext_ro     RO   FDW_ext_ro  1637.314  1402.255  1507.400
+2 RO.FDW_external     RO FDW_external  1596.900  1413.704  1519.091
+3    RO.FDW_local     RO    FDW_local  1570.985  1310.034  1476.397
+4        RO.local     RO        local 11670.959 10981.858 11475.249
 
-
-Latency in ms:
-
-|Bench  | Type   |    Target |  Max |  Min |  Mean
-|---|---|---|---|---|
-|RO.FDW_external   |  RO |FDW_external| 0.721 |0.584 |0.6642
-|RO.FDW_local   |  RO  |  FDW_local| 0.692| 0.642 |0.6748
-|RO.local  |   RO     |   local |0.090 |0.085 |0.0869
-|RW.FDW_external  |   RW | FDW_external| 9.784 |7.805| 8.8521
-|RW.FDW_local   |  RW  |  FDW_local |7.367 |6.849| 7.1598
-|RW.local   |  RW  |      local |4.912 |4.604| 4.7748
-
+> subset(byBenchTPS, Type == "RW")
+            Bench   Type       Target      Max      Min     Mean
+1 RW.FDW_external     RW FDW_external 136.4827 110.6894 124.5781
+2    RW.FDW_local     RW    FDW_local 145.5167 125.2096 133.1675
+3        RW.local     RW        local 240.8039 205.6248 219.2062
+```
 
 
 ## Reproducing the test
