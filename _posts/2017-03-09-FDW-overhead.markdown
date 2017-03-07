@@ -47,7 +47,11 @@ over the same session for each user mapping.
   behavior than the standard Postgres default (read committed).
 - Network can add a considerable latency. If possible, database servers should
   communicate in fast and closed networks, in order to avoid any other extra noise.
-
+- Both RW and RO benchs use one connection for the pgbench. There are two reasons for
+  this: 1) I wanted to keep tests RW/RO comparable in ratio  and , 2) when using
+  FDW you are attached to a higher transaction isolation than the default, meaning
+  that executing more than one RW connection **won't be able to serialize access due
+  to concurrent update**.
 
 ## RW overhead by TPS throughput
 
@@ -71,8 +75,22 @@ in the TPS mean when using FDW on a different instance over using the FDW locall
 due the permissions check. `RO.FDW_ext_ro` adds the options shown at [Snippet 2] to each
 FDW table.
 
+With 1 connection for RO:
+
 ![RO TPS][4]
 <figcaption class="caption">[Fig. 1] RO TPS throughput with/without updatable option.</figcaption>
+
+
+With 5 connections for RO connections over all the tests:
+
+![RO TPS][5]
+<figcaption class="caption">[Fig. 2] RO TPS throughput (5 connections) with/without updatable option.</figcaption>
+
+> Note
+>
+> Looks like FDW have a roof in terms of performance for concurrent sessions. This
+> probably need a more intensive benchmark which could be analyzed in a second part of this
+> post.
 
 
 ## Latency inspection
@@ -152,7 +170,13 @@ $PGVACUUM
 { for i in $(seq 1 10) ; do  $PGBENCHBIN -p5434 -Sn -T10 localfdw   | grep -Po '= \K[\d]+\.[\d]+' | paste -sd "," - ; done } > benchRO.FDW_local
 { for i in $(seq 1 10) ; do  $PGBENCHBIN -p5435 -Sn -T10 external   | grep -Po '= \K[\d]+\.[\d]+' | paste -sd "," - ; done } > benchRO.FDW_external
 { for i in $(seq 1 10) ; do  $PGBENCHBIN -p5435 -Sn -T10 external_ro   | grep -Po '= \K[\d]+\.[\d]+' | paste -sd "," - ; done } > benchRO.FDW_ext_ro
+
+{ for i in $(seq 1 10) ; do  $PGBENCHBIN -p5434 -Sn -c5 -T10 source     | grep -Po '= \K[\d]+\.[\d]+' | paste -sd "," - ; done } > benchRO.local_5
+{ for i in $(seq 1 10) ; do  $PGBENCHBIN -p5434 -Sn -c5 -T10 localfdw   | grep -Po '= \K[\d]+\.[\d]+' | paste -sd "," - ; done } > benchRO.FDW_local_5
+{ for i in $(seq 1 10) ; do  $PGBENCHBIN -p5435 -Sn -c5 -T10 external   | grep -Po '= \K[\d]+\.[\d]+' | paste -sd "," - ; done } > benchRO.FDW_external_5
+{ for i in $(seq 1 10) ; do  $PGBENCHBIN -p5435 -Sn -c5 -T10 external_ro   | grep -Po '= \K[\d]+\.[\d]+' | paste -sd "," - ; done } > benchRO.FDW_ext_ro_5
 ```
+
 
 Hope you enjoyed the article!
 
@@ -196,4 +220,5 @@ s.setAttribute('data-timestamp', +new Date());
 [2]: http://www.3manuek.com/assets/posts/latfdw.png
 [3]: https://www.postgresql.org/docs/9.6/static/postgres-fdw.html
 [4]: http://www.3manuek.com/assets/posts/tpsfdwro.png
+[5]: http://www.3manuek.com/assets/posts/tpsfdw_5.png
 [10]: http://www.3manuek.com/assets/posts/dosequis.jpg

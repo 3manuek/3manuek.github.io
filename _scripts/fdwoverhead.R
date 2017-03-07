@@ -33,6 +33,8 @@ colnames(byBenchLAT) <- c("Bench","Type","Target","Max","Min", "Mean")
 # Graph
 dodge <- position_dodge(width = 0.9)
 
+byBenchTPS_5 <- subset(byBenchTPS, grepl("*5$", Bench))
+limitsTPS_5 <- aes(ymax = byBenchTPS_5$Max, ymin = byBenchTPS_5$Min )
 limitsTPS <- aes(ymax = byBenchTPS$Max, ymin = byBenchTPS$Min )
 #limitsTPS_ro <- aes(ymax = byBenchTPS$Max, ymin = byBenchTPS$Min + byBenchTPS$Mean )
 limitsLAT <- aes(ymax = byBenchLAT$Max,ymin = byBenchLAT$Min)
@@ -46,6 +48,19 @@ TPSplot + geom_bar(stat = "identity", position = dodge) + #, aes(fill=Bench)
       facet_grid(Type~., scales = "free") +
       theme(legend.background = element_rect(fill="gray90", size=.5, linetype="dotted"))
 dev.off()
+
+png("../../assets/posts/tpsfdwro_5.png")
+TPSplot <- ggplot(data = byBenchTPS_5, aes(x = Target, y = Mean,fill = Bench )) #
+TPSplot + geom_bar(stat = "identity", position = dodge) + #, aes(fill=Bench)
+      geom_errorbar(limitsTPS_5, position = dodge, width = 0.25) +
+      coord_cartesian(ylim=c(byBenchTPS_5$Min ,byBenchTPS_5$Max)) + 
+      labs(x = "Target", y = "TPS") +
+      ggtitle("TPS including connections (5 connections)") +
+      facet_grid(Type~., scales = "free") +
+      theme(legend.background = element_rect(fill="gray90", size=.5, linetype="dotted"),
+            axis.text.x = element_text(angle = 45, hjust = 1))
+dev.off()
+
 
 byBenchTPS <- subset(byBenchTPS, Type == "RO" & grepl("ext", Bench))
 png("../../assets/posts/tpsfdwro.png")
