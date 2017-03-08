@@ -220,5 +220,5 @@ s.setAttribute('data-timestamp', +new Date());
 [2]: http://www.3manuek.com/assets/posts/latfdw.png
 [3]: https://www.postgresql.org/docs/9.6/static/postgres-fdw.html
 [4]: http://www.3manuek.com/assets/posts/tpsfdwro.png
-[5]: http://www.3manuek.com/assets/posts/tpsfdw_5.png
+[5]: {{ site.url }}/assets/posts/tpsfdwro_5.png
 [10]: http://www.3manuek.com/assets/posts/dosequis.jpg

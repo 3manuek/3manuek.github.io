@@ -5,8 +5,8 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Tue, 07 Mar 2017 11:11:15 -0300</lastBuildDate>
-        <pubDate>Tue, 07 Mar 2017 11:11:15 -0300</pubDate>
+        <lastBuildDate>Wed, 08 Mar 2017 13:16:19 -0300</lastBuildDate>
+        <pubDate>Wed, 08 Mar 2017 13:16:19 -0300</pubDate>
         <ttl>60</ttl>
 
 
@@ -82,7 +82,7 @@ FDW table.&lt;/p&gt;
 
 &lt;p&gt;With 5 connections for RO connections over all the tests:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/tpsfdw_5.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/tpsfdwro_5.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;[Fig. 2] RO TPS throughput (5 connections) with/without updatable option.&lt;/figcaption&gt;
 
 &lt;blockquote&gt;
