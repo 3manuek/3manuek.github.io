@@ -1,7 +1,10 @@
 ---
 title: Resume
 layout: post
+author: 3manuek
+comments: false
 ---
+
 
 
 For professional contact, you can send a contact request or message through my
@@ -12,25 +15,25 @@ For professional contact, you can send a contact request or message through my
 ## Summary
 
 - Since 2006, I've worked with a very heterogeneous set of technologies  and companies, from boutique services to large consulting firms, telecommunications companies for training and consulting.
-- Mostly focused on data and its process, from pipelines, workers, queues to databases/datastores.
+- Mostly focused on Open Source Databases/Datastores and related patterns for data manipulation from pipelines, workers and queues.
 - Code fixing in several languages is something that I do on a daily basis (Python, Perl, Go, R, Bash and other shells).
 - Although I've played with Windows in the past, I consider that at least 98% of the servers that I have played with, run Linux, Unix BSD or Solaris.
 - Postgres and MySQL/MariaDB are my most known database systems. However, I've hands on others DB/DS experience in Oracle, Vertica, MongoDB, Redis, Greenplum, among others.
 - Good AWS experience.
 
-My current technology stack is:
+My technology stack is:
 - PostgreSQL and extensions, MySQL/MariaDB, XtraDB Cluster, Sphinx, MongoDB, Elasticsearch, Cassandra, etcd
 - Vertica and Redshift
 - Ansible
 - Rabbitmq, ZeroMQ and PQ(Python implementation)
 - Apache Kafka
 - Linux and Unix
-- Bash, Python, Golang
+- Bash, Python, Golang, R
 - lxc and Docker
 
 
-As a previous and totally unrelated experience, I worked at Federal Penitentiary Argentinian Force,
-as officer in several institutions, from medium to high security.
+_As a previous and totally unrelated experience, I worked at Federal Penitentiary Argentinian Force,
+as officer in several institutions, from medium to high security._
 
 ## External publications
 
@@ -77,6 +80,7 @@ Remote DBA for MySQL and forks around several customers (Team Atlas).
 > September, 2016 - Current
 
 Ayres became as a local project for Data Engineers aroud Open Source solutions.  
+Customers: iMedicare, Eloquentix.
 
 
 ### 8kData - Data External Advisor
@@ -86,16 +90,16 @@ Ayres became as a local project for Data Engineers aroud Open Source solutions.
 Providing advise regarding tangent technologies and community support.
 
 
+
+----
+
+## Past Experience
+
 ### UDE - Open Source Source Undergraduate Degree Associate Professor
 > La Plata, Argentina
 > June 2016
 
 Open Source Source Undergraduate Degree Associate Professor, PostgreSQL Database specialist.
-
-
-----
-
-## Past Experience
 
 
 ### Pythian - Lead DB / MySQL Database Consultant and ACTG member
@@ -198,6 +202,7 @@ As a consultant, I provided independent database consulting services for the fol
 
 - iMedicare (USA)
 - Eloquentix (USA)
+- Pic-pic (USA)
 - PFA (Argentina)
 - Autofarma (Arg)
 - VSTour (Arg)
@@ -214,6 +219,6 @@ As a consultant, I provided independent database consulting services for the fol
 - BTS (Usa - Zaragoza)
 - LCRCOM.net (Madrid)
 - Pampa Business Solutions - Telecentro (Argentina)
-- Ericsson/EDB ( USA)
+- Ericsson/EDB (USA)
 - Sindicato de Pasteleros y afines (Arg)
 - 8kdata (Spain, Madrid)
