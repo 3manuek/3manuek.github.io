@@ -19,7 +19,7 @@ do not represent those of my employer.
 
 <ul class="skill-list">
 	<li>PostgreSQL and extensions, MySQL/MariaDB, XtraDB Cluster, Sphinx, MongoDB, Elasticsearch, Cassandra, etcd, Apache Kafka</li>
-	<li>Vertica and Redshift</li>
+	<li>Vertica, Aurora and Redshift</li>
 	<li>Bash, Python, Golang</li>
 	<li>Ansible</li>
 	<li>Rabbitmq, ZeroMQ and transactional queues systems as PQ(Python implementation), que-go</li>
