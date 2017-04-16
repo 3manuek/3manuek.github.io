@@ -47,5 +47,14 @@
             </li>
         {% endif %}
 
+        {% if site.slides == true %}
+            <li class="item">
+                <!--<a class="link" href="{% if site.resume-external %}{{ site.resume-url }}{% else %}{{ site.url }}/{{ site.resume-url }}{% endif %}">Résumé</a>-->
+                <a class="link" href="https://github.com/3manuek/slides.git">Slides</a>
+            </li>
+        {% endif %}
+
+        
+
     </ul>
 </nav>
