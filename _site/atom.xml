@@ -4,13 +4,126 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2017-05-18T21:18:46-03:00</updated>
+ <updated>2017-05-24T04:05:06-03:00</updated>
  <id></id>
  <author>
    <name></name>
    <email></email>
  </author>
 
+ 
+ <entry>
+   <title>Import data from Redshift into Clickhouse in a single command.</title>
+   <link href="/redshiftclickhouse"/>
+   <updated>2017-03-06T00:00:00-03:00</updated>
+   <id>/Import-data-to-ch-from-rs</id>
+   <content type="html">&lt;h2 id=&quot;scope&quot;&gt;Scope&lt;/h2&gt;
+
+&lt;p&gt;If you heard about CLickhouse and you are wondering how
+to test your data residing on Redshift, here is a command
+that will show you a few tips to make you speed up.&lt;/p&gt;
+
+&lt;p&gt;The standard wat to move your data out of Redshift is by using &lt;a href=&quot;http://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html&quot;&gt;UNLOAD&lt;/a&gt; command,
+which pushes the output into S3 files. Not surprisingly, Redshift does not support
+&lt;code class=&quot;highlighter-rouge&quot;&gt;COPY (&amp;lt;query&amp;gt;) TO STDOUT&lt;/code&gt;, which could make life easier (as it 
+Postgres version 8.0.2 based, quite ol’). Info about this, &lt;a href=&quot;http://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-magic&quot;&gt;The magic&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Open a screen/ tmux session.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Execute the command:&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;time &lt;/span&gt;psql -h rs1.garbagestring.redshift.amazonaws.com &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+          -p 5439 -U redshift thedatabase &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+          -Antq --variable&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;FETCH_COUNT=1000000&quot;&lt;/span&gt; -F &lt;span class=&quot;nv&quot;&gt;$'&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\t&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;' &amp;lt;&amp;lt;EOF | \
+          clickhouse-client --database thenewdb --query=&quot;INSERT INTO thenewdb.thetable FORMAT TabSeparated&quot;
+select trunc(datefield),
+  id,
+  datefield::timestamp(0) ,
+  store_id ,
+(... many columns more ... )
+  regexp_replace(data,'&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\\&lt;/span&gt;t|&lt;span class=&quot;se&quot;&gt;\\&lt;/span&gt;n&lt;span class=&quot;s1&quot;&gt;','') 
+from theoriginaltable
+EOF
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;the-explanation&quot;&gt;The explanation&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Why TabSeparated?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Clickhouse offers several &lt;a href=&quot;https://clickhouse.yandex/reference_en.html#Formats&quot;&gt;formats&lt;/a&gt;, a lot.
+Even tho, the tab in this case seemed enough for importing plain
+texts (until a magic JSON with tabs and newlines broke the import).&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Why casting with no microseconds &lt;code class=&quot;highlighter-rouge&quot;&gt;::timestamp(0)&lt;/code&gt;?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;CH does not support microseconds.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Why doing replace &lt;code class=&quot;highlighter-rouge&quot;&gt;regexp_replace(data,'\\t|\\n','')&lt;/code&gt;?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;We are importing using TSV, which by standard it does not
+support newlines and obviously, tabs. Unfortunately, is 
+not possible at the moment to use enconding/decoding using
+base64 for inserting without replacing (by inserting the
+data encoded).&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Why &lt;code class=&quot;highlighter-rouge&quot;&gt;--variable=&quot;FETCH_COUNT=1000000&quot;&lt;/code&gt;?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This is the sauce. &lt;code class=&quot;highlighter-rouge&quot;&gt;psql&lt;/code&gt; will try to place the whole result
+set in memory, making the box explode within a few minutes
+after start running. Within this, it creates a server-side cursor, allowing us to import result set bigger than the client
+machine.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Why &lt;code class=&quot;highlighter-rouge&quot;&gt;-F $'\t'&lt;/code&gt;?&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Depending on your shell, you may consider &lt;a href=&quot;https://www.postgresql.org/message-id/455C54FE.5090902@numerixtechnology.de&quot;&gt;this&lt;/a&gt;. You need to use a &lt;em&gt;literal tab&lt;/em&gt;, 
+which means that it needs to be the character itself. On UNIX
+&lt;code class=&quot;highlighter-rouge&quot;&gt;Ctrl-V tab&lt;/code&gt; should do the thing.&lt;/p&gt;
+
+&lt;p&gt;You can do a small try abuot this with &lt;code class=&quot;highlighter-rouge&quot;&gt;echo&lt;/code&gt;. The option &lt;code class=&quot;highlighter-rouge&quot;&gt;-e&lt;/code&gt;
+&lt;em&gt;enables the interpretation of backslash escapes&lt;/em&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;gp&quot;&gt;ubuntu@host:~$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$'&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'
+
+
+ubuntu@host:~$ echo '&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'
+\n
+ubuntu@host:~$ echo -e '&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'
+
+
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;rogue-numbers&quot;&gt;Rogue numbers&lt;/h2&gt;
+
+&lt;p&gt;The process itself is consirably fast: it moved a 150GB
+table into a Clickhouse MergeTree of around 11GB (&lt;em&gt;wow
+such compression much wow&lt;/em&gt; ) in 20 minutes.&lt;/p&gt;
+
+&lt;p&gt;Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes
+Instance CH: single EC2 r4.2xlarge, volume 3000 iops EBS&lt;/p&gt;
+
+&lt;p&gt;I hope you find this tip  useful!&lt;/p&gt;
+
+</content>
+ </entry>
  
  <entry>
    <title>postgres_fdw estimated overhead.</title>
