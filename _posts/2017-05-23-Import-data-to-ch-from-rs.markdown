@@ -17,14 +17,57 @@ author: 3manuek
 
 ## Scope 
 
-If you heard about CLickhouse and you are wondering how
-to test your data residing on Redshift, here is a command
+If you heard about Clickhouse and you are wondering how
+to test with your residing data in Redshift, here is a command
 that will show you a few tips to make you speed up.
 
 The standard wat to move your data out of Redshift is by using [UNLOAD](http://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html) command,
 which pushes the output into S3 files. Not surprisingly, Redshift does not support
 `COPY (<query>) TO STDOUT`, which could make life easier (as it 
 Postgres version 8.0.2 based, quite ol'). Info about this, [here](http://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html).
+
+Clickhouse supports several engines but so far, you will for
+sure start with MergeTree. The supported types are more finite,
+although they should be enough for plain analytics. At table
+creation, I will recommend to add sampling support which is added 
+in the engine parameters through any hash function returning unsigned integers after the key definition.
+In this case I've choosen cityHash64 as it is not cryptographic 
+, it has a decent accuracy and better performance.  
+
+The table in CH is the following:
+
+```sql
+CREATE TABLE thenewdb.thetable (
+normdate Date,
+id String,
+datefield DateTime,
+(... many others ...)
+data String
+)
+ENGINE = MergeTree(normdate,cityHash64(id), (datefield, id,cityHash64(id)),8192);
+```
+
+> NOTE: The engine parameters are: a date column, the optional sampling expression (cityHash64)
+> the primary key (datefield,id) and the index granularity.
+
+
+The table in Redshift is:
+
+```sql
+     Column     |            Type             | Modifiers
+----------------+-----------------------------+-----------
+ id             | character varying(32)       | not null
+ datefield      | timestamp without time zone | not null
+ (... other columns...)
+  data           | character varying(8192)     |
+Indexes:
+    "thetable_pkey1" PRIMARY KEY, btree (id)
+```
+
+As you may see, there is an additional column in CH. The reason
+is that in Clickhouse is a requirement to have a Date column
+defined as explained in the note above. For more information,
+check out the [MergeTree doc](https://clickhouse.yandex/reference_en.html#MergeTree).
 
 
 ## The magic

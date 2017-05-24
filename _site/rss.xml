@@ -5,8 +5,8 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Wed, 24 May 2017 04:05:23 -0300</lastBuildDate>
-        <pubDate>Wed, 24 May 2017 04:05:23 -0300</pubDate>
+        <lastBuildDate>Wed, 24 May 2017 04:25:00 -0300</lastBuildDate>
+        <pubDate>Wed, 24 May 2017 04:25:00 -0300</pubDate>
         <ttl>60</ttl>
 
 
@@ -14,14 +14,58 @@
                 <title>Import data from Redshift into Clickhouse in a single command.</title>
                 <description>&lt;h2 id=&quot;scope&quot;&gt;Scope&lt;/h2&gt;
 
-&lt;p&gt;If you heard about CLickhouse and you are wondering how
-to test your data residing on Redshift, here is a command
+&lt;p&gt;If you heard about Clickhouse and you are wondering how
+to test with your residing data in Redshift, here is a command
 that will show you a few tips to make you speed up.&lt;/p&gt;
 
 &lt;p&gt;The standard wat to move your data out of Redshift is by using &lt;a href=&quot;http://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html&quot;&gt;UNLOAD&lt;/a&gt; command,
 which pushes the output into S3 files. Not surprisingly, Redshift does not support
 &lt;code class=&quot;highlighter-rouge&quot;&gt;COPY (&amp;lt;query&amp;gt;) TO STDOUT&lt;/code&gt;, which could make life easier (as it 
 Postgres version 8.0.2 based, quite ol’). Info about this, &lt;a href=&quot;http://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Clickhouse supports several engines but so far, you will for
+sure start with MergeTree. The supported types are more finite,
+although they should be enough for plain analytics. At table
+creation, I will recommend to add sampling support which is added 
+in the engine parameters through any hash function returning unsigned integers after the key definition.
+In this case I’ve choosen cityHash64 as it is not cryptographic 
+, it has a decent accuracy and better performance.&lt;/p&gt;
+
+&lt;p&gt;The table in CH is the following:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;thenewdb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;thetable&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;normdate&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Date&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;datefield&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DateTime&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;(...&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;many&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;others&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;data&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;String&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;ENGINE&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MergeTree&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;normdate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cityHash64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;datefield&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cityHash64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)),&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;8192&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;NOTE: The engine parameters are: a date column, the optional sampling expression (cityHash64)
+the primary key (datefield,id) and the index granularity.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The table in Redshift is:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;     &lt;span class=&quot;k&quot;&gt;Column&lt;/span&gt;     &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;            &lt;span class=&quot;k&quot;&gt;Type&lt;/span&gt;             &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Modifiers&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;----------------+-----------------------------+-----------&lt;/span&gt;
+ &lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;             &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;character&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;varying&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;       &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;null&lt;/span&gt;
+ &lt;span class=&quot;n&quot;&gt;datefield&lt;/span&gt;      &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;timestamp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;without&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;time&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;zone&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;null&lt;/span&gt;
+ &lt;span class=&quot;p&quot;&gt;(...&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;other&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;columns&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;...)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;data&lt;/span&gt;           &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;character&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;varying&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;8192&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;     &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;Indexes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;&quot;thetable_pkey1&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;PRIMARY&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;KEY&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;btree&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;As you may see, there is an additional column in CH. The reason
+is that in Clickhouse is a requirement to have a Date column
+defined as explained in the note above. For more information,
+check out the &lt;a href=&quot;https://clickhouse.yandex/reference_en.html#MergeTree&quot;&gt;MergeTree doc&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h2 id=&quot;the-magic&quot;&gt;The magic&lt;/h2&gt;
 
