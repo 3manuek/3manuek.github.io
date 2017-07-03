@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-07-03T17:43:25-03:00</updated><id>http://localhost:4000/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://localhost:4000/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://localhost:4000/clickhouse-sampling-data</id><content type="html" xml:base="http://localhost:4000/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2017-07-03T17:43:49-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://www.3manuek.com/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://www.3manuek.com/clickhouse-sampling-data</id><content type="html" xml:base="http://www.3manuek.com/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
 
 &lt;p&gt;When dealing with very large amount of data, you probably want to run your 
 queries only for a smaller dataset in your current tables. Specially if your dataset
@@ -222,7 +222,7 @@ The bellow is an example of a bigger result set using no-sampling and sampling.&
 &lt;span class=&quot;p&quot;&gt;[...]&lt;/span&gt;
 &lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;45&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;78&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Clickhouse" /><summary type="html">Why sampling is important and what you need to be aware of?</summary></entry><entry><title type="html">Import data from Redshift into Clickhouse in a single command.</title><link href="http://localhost:4000/redshiftclickhouse" rel="alternate" type="text/html" title="Import data from Redshift into Clickhouse in a single command." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://localhost:4000/Import-data-to-ch-from-rs</id><content type="html" xml:base="http://localhost:4000/redshiftclickhouse">&lt;h2 id=&quot;scope&quot;&gt;Scope&lt;/h2&gt;
+&lt;/div&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Clickhouse" /><summary type="html">Why sampling is important and what you need to be aware of?</summary></entry><entry><title type="html">Import data from Redshift into Clickhouse in a single command.</title><link href="http://www.3manuek.com/redshiftclickhouse" rel="alternate" type="text/html" title="Import data from Redshift into Clickhouse in a single command." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://www.3manuek.com/Import-data-to-ch-from-rs</id><content type="html" xml:base="http://www.3manuek.com/redshiftclickhouse">&lt;h2 id=&quot;scope&quot;&gt;Scope&lt;/h2&gt;
 
 &lt;p&gt;If you heard about Clickhouse and you are wondering how
 to test with your residing data in Redshift, here is a command
@@ -448,7 +448,7 @@ ubuntu@host:~$ echo -e '&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/spa
 &lt;p&gt;Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes + 1 coordinator
 Instance CH: single EC2 r4.2xlarge, volume 3000 iops EBS&lt;/p&gt;
 
-&lt;p&gt;I hope you find this tip  useful!&lt;/p&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Redshift" /><category term="Clickhouse" /><summary type="html">Scope</summary></entry><entry><title type="html">postgres_fdw estimated overhead.</title><link href="http://localhost:4000/fdwoverhead" rel="alternate" type="text/html" title="postgres_fdw estimated overhead." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://localhost:4000/FDW-overhead</id><content type="html" xml:base="http://localhost:4000/fdwoverhead">&lt;h2 id=&quot;performance-analysis-of-fdw-overhead-on-intensive-transaction-workloads&quot;&gt;Performance analysis of FDW overhead on intensive transaction workloads&lt;/h2&gt;
+&lt;p&gt;I hope you find this tip  useful!&lt;/p&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Redshift" /><category term="Clickhouse" /><summary type="html">Scope</summary></entry><entry><title type="html">postgres_fdw estimated overhead.</title><link href="http://www.3manuek.com/fdwoverhead" rel="alternate" type="text/html" title="postgres_fdw estimated overhead." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://www.3manuek.com/FDW-overhead</id><content type="html" xml:base="http://www.3manuek.com/fdwoverhead">&lt;h2 id=&quot;performance-analysis-of-fdw-overhead-on-intensive-transaction-workloads&quot;&gt;Performance analysis of FDW overhead on intensive transaction workloads&lt;/h2&gt;
 
 &lt;p&gt;The current benchmarks were run under PostgreSQL 9.6.2, in order to persuit an
 estimation of the overhead of the &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; extension. For doing so I’d set
@@ -518,7 +518,7 @@ FDW table.&lt;/p&gt;
 
 &lt;p&gt;With 5 connections for RO connections over all the tests:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/posts/tpsfdwro_5.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/tpsfdwro_5.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;[Fig. 2] RO TPS throughput (5 connections) with/without updatable option.&lt;/figcaption&gt;
 
 &lt;blockquote&gt;
@@ -651,7 +651,7 @@ and TPS excluding connections):&lt;/p&gt;
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = postgres_fdw estimated overhead.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -663,7 +663,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><summary type="html">Performance analysis of FDW overhead on intensive transaction workloads</summary></entry><entry><title type="html">Simple and manual sharding on PostgreSQL.</title><link href="http://localhost:4000/postgresmanualsharding" rel="alternate" type="text/html" title="Simple and manual sharding on PostgreSQL." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://localhost:4000/simple-manual-sharding</id><content type="html" xml:base="http://localhost:4000/postgresmanualsharding">&lt;h2 id=&quot;concept&quot;&gt;Concept&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><summary type="html">Performance analysis of FDW overhead on intensive transaction workloads</summary></entry><entry><title type="html">Simple and manual sharding on PostgreSQL.</title><link href="http://www.3manuek.com/postgresmanualsharding" rel="alternate" type="text/html" title="Simple and manual sharding on PostgreSQL." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://www.3manuek.com/simple-manual-sharding</id><content type="html" xml:base="http://www.3manuek.com/postgresmanualsharding">&lt;h2 id=&quot;concept&quot;&gt;Concept&lt;/h2&gt;
 
 &lt;p&gt;In the current concept, we are going to combine &lt;em&gt;Foreign tables inheritance&lt;/em&gt; with
 the &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; extension, both being already available features since 9.5 version.&lt;/p&gt;
@@ -706,7 +706,7 @@ solution available in the core version. To be fair, 9.6 supports &lt;em&gt;strea
 and logical decoding, which is used by the &lt;code class=&quot;highlighter-rouge&quot;&gt;pglogical&lt;/code&gt; tool for providing advanced
 logical replication per table basis.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/posts/fdwsharding1.jpg&quot; alt=&quot;TPS&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/fdwsharding1.jpg&quot; alt=&quot;TPS&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;[Fig. 1] Manual sharding with FDW current implementation.&lt;/figcaption&gt;
 
 &lt;h2 id=&quot;foreign-tables&quot;&gt;Foreign tables&lt;/h2&gt;
@@ -918,7 +918,7 @@ a price with a visible &lt;a href=&quot;http://www.3manuek.com/fdwoverhead&quot;
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Simple and manual sharding on PostgreSQL.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -930,7 +930,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><summary type="html">Concept</summary></entry><entry><title type="html">Playing with Postgres and Kafka.</title><link href="http://localhost:4000/kafkacatandcopypg" rel="alternate" type="text/html" title="Playing with Postgres and Kafka." /><published>2017-02-28T00:00:00-03:00</published><updated>2017-02-28T00:00:00-03:00</updated><id>http://localhost:4000/kafka-and-copy-in-pg</id><content type="html" xml:base="http://localhost:4000/kafkacatandcopypg">&lt;h2 id=&quot;apache-kafka-and-postgres-transaction-and-reporting-capabilities&quot;&gt;Apache Kafka and Postgres: Transaction and reporting capabilities&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><summary type="html">Concept</summary></entry><entry><title type="html">Playing with Postgres and Kafka.</title><link href="http://www.3manuek.com/kafkacatandcopypg" rel="alternate" type="text/html" title="Playing with Postgres and Kafka." /><published>2017-02-28T00:00:00-03:00</published><updated>2017-02-28T00:00:00-03:00</updated><id>http://www.3manuek.com/kafka-and-copy-in-pg</id><content type="html" xml:base="http://www.3manuek.com/kafkacatandcopypg">&lt;h2 id=&quot;apache-kafka-and-postgres-transaction-and-reporting-capabilities&quot;&gt;Apache Kafka and Postgres: Transaction and reporting capabilities&lt;/h2&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://kafka.apache.org/&quot;&gt;Apache Kafka&lt;/a&gt; is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for
@@ -1105,7 +1105,7 @@ server.properties file.&lt;/p&gt;
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Playing with Postgres and Kafka.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1117,7 +1117,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Kafka" /><summary type="html">Apache Kafka and Postgres: Transaction and reporting capabilities</summary></entry><entry><title type="html">Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title><link href="http://localhost:4000/postgres10logrepypart" rel="alternate" type="text/html" title="Highlighting Postgres 10 new features: Logical Replication and Partitioning." /><published>2017-02-18T00:00:00-03:00</published><updated>2017-02-18T00:00:00-03:00</updated><id>http://localhost:4000/postgres-10-logrep-y-part</id><content type="html" xml:base="http://localhost:4000/postgres10logrepypart">&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Kafka" /><summary type="html">Apache Kafka and Postgres: Transaction and reporting capabilities</summary></entry><entry><title type="html">Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title><link href="http://www.3manuek.com/postgres10logrepypart" rel="alternate" type="text/html" title="Highlighting Postgres 10 new features: Logical Replication and Partitioning." /><published>2017-02-18T00:00:00-03:00</published><updated>2017-02-18T00:00:00-03:00</updated><id>http://www.3manuek.com/postgres-10-logrep-y-part</id><content type="html" xml:base="http://www.3manuek.com/postgres10logrepypart">&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in
 the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to
 say that these features &lt;strong&gt;aren’t yet available in the stable release, so they are prune
 to change or extended.&lt;/strong&gt;&lt;/p&gt;
@@ -1332,7 +1332,7 @@ an EXPLAIN as proof that none of the other foreign tables have been examined.&lt
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Highlighting Postgres 10 new features: Logical Replication and Partitioning.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1344,7 +1344,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><category term="Partitioning" /><category term="LogicalReplication" /><summary type="html">Heya! I this article we are going to explore two of the major features commited in the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to say that these features aren’t yet available in the stable release, so they are prune to change or extended.</summary></entry><entry><title type="html">MyRocks Views</title><link href="http://localhost:4000/myrocks-views/" rel="alternate" type="text/html" title="MyRocks Views" /><published>2017-01-01T22:10:00-03:00</published><updated>2017-01-01T22:10:00-03:00</updated><id>http://localhost:4000/myrocks-views</id><content type="html" xml:base="http://localhost:4000/myrocks-views/">&lt;p&gt;&lt;a href=&quot;http://myrocks.io/&quot;&gt;MyRocks&lt;/a&gt; is an storage engine available also in MongoDB, focused on performance
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><category term="Partitioning" /><category term="LogicalReplication" /><summary type="html">Heya! I this article we are going to explore two of the major features commited in the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to say that these features aren’t yet available in the stable release, so they are prune to change or extended.</summary></entry><entry><title type="html">MyRocks Views</title><link href="http://www.3manuek.com/myrocks-views/" rel="alternate" type="text/html" title="MyRocks Views" /><published>2017-01-01T22:10:00-03:00</published><updated>2017-01-01T22:10:00-03:00</updated><id>http://www.3manuek.com/myrocks-views</id><content type="html" xml:base="http://www.3manuek.com/myrocks-views/">&lt;p&gt;&lt;a href=&quot;http://myrocks.io/&quot;&gt;MyRocks&lt;/a&gt; is an storage engine available also in MongoDB, focused on performance
 and space saving. It is a LSM tree, with Bloom filtering for unique keys, providing
 steady performance in limited amount of cache. Installing can be done through
 a 5.6 fork, &lt;a href=&quot;https://github.com/facebook/mysql-5.6&quot;&gt;repository here&lt;/a&gt;.&lt;/p&gt;
@@ -1361,7 +1361,7 @@ a 5.6 fork, &lt;a href=&quot;https://github.com/facebook/mysql-5.6&quot;&gt;repo
   &lt;li&gt;SQL&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;hr /&gt;</content><author><name>3manuek</name></author><category term="project" /><category term="scripts" /><summary type="html">MyRocks is an storage engine available also in MongoDB, focused on performance and space saving. It is a LSM tree, with Bloom filtering for unique keys, providing steady performance in limited amount of cache. Installing can be done through a 5.6 fork, repository here.</summary></entry><entry><title type="html">Go-Plus and Atom GOPATH fix</title><link href="http://localhost:4000/goplusatomcopath" rel="alternate" type="text/html" title="Go-Plus and Atom GOPATH fix" /><published>2016-10-05T00:00:00-03:00</published><updated>2016-10-05T00:00:00-03:00</updated><id>http://localhost:4000/GoPlus-and-Atom-GOPATH-fix-HOWTO</id><content type="html" xml:base="http://localhost:4000/goplusatomcopath">&lt;h2 id=&quot;the-background&quot;&gt;The background&lt;/h2&gt;
+&lt;hr /&gt;</content><author><name>3manuek</name></author><category term="project" /><category term="scripts" /><summary type="html">MyRocks is an storage engine available also in MongoDB, focused on performance and space saving. It is a LSM tree, with Bloom filtering for unique keys, providing steady performance in limited amount of cache. Installing can be done through a 5.6 fork, repository here.</summary></entry><entry><title type="html">Go-Plus and Atom GOPATH fix</title><link href="http://www.3manuek.com/goplusatomcopath" rel="alternate" type="text/html" title="Go-Plus and Atom GOPATH fix" /><published>2016-10-05T00:00:00-03:00</published><updated>2016-10-05T00:00:00-03:00</updated><id>http://www.3manuek.com/GoPlus-and-Atom-GOPATH-fix-HOWTO</id><content type="html" xml:base="http://www.3manuek.com/goplusatomcopath">&lt;h2 id=&quot;the-background&quot;&gt;The background&lt;/h2&gt;
 
 &lt;p&gt;Golang is an awesome language, but I found it pretty unstable within the environment variables (at least in macOS Sierra/El Capitan). &lt;code class=&quot;highlighter-rouge&quot;&gt;gvm&lt;/code&gt; is your friend btw, and it helped me to fix some of the issues by installing the latest release candidate of the 1.7.1 series.&lt;/p&gt;
 
@@ -1401,7 +1401,7 @@ nohup atom &amp;amp;
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Go-Plus and Atom GOPATH fix; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1413,7 +1413,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Golang" /><category term="Go" /><category term="Atom" /><summary type="html">The background</summary></entry><entry><title type="html">PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</title><link href="http://localhost:4000/pgstatramdisksize" rel="alternate" type="text/html" title="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations" /><published>2016-09-25T00:00:00-03:00</published><updated>2016-09-25T00:00:00-03:00</updated><id>http://localhost:4000/RDS-pg-stat-ramdisk-size-on-RDS</id><content type="html" xml:base="http://localhost:4000/pgstatramdisksize">&lt;h2 id=&quot;what-does-it-change-and-why-is-so-important&quot;&gt;What does it change and why is so important?&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Golang" /><category term="Go" /><category term="Atom" /><summary type="html">The background</summary></entry><entry><title type="html">PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</title><link href="http://www.3manuek.com/pgstatramdisksize" rel="alternate" type="text/html" title="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations" /><published>2016-09-25T00:00:00-03:00</published><updated>2016-09-25T00:00:00-03:00</updated><id>http://www.3manuek.com/RDS-pg-stat-ramdisk-size-on-RDS</id><content type="html" xml:base="http://www.3manuek.com/pgstatramdisksize">&lt;h2 id=&quot;what-does-it-change-and-why-is-so-important&quot;&gt;What does it change and why is so important?&lt;/h2&gt;
 
 &lt;p&gt;Tracking databases and &lt;em&gt;not just tables&lt;/em&gt; counters in Postgres isn’t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by &lt;code class=&quot;highlighter-rouge&quot;&gt;stat_temp_directory&lt;/code&gt; GUC variable. That directory places a &lt;code class=&quot;highlighter-rouge&quot;&gt;global.stat&lt;/code&gt; and a per-database stat files called like &lt;code class=&quot;highlighter-rouge&quot;&gt;db_&amp;lt;oidOfDB&amp;gt;.stat&lt;/code&gt;. Although the mechanism for writing into these files avoids extra or unnecessary flushes, it is very write intensive.&lt;/p&gt;
 
@@ -1641,7 +1641,7 @@ PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1653,7 +1653,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="RDS" /><summary type="html">What does it change and why is so important?</summary></entry><entry><title type="html">Verificando descargas a traves de hashes y firmas</title><link href="http://localhost:4000/pgp-bitcoint-sha" rel="alternate" type="text/html" title="Verificando descargas a traves de hashes y firmas" /><published>2016-08-18T00:00:00-03:00</published><updated>2016-08-18T00:00:00-03:00</updated><id>http://localhost:4000/verificar-hashes-y-firmas-en-binarios</id><content type="html" xml:base="http://localhost:4000/pgp-bitcoint-sha">&lt;h2 id=&quot;la-razón&quot;&gt;La razón&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="RDS" /><summary type="html">What does it change and why is so important?</summary></entry><entry><title type="html">Verificando descargas a traves de hashes y firmas</title><link href="http://www.3manuek.com/pgp-bitcoint-sha" rel="alternate" type="text/html" title="Verificando descargas a traves de hashes y firmas" /><published>2016-08-18T00:00:00-03:00</published><updated>2016-08-18T00:00:00-03:00</updated><id>http://www.3manuek.com/verificar-hashes-y-firmas-en-binarios</id><content type="html" xml:base="http://www.3manuek.com/pgp-bitcoint-sha">&lt;h2 id=&quot;la-razón&quot;&gt;La razón&lt;/h2&gt;
 
 &lt;p&gt;Bitcoin es en mi opinión, la más reciente y revolucionaria tecnología, que permite
 monetizar la capacidad de computo. No voy a entrar en detalles con respecto a
@@ -1809,7 +1809,7 @@ esas cosas que descargamos, en especial aquellas que están en la mira.&lt;/p&gt
 
 
 var disqus_config = function () {
-this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Verificando descargas a traves de hashes y firmas; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
