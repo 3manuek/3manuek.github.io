@@ -1,4 +1,226 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2017-05-24T04:25:12-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Import data from Redshift into Clickhouse in a single command.</title><link href="http://www.3manuek.com/redshiftclickhouse" rel="alternate" type="text/html" title="Import data from Redshift into Clickhouse in a single command." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://www.3manuek.com/Import-data-to-ch-from-rs</id><content type="html" xml:base="http://www.3manuek.com/redshiftclickhouse">&lt;h2 id=&quot;scope&quot;&gt;Scope&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2017-07-03T15:04:48-03:00</updated><id>http://localhost:4000/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://localhost:4000/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://localhost:4000/clickhouse-sampling-data</id><content type="html" xml:base="http://localhost:4000/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
+
+&lt;p&gt;When dealing with very large amount of data, you probably want to run your 
+queries only for a smaller dataset in your current tables. Specially if your dataset
+is not fitting in RAM.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MergeTree&lt;/code&gt; is the first and more advanced engine on Clickhouse that you want to try.
+It supports indexing by Primary Key and it is mandatory to have a column of &lt;code class=&quot;highlighter-rouge&quot;&gt;Date&lt;/code&gt;
+type (used for automatic partitioning).&lt;/p&gt;
+
+&lt;p&gt;Is the only engine that supports sampling, and only &lt;em&gt;if the sampling expression was defined
+at table creation&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Sampling expression uses a hash function over a chosen column in order to generate pseudo randomly
+data on each of the selected columns defined in the primary key. Then you can enable this feature by accesing
+the data using the SAMPLE clause in the query.&lt;/p&gt;
+
+&lt;p&gt;Values of aggregate functions are not corrected automatically, so to get an approximate result, 
+the value ‘count()’ is manually multiplied by the factor of the sample. For instance, a sample
+of 0.1 (10%) will need to be multiplied by 10, 0.2 will need to be multiplied by 5.&lt;/p&gt;
+
+&lt;p&gt;Suppose we have the 96MM rows in a distributed table, split in 2 shards:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;┌──&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┐&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96414151&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;└──────────┘&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;026&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;192&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;83&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;68&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;billion&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;36&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;If you use &lt;code class=&quot;highlighter-rouge&quot;&gt;SAMPLE &amp;gt; 100&lt;/code&gt;, you’ll probably get some dirty results, specially if you execute over
+a distributed umbrella. In the bellow example is possible to see that the SAMPLE is over each
+local table and aggregated later locally (there are 2 shards):&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_local&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SAMPLE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1000&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;┌─&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┐&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;    &lt;span class=&quot;mi&quot;&gt;1015&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;└─────────┘&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;296&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;48&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;21&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;07&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;37&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;18&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;60&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+
+
+&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SAMPLE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1000&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;┌─&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┐&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;    &lt;span class=&quot;mi&quot;&gt;2032&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;└─────────┘&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;256&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;76&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;75&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;30&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Instead, by using the relative coefficient format, the aggregations are more accurate/consistent in terms of total rows
+gathered, although you’ll need to fix the estimation depending on the coefficient:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; 
+    &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AS&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;count_over_sample&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;   &lt;span class=&quot;c1&quot;&gt;-- Without fixing, we have x10 less rows&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AS&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;count_estimated&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;-- By 10 as we are sampling 10% of the table&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SAMPLE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;┌─&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;count_over_sample&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┬─&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;count_estimated&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┐&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;           &lt;span class=&quot;mi&quot;&gt;9641965&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;        &lt;span class=&quot;mi&quot;&gt;96419650&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;└───────────────────┴─────────────────┘&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;442&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;66&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;84&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;87&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;hasing-functions-for-sampling-int-and-strings&quot;&gt;Hasing functions for sampling Int and Strings&lt;/h2&gt;
+
+&lt;p&gt;You have several hashing functions (intHash32 for integers and cityHash64 for strings) although
+you may stick with those non-cryptographic in order to don’t affect the performance.&lt;/p&gt;
+
+&lt;p&gt;Example without sampling support: &lt;code class=&quot;highlighter-rouge&quot;&gt;MergeTree(EventDate, (CounterID, EventDate), 8192)&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Example with sampling support: &lt;code class=&quot;highlighter-rouge&quot;&gt;MergeTree(EventDate, intHash32(UserID), (CounterID, EventDate, intHash32(UserID)), 8192)&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The examples on this article use cityHash64, as the id is a &lt;code class=&quot;highlighter-rouge&quot;&gt;String&lt;/code&gt;. Also the distribution
+is random, in order to warrante the parallelization of the queries:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_local&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;ENGINE&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MergeTree&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;normdate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cityHash64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;created_at&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cityHash64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)),&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;8192&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;   
+
+&lt;span class=&quot;k&quot;&gt;CREATE&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AS&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_local&lt;/span&gt; 
+&lt;span class=&quot;n&quot;&gt;ENGINE&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Distributed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stats_table_local&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;handling-accuracy-properly&quot;&gt;Handling accuracy properly&lt;/h2&gt;
+
+&lt;p&gt;Here is another example when gathering aggregations over sampling. The bellow statement 
+is a non-sampled query:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DISTINCT&lt;/span&gt; 
+    &lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;HAVING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;500000&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DESC&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;┌─&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─────────┬─&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┐&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;222&lt;/span&gt;      &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;7431672&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;         &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4727411&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;104&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;198&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2377910&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;110&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2366481&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;        &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1852113&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;        &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1413009&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;54&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;84&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;210&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;50&lt;/span&gt;    &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1141153&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;63&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;138&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;62&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;  &lt;span class=&quot;mi&quot;&gt;950598&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;11&lt;/span&gt;       &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;  &lt;span class=&quot;mi&quot;&gt;738150&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;       &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;  &lt;span class=&quot;mi&quot;&gt;709582&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;110&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;131&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;  &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;  &lt;span class=&quot;mi&quot;&gt;601535&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;65&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;30&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;67&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;  &lt;span class=&quot;mi&quot;&gt;584043&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;└─────────────────┴─────────┘&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;668&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;04&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;57&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;79&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;23&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;But, if we sample without fixing the aggregations:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DISTINCT&lt;/span&gt; 
+    &lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SAMPLE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;HAVING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;500000&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DESC&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;┌─&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;────────┬─&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┐&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;222&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;  &lt;span class=&quot;mi&quot;&gt;744235&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;└────────────────┴─────────┘&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;127&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;45&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;82&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;You can add some fixing around and increase the sample in order to get more accurate results:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DISTINCT&lt;/span&gt; 
+    &lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SAMPLE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;HAVING&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;500000&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DESC&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;┌─&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─────────┬─&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;multiply&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┐&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;222&lt;/span&gt;      &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;7442350&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;         &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;4725650&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;104&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;198&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;2381920&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;110&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;2363170&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;        &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;1856500&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;        &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;1413860&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;54&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;84&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;210&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;50&lt;/span&gt;    &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;1141190&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;63&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;138&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;62&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;                &lt;span class=&quot;mi&quot;&gt;954630&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;11&lt;/span&gt;       &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;                &lt;span class=&quot;mi&quot;&gt;739530&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;       &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;                &lt;span class=&quot;mi&quot;&gt;712970&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;110&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;131&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;  &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;                &lt;span class=&quot;mi&quot;&gt;604510&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;65&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;30&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;67&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;                &lt;span class=&quot;mi&quot;&gt;583320&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;└─────────────────┴───────────────────────┘&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;134&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;45&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;17&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;81&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DISTINCT&lt;/span&gt; 
+    &lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SAMPLE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;HAVING&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;500000&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DESC&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;┌─&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;address&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─────────┬─&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;multiply&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;─┐&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;222&lt;/span&gt;      &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;              &lt;span class=&quot;mi&quot;&gt;7430545&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;         &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;              &lt;span class=&quot;mi&quot;&gt;4730535&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;104&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;198&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;              &lt;span class=&quot;mi&quot;&gt;2378665&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;110&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;              &lt;span class=&quot;mi&quot;&gt;2364765&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;        &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;              &lt;span class=&quot;mi&quot;&gt;1854600&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;        &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;              &lt;span class=&quot;mi&quot;&gt;1412980&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;54&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;84&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;210&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;50&lt;/span&gt;    &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;              &lt;span class=&quot;mi&quot;&gt;1142130&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;63&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;138&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;62&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;952105&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;11&lt;/span&gt;       &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;740335&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt;       &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;709805&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;110&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;131&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;100&lt;/span&gt;  &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;603960&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;│&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;65&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;30&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;67&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;32&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;               &lt;span class=&quot;mi&quot;&gt;582545&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;│&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;└─────────────────┴──────────────────────┘&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;344&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;00&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;13&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;56&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;performance-heads-up&quot;&gt;Performance heads up&lt;/h2&gt;
+
+&lt;p&gt;If the dataset is smaller than the amount of RAM, sampling won’t help in terms of performance.
+The bellow is an example of a bigger result set using no-sampling and sampling.&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; 
+    &lt;span class=&quot;n&quot;&gt;some_type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;resource_type&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;HAVING&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1000000&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DESC&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;[...]&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;534&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;95&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;62&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;84&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;27&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; 
+    &lt;span class=&quot;n&quot;&gt;some_type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;database_report&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stats_table_distributed&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;SAMPLE&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;GROUP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;resource_type&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;HAVING&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1000000&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ORDER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;BY&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DESC&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;[...]&lt;/span&gt;
+&lt;span class=&quot;mi&quot;&gt;15&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Elapsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Processed&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;96&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;90&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;45&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;41&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;million&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;rows&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;78&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;GB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Clickhouse" /><summary type="html">Why sampling is important and what you need to be aware of?</summary></entry><entry><title type="html">Import data from Redshift into Clickhouse in a single command.</title><link href="http://localhost:4000/redshiftclickhouse" rel="alternate" type="text/html" title="Import data from Redshift into Clickhouse in a single command." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://localhost:4000/Import-data-to-ch-from-rs</id><content type="html" xml:base="http://localhost:4000/redshiftclickhouse">&lt;h2 id=&quot;scope&quot;&gt;Scope&lt;/h2&gt;
 
 &lt;p&gt;If you heard about Clickhouse and you are wondering how
 to test with your residing data in Redshift, here is a command
@@ -79,6 +301,89 @@ EOF
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
+&lt;h2 id=&quot;amount-of-ram-needed-and-calculation&quot;&gt;Amount of RAM needed and calculation&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MergeTree&lt;/code&gt; engine is indeed an interesting implementation. Is not an LSM as it
+does not process in &lt;em&gt;memtables&lt;/em&gt;. It already process the data in batches and write
+directly to the file system. This consumes a significant amount of RAM at the cost
+of saving disk operations by background workers that do the merges.&lt;/p&gt;
+
+&lt;p&gt;A common error when you run out of memory due to this merge processes eating RAM is:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Code: 240. DB::Exception: Allocator: 
+Cannot mremap., errno: 12, strerror: Cannot allocate memory
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The reason on why this happens is due to the RAM consumed on background merges.
+There are five elements to have in mind to calculate the needed memory:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;background_pool_size&lt;/code&gt; is 6, determining the maximum number of background merges.&lt;/li&gt;
+  &lt;li&gt;Maximum number of merge pieces during merge (default 100)&lt;/li&gt;
+  &lt;li&gt;block size for the merger (8192 rows)&lt;/li&gt;
+  &lt;li&gt;average size of row uncompressed&lt;/li&gt;
+  &lt;li&gt;maximum overhead memory allocation for buffers (2)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;You can assume a row size of 1024 bytes and multiply all of the above
+together. i.e. &lt;code class=&quot;highlighter-rouge&quot;&gt;SELECT formatReadableSize( 2* 6 * 100 * 8192 * 1024);&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;The current issue is that the merge algorithm process by row instead each
+column separately, and is expected to have a performance gain.&lt;/p&gt;
+
+&lt;p&gt;So, guessing that you get a row size of &lt;code class=&quot;highlighter-rouge&quot;&gt;13557 bytes (14k)&lt;/code&gt; using query 1),
+you can get an approximate of RAM needed for the block of operations 2).&lt;/p&gt;
+
+&lt;p&gt;1)&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;time psql -h rs-clusterandhash.us-east-1.redshift.amazonaws.com           -p 5439 -U redshift reportdb  -Antq --variable=&quot;FETCH_COUNT=1000000&quot; -F $'\t' &amp;lt;&amp;lt;EOF | wc -c
+select
+  *
+from big_table
+LIMIT 1
+EOF
+13835
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;2)&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;SELECT formatReadableSize((((2 * 6) * 100) * 8192) * 13557)
+┌─formatReadableSize(multiply(multiply(multiply(multiply(2, 6), 100), 8192), 13557))─┐
+│ 124.12 GiB                                                                         │
+└────────────────────────────────────────────────────────────────────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;More information on this &lt;a href=&quot;https://groups.google.com/forum/#!topic/clickhouse/SLlMNwIOtmY&quot;&gt;google groups thread&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, client can’t handle this properly yet. Even limiting the memory usage
+with &lt;code class=&quot;highlighter-rouge&quot;&gt;--max_memory_usage 5GB&lt;/code&gt; (i.e), you will get a different error like this:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Code: 241. DB::Exception: 
+Received from localhost:9000, 127.0.0.1. 
+DB::Exception: Memory limit (for query) exceeded: 
+would use 1.00 MiB (attempt to allocate chunk of 1048576 bytes), maximum: 5.00 B.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;If the necessary RAM is very close to your current resource, a possible solution would be using &lt;code class=&quot;highlighter-rouge&quot;&gt;ReplacingMergeTree&lt;/code&gt; engine, 
+but deduplication is not warranted and indeed you will play in very small limits (you should be 
+very close to the above calculation).
+Also, there are several settings at engine level for tuning the mergetree engine through configuration
+at &lt;a href=&quot;https://github.com/yandex/ClickHouse/blob/9de4d8facb412fa178cd8380a4411c30da43acc7/dbms/src/Storages/MergeTree/MergeTreeSettings.h&quot;&gt;MergeTreeSettings.h&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;i.e., the bellow will reduce the RAM consumption considerably:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &amp;lt;merge_tree&amp;gt;
+        &amp;lt;max_suspicious_broken_parts&amp;gt;20&amp;lt;/max_suspicious_broken_parts&amp;gt;
+        &amp;lt;enable_vertical_merge_algorithm&amp;gt;1&amp;lt;/enable_vertical_merge_algorithm&amp;gt;
+        &amp;lt;max_delay_to_insert&amp;gt;5&amp;lt;/max_delay_to_insert&amp;gt;
+        &amp;lt;parts_to_delay_insert&amp;gt;100&amp;lt;/parts_to_delay_insert&amp;gt;
+    &amp;lt;/merge_tree&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
 &lt;h2 id=&quot;the-explanation&quot;&gt;The explanation&lt;/h2&gt;
 
 &lt;ul&gt;
@@ -145,7 +450,7 @@ such compression much wow&lt;/em&gt; ) in 20 minutes.&lt;/p&gt;
 &lt;p&gt;Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes
 Instance CH: single EC2 r4.2xlarge, volume 3000 iops EBS&lt;/p&gt;
 
-&lt;p&gt;I hope you find this tip  useful!&lt;/p&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Redshift" /><category term="Clickhouse" /><summary type="html">Scope</summary></entry><entry><title type="html">postgres_fdw estimated overhead.</title><link href="http://www.3manuek.com/fdwoverhead" rel="alternate" type="text/html" title="postgres_fdw estimated overhead." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://www.3manuek.com/FDW-overhead</id><content type="html" xml:base="http://www.3manuek.com/fdwoverhead">&lt;h2 id=&quot;performance-analysis-of-fdw-overhead-on-intensive-transaction-workloads&quot;&gt;Performance analysis of FDW overhead on intensive transaction workloads&lt;/h2&gt;
+&lt;p&gt;I hope you find this tip  useful!&lt;/p&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Redshift" /><category term="Clickhouse" /><summary type="html">Scope</summary></entry><entry><title type="html">postgres_fdw estimated overhead.</title><link href="http://localhost:4000/fdwoverhead" rel="alternate" type="text/html" title="postgres_fdw estimated overhead." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://localhost:4000/FDW-overhead</id><content type="html" xml:base="http://localhost:4000/fdwoverhead">&lt;h2 id=&quot;performance-analysis-of-fdw-overhead-on-intensive-transaction-workloads&quot;&gt;Performance analysis of FDW overhead on intensive transaction workloads&lt;/h2&gt;
 
 &lt;p&gt;The current benchmarks were run under PostgreSQL 9.6.2, in order to persuit an
 estimation of the overhead of the &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; extension. For doing so I’d set
@@ -215,7 +520,7 @@ FDW table.&lt;/p&gt;
 
 &lt;p&gt;With 5 connections for RO connections over all the tests:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/tpsfdwro_5.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/posts/tpsfdwro_5.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;[Fig. 2] RO TPS throughput (5 connections) with/without updatable option.&lt;/figcaption&gt;
 
 &lt;blockquote&gt;
@@ -348,7 +653,7 @@ and TPS excluding connections):&lt;/p&gt;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = postgres_fdw estimated overhead.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -360,7 +665,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><summary type="html">Performance analysis of FDW overhead on intensive transaction workloads</summary></entry><entry><title type="html">Simple and manual sharding on PostgreSQL.</title><link href="http://www.3manuek.com/postgresmanualsharding" rel="alternate" type="text/html" title="Simple and manual sharding on PostgreSQL." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://www.3manuek.com/simple-manual-sharding</id><content type="html" xml:base="http://www.3manuek.com/postgresmanualsharding">&lt;h2 id=&quot;concept&quot;&gt;Concept&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><summary type="html">Performance analysis of FDW overhead on intensive transaction workloads</summary></entry><entry><title type="html">Simple and manual sharding on PostgreSQL.</title><link href="http://localhost:4000/postgresmanualsharding" rel="alternate" type="text/html" title="Simple and manual sharding on PostgreSQL." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://localhost:4000/simple-manual-sharding</id><content type="html" xml:base="http://localhost:4000/postgresmanualsharding">&lt;h2 id=&quot;concept&quot;&gt;Concept&lt;/h2&gt;
 
 &lt;p&gt;In the current concept, we are going to combine &lt;em&gt;Foreign tables inheritance&lt;/em&gt; with
 the &lt;code class=&quot;highlighter-rouge&quot;&gt;postgres_fdw&lt;/code&gt; extension, both being already available features since 9.5 version.&lt;/p&gt;
@@ -403,7 +708,7 @@ solution available in the core version. To be fair, 9.6 supports &lt;em&gt;strea
 and logical decoding, which is used by the &lt;code class=&quot;highlighter-rouge&quot;&gt;pglogical&lt;/code&gt; tool for providing advanced
 logical replication per table basis.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/fdwsharding1.jpg&quot; alt=&quot;TPS&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/posts/fdwsharding1.jpg&quot; alt=&quot;TPS&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;[Fig. 1] Manual sharding with FDW current implementation.&lt;/figcaption&gt;
 
 &lt;h2 id=&quot;foreign-tables&quot;&gt;Foreign tables&lt;/h2&gt;
@@ -615,7 +920,7 @@ a price with a visible &lt;a href=&quot;http://www.3manuek.com/fdwoverhead&quot;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Simple and manual sharding on PostgreSQL.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -627,7 +932,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><summary type="html">Concept</summary></entry><entry><title type="html">Playing with Postgres and Kafka.</title><link href="http://www.3manuek.com/kafkacatandcopypg" rel="alternate" type="text/html" title="Playing with Postgres and Kafka." /><published>2017-02-28T00:00:00-03:00</published><updated>2017-02-28T00:00:00-03:00</updated><id>http://www.3manuek.com/kafka-and-copy-in-pg</id><content type="html" xml:base="http://www.3manuek.com/kafkacatandcopypg">&lt;h2 id=&quot;apache-kafka-and-postgres-transaction-and-reporting-capabilities&quot;&gt;Apache Kafka and Postgres: Transaction and reporting capabilities&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><summary type="html">Concept</summary></entry><entry><title type="html">Playing with Postgres and Kafka.</title><link href="http://localhost:4000/kafkacatandcopypg" rel="alternate" type="text/html" title="Playing with Postgres and Kafka." /><published>2017-02-28T00:00:00-03:00</published><updated>2017-02-28T00:00:00-03:00</updated><id>http://localhost:4000/kafka-and-copy-in-pg</id><content type="html" xml:base="http://localhost:4000/kafkacatandcopypg">&lt;h2 id=&quot;apache-kafka-and-postgres-transaction-and-reporting-capabilities&quot;&gt;Apache Kafka and Postgres: Transaction and reporting capabilities&lt;/h2&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://kafka.apache.org/&quot;&gt;Apache Kafka&lt;/a&gt; is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for
@@ -802,7 +1107,7 @@ server.properties file.&lt;/p&gt;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Playing with Postgres and Kafka.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -814,7 +1119,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Kafka" /><summary type="html">Apache Kafka and Postgres: Transaction and reporting capabilities</summary></entry><entry><title type="html">Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title><link href="http://www.3manuek.com/postgres10logrepypart" rel="alternate" type="text/html" title="Highlighting Postgres 10 new features: Logical Replication and Partitioning." /><published>2017-02-18T00:00:00-03:00</published><updated>2017-02-18T00:00:00-03:00</updated><id>http://www.3manuek.com/postgres-10-logrep-y-part</id><content type="html" xml:base="http://www.3manuek.com/postgres10logrepypart">&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Kafka" /><summary type="html">Apache Kafka and Postgres: Transaction and reporting capabilities</summary></entry><entry><title type="html">Highlighting Postgres 10 new features: Logical Replication and Partitioning.</title><link href="http://localhost:4000/postgres10logrepypart" rel="alternate" type="text/html" title="Highlighting Postgres 10 new features: Logical Replication and Partitioning." /><published>2017-02-18T00:00:00-03:00</published><updated>2017-02-18T00:00:00-03:00</updated><id>http://localhost:4000/postgres-10-logrep-y-part</id><content type="html" xml:base="http://localhost:4000/postgres10logrepypart">&lt;p&gt;Heya! I this article we are going to explore two of the major features commited in
 the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to
 say that these features &lt;strong&gt;aren’t yet available in the stable release, so they are prune
 to change or extended.&lt;/strong&gt;&lt;/p&gt;
@@ -1029,7 +1334,7 @@ an EXPLAIN as proof that none of the other foreign tables have been examined.&lt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Highlighting Postgres 10 new features: Logical Replication and Partitioning.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1041,7 +1346,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><category term="Partitioning" /><category term="LogicalReplication" /><summary type="html">Heya! I this article we are going to explore two of the major features commited in the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to say that these features aren’t yet available in the stable release, so they are prune to change or extended.</summary></entry><entry><title type="html">MyRocks Views</title><link href="http://www.3manuek.com/myrocks-views/" rel="alternate" type="text/html" title="MyRocks Views" /><published>2017-01-01T22:10:00-03:00</published><updated>2017-01-01T22:10:00-03:00</updated><id>http://www.3manuek.com/myrocks-views</id><content type="html" xml:base="http://www.3manuek.com/myrocks-views/">&lt;p&gt;&lt;a href=&quot;http://myrocks.io/&quot;&gt;MyRocks&lt;/a&gt; is an storage engine available also in MongoDB, focused on performance
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="Sharding" /><category term="Partitioning" /><category term="LogicalReplication" /><summary type="html">Heya! I this article we are going to explore two of the major features commited in the upcoming PostgreSQL release: Logical Replication and Partitioning. Needeless to say that these features aren’t yet available in the stable release, so they are prune to change or extended.</summary></entry><entry><title type="html">MyRocks Views</title><link href="http://localhost:4000/myrocks-views/" rel="alternate" type="text/html" title="MyRocks Views" /><published>2017-01-01T22:10:00-03:00</published><updated>2017-01-01T22:10:00-03:00</updated><id>http://localhost:4000/myrocks-views</id><content type="html" xml:base="http://localhost:4000/myrocks-views/">&lt;p&gt;&lt;a href=&quot;http://myrocks.io/&quot;&gt;MyRocks&lt;/a&gt; is an storage engine available also in MongoDB, focused on performance
 and space saving. It is a LSM tree, with Bloom filtering for unique keys, providing
 steady performance in limited amount of cache. Installing can be done through
 a 5.6 fork, &lt;a href=&quot;https://github.com/facebook/mysql-5.6&quot;&gt;repository here&lt;/a&gt;.&lt;/p&gt;
@@ -1058,7 +1363,7 @@ a 5.6 fork, &lt;a href=&quot;https://github.com/facebook/mysql-5.6&quot;&gt;repo
   &lt;li&gt;SQL&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;hr /&gt;</content><author><name>3manuek</name></author><category term="project" /><category term="scripts" /><summary type="html">MyRocks is an storage engine available also in MongoDB, focused on performance and space saving. It is a LSM tree, with Bloom filtering for unique keys, providing steady performance in limited amount of cache. Installing can be done through a 5.6 fork, repository here.</summary></entry><entry><title type="html">Go-Plus and Atom GOPATH fix</title><link href="http://www.3manuek.com/goplusatomcopath" rel="alternate" type="text/html" title="Go-Plus and Atom GOPATH fix" /><published>2016-10-05T00:00:00-03:00</published><updated>2016-10-05T00:00:00-03:00</updated><id>http://www.3manuek.com/GoPlus-and-Atom-GOPATH-fix-HOWTO</id><content type="html" xml:base="http://www.3manuek.com/goplusatomcopath">&lt;h2 id=&quot;the-background&quot;&gt;The background&lt;/h2&gt;
+&lt;hr /&gt;</content><author><name>3manuek</name></author><category term="project" /><category term="scripts" /><summary type="html">MyRocks is an storage engine available also in MongoDB, focused on performance and space saving. It is a LSM tree, with Bloom filtering for unique keys, providing steady performance in limited amount of cache. Installing can be done through a 5.6 fork, repository here.</summary></entry><entry><title type="html">Go-Plus and Atom GOPATH fix</title><link href="http://localhost:4000/goplusatomcopath" rel="alternate" type="text/html" title="Go-Plus and Atom GOPATH fix" /><published>2016-10-05T00:00:00-03:00</published><updated>2016-10-05T00:00:00-03:00</updated><id>http://localhost:4000/GoPlus-and-Atom-GOPATH-fix-HOWTO</id><content type="html" xml:base="http://localhost:4000/goplusatomcopath">&lt;h2 id=&quot;the-background&quot;&gt;The background&lt;/h2&gt;
 
 &lt;p&gt;Golang is an awesome language, but I found it pretty unstable within the environment variables (at least in macOS Sierra/El Capitan). &lt;code class=&quot;highlighter-rouge&quot;&gt;gvm&lt;/code&gt; is your friend btw, and it helped me to fix some of the issues by installing the latest release candidate of the 1.7.1 series.&lt;/p&gt;
 
@@ -1098,7 +1403,7 @@ nohup atom &amp;amp;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Go-Plus and Atom GOPATH fix; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1110,7 +1415,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Golang" /><category term="Go" /><category term="Atom" /><summary type="html">The background</summary></entry><entry><title type="html">PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</title><link href="http://www.3manuek.com/pgstatramdisksize" rel="alternate" type="text/html" title="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations" /><published>2016-09-25T00:00:00-03:00</published><updated>2016-09-25T00:00:00-03:00</updated><id>http://www.3manuek.com/RDS-pg-stat-ramdisk-size-on-RDS</id><content type="html" xml:base="http://www.3manuek.com/pgstatramdisksize">&lt;h2 id=&quot;what-does-it-change-and-why-is-so-important&quot;&gt;What does it change and why is so important?&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Golang" /><category term="Go" /><category term="Atom" /><summary type="html">The background</summary></entry><entry><title type="html">PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</title><link href="http://localhost:4000/pgstatramdisksize" rel="alternate" type="text/html" title="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations" /><published>2016-09-25T00:00:00-03:00</published><updated>2016-09-25T00:00:00-03:00</updated><id>http://localhost:4000/RDS-pg-stat-ramdisk-size-on-RDS</id><content type="html" xml:base="http://localhost:4000/pgstatramdisksize">&lt;h2 id=&quot;what-does-it-change-and-why-is-so-important&quot;&gt;What does it change and why is so important?&lt;/h2&gt;
 
 &lt;p&gt;Tracking databases and &lt;em&gt;not just tables&lt;/em&gt; counters in Postgres isn’t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by &lt;code class=&quot;highlighter-rouge&quot;&gt;stat_temp_directory&lt;/code&gt; GUC variable. That directory places a &lt;code class=&quot;highlighter-rouge&quot;&gt;global.stat&lt;/code&gt; and a per-database stat files called like &lt;code class=&quot;highlighter-rouge&quot;&gt;db_&amp;lt;oidOfDB&amp;gt;.stat&lt;/code&gt;. Although the mechanism for writing into these files avoids extra or unnecessary flushes, it is very write intensive.&lt;/p&gt;
 
@@ -1338,7 +1643,7 @@ PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1350,7 +1655,7 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="RDS" /><summary type="html">What does it change and why is so important?</summary></entry><entry><title type="html">Verificando descargas a traves de hashes y firmas</title><link href="http://www.3manuek.com/pgp-bitcoint-sha" rel="alternate" type="text/html" title="Verificando descargas a traves de hashes y firmas" /><published>2016-08-18T00:00:00-03:00</published><updated>2016-08-18T00:00:00-03:00</updated><id>http://www.3manuek.com/verificar-hashes-y-firmas-en-binarios</id><content type="html" xml:base="http://www.3manuek.com/pgp-bitcoint-sha">&lt;h2 id=&quot;la-razón&quot;&gt;La razón&lt;/h2&gt;
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="RDS" /><summary type="html">What does it change and why is so important?</summary></entry><entry><title type="html">Verificando descargas a traves de hashes y firmas</title><link href="http://localhost:4000/pgp-bitcoint-sha" rel="alternate" type="text/html" title="Verificando descargas a traves de hashes y firmas" /><published>2016-08-18T00:00:00-03:00</published><updated>2016-08-18T00:00:00-03:00</updated><id>http://localhost:4000/verificar-hashes-y-firmas-en-binarios</id><content type="html" xml:base="http://localhost:4000/pgp-bitcoint-sha">&lt;h2 id=&quot;la-razón&quot;&gt;La razón&lt;/h2&gt;
 
 &lt;p&gt;Bitcoin es en mi opinión, la más reciente y revolucionaria tecnología, que permite
 monetizar la capacidad de computo. No voy a entrar en detalles con respecto a
@@ -1506,7 +1811,7 @@ esas cosas que descargamos, en especial aquellas que están en la mira.&lt;/p&gt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Verificando descargas a traves de hashes y firmas; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1518,114 +1823,4 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PGP" /><category term="SHA" /><category term="Bitcoin" /><summary type="html">La razón</summary></entry><entry><title type="html">HOWTO Percona Server with docker</title><link href="http://www.3manuek.com/perconaserverbasichowto" rel="alternate" type="text/html" title="HOWTO Percona Server with docker" /><published>2016-07-02T00:00:00-03:00</published><updated>2016-07-02T00:00:00-03:00</updated><id>http://www.3manuek.com/percona-docker</id><content type="html" xml:base="http://www.3manuek.com/perconaserverbasichowto">&lt;h2 id=&quot;before-starting-the-container&quot;&gt;Before starting the container&lt;/h2&gt;
-
-&lt;p&gt;This article is not an introductory explanation of docker,however it’s scope if for docker’s beginners. You can consider it as an extension of the well documented &lt;a href=&quot;https://hub.docker.com/_/percona/&quot;&gt;Percona docker hub doc&lt;/a&gt;. For the source code of the image, the repository is at &lt;a href=&quot;https://github.com/dockerfile/percona&quot;&gt;github&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;Here is the all what you need to do for start:&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run --name percona57 -e &lt;span class=&quot;nv&quot;&gt;MYSQL_ROOT_PASSWORD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&amp;lt;a_password&amp;gt;  -d percona:5.7
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;For checking the container status log, you can execute &lt;code class=&quot;highlighter-rouge&quot;&gt;docker logs percona57&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;additional-mysql-logs&quot;&gt;Additional MySQL logs&lt;/h2&gt;
-
-&lt;p&gt;To start the container is pretty easy, but if you are not very used to Docker, you will find a bit lost if you want to enable logging or other features.&lt;/p&gt;
-
-&lt;p&gt;For example, a full logging container will be started with this:&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run --name percona57  -v /var/log/mysql:/var/log/mysql  -e &lt;span class=&quot;nv&quot;&gt;MYSQL_ROOT_PASSWORD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mysql  -d percona:5.7 --general-log&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1 --slow-query-log&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1 --long-query-time&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0  --log_slow_verbosity&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'full, profiling, profiling_use_getrusage'&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Note that the &lt;code class=&quot;highlighter-rouge&quot;&gt;log_slow_verbosity&lt;/code&gt; is only applicable for the Percona release, and adds extra output that turns very useful when doing complex query reviews. As you can appreciate, all the options are passed after the image name (percona:5.7).&lt;/p&gt;
-
-&lt;p&gt;Now, the question is: where are the logs? Generally, you can access the container using &lt;code class=&quot;highlighter-rouge&quot;&gt;docker exec -it percona57 bash&lt;/code&gt; and view the logs inside it, although this is not the most comfortable way to do this.&lt;/p&gt;
-
-&lt;p&gt;In the example bellow, we’ll use &lt;code class=&quot;highlighter-rouge&quot;&gt;jq&lt;/code&gt; (a very handy json parser).&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ &lt;span class=&quot;c&quot;&gt;# docker ps&lt;/span&gt;
-CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
-cb740be0743c        percona:5.7         &lt;span class=&quot;s2&quot;&gt;&quot;docker-entrypoint.sh&quot;&lt;/span&gt;   35 minutes ago      Up 35 minutes       3306/tcp            percona57
-
-3laptop ~ &lt;span class=&quot;c&quot;&gt;# docker inspect percona57 | jq .[].Mounts&lt;/span&gt;
-&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;
-  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;s2&quot;&gt;&quot;Propagation&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;rprivate&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;RW&quot;&lt;/span&gt;: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Mode&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Destination&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;/var/log/mysql&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Source&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;/var/log/mysql&quot;&lt;/span&gt;
-  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;,
-  &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;s2&quot;&gt;&quot;Propagation&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;RW&quot;&lt;/span&gt;: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Mode&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Driver&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;local&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Destination&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;/var/lib/mysql&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Source&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;/var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Name&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154&quot;&lt;/span&gt;
-  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
-
-3laptop ~ &lt;span class=&quot;c&quot;&gt;# ls -l /var/lib/docker/volumes/ceda51de62dac317fcafe9dd9e8f9b6f1dc5d70874466b3faf7cdfbcbbc91154/_data&lt;/span&gt;
-...
--rw-r----- 1 maxscale docker  26886023 Jul  2 19:10 cb740be0743c.log
--rw-r----- 1 maxscale docker 268834670 Jul  2 19:10 cb740be0743c-slow.log
-...
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;The logs (general and slow) are using the &lt;code class=&quot;highlighter-rouge&quot;&gt;container id&lt;/code&gt; in the file name, which can be appreciated when executing &lt;code class=&quot;highlighter-rouge&quot;&gt;docker ps&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2 id=&quot;access-through-network&quot;&gt;Access through network&lt;/h2&gt;
-
-&lt;p&gt;Obviously, when using docker in production, you don’t want to access it locally.  For getting the host of our container (and all the running containers), we can do the following commands:&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ &lt;span class=&quot;c&quot;&gt;# docker network ls&lt;/span&gt;
-NETWORK ID          NAME                DRIVER
-5fddd2e1a80a        bridge              bridge              
-e4e0c655e1aa        host                host                
-565f4a23d95a        none                null  
-
-3laptop ~ &lt;span class=&quot;c&quot;&gt;# docker network inspect 5fddd2e1a80a | jq .[].Containers&lt;/span&gt;
-&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;s2&quot;&gt;&quot;cb740be0743cd662c700f73586fe481dc25e4eb27ef94e075c4668a5421eca13&quot;&lt;/span&gt;: &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;s2&quot;&gt;&quot;IPv6Address&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;IPv4Address&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;172.17.0.2/16&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;MacAddress&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;02:42:ac:11:00:02&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;EndpointID&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;6dbd28900efe2c6f6edffcbbec0ac7d6446b4336e6e31f018f18d00f1005a812&quot;&lt;/span&gt;,
-    &lt;span class=&quot;s2&quot;&gt;&quot;Name&quot;&lt;/span&gt;: &lt;span class=&quot;s2&quot;&gt;&quot;percona57&quot;&lt;/span&gt;
-  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;We can see that our container &lt;code class=&quot;highlighter-rouge&quot;&gt;percona57&lt;/code&gt; is running over &lt;code class=&quot;highlighter-rouge&quot;&gt;172.17.0.2&lt;/code&gt; IP address. To access it, you only need to do as usual:&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3laptop ~ &lt;span class=&quot;c&quot;&gt;# mysql -h 172.17.0.2 -p&lt;/span&gt;
-....
-mysql&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
-&lt;script&gt;
-
-
-var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = HOWTO Percona Server with docker; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = '//3manuek.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-&lt;/script&gt;
-
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="MySQL" /><category term="docker" /><summary type="html">Before starting the container</summary></entry></feed>
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PGP" /><category term="SHA" /><category term="Bitcoin" /><summary type="html">La razón</summary></entry></feed>

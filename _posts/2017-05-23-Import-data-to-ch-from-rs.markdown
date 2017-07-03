@@ -91,8 +91,91 @@ from theoriginaltable
 EOF
 ```
 
-## The explanation
+## Amount of RAM needed and calculation 
 
+`MergeTree` engine is indeed an interesting implementation. Is not an LSM as it
+does not process in _memtables_. It already process the data in batches and write
+directly to the file system. This consumes a significant amount of RAM at the cost
+of saving disk operations by background workers that do the merges.
+
+
+A common error when you run out of memory due to this merge processes eating RAM is:
+
+```
+Code: 240. DB::Exception: Allocator: 
+Cannot mremap., errno: 12, strerror: Cannot allocate memory
+```
+
+The reason on why this happens is due to the RAM consumed on background merges.
+There are five elements to have in mind to calculate the needed memory:
+
+- `background_pool_size` is 6, determining the maximum number of background merges.
+- Maximum number of merge pieces during merge (default 100)
+- block size for the merger (8192 rows)
+- average size of row uncompressed
+- maximum overhead memory allocation for buffers (2)
+
+You can assume a row size of 1024 bytes and multiply all of the above
+together. i.e. `SELECT formatReadableSize( 2* 6 * 100 * 8192 * 1024);`
+
+The current issue is that the merge algorithm process by row instead each
+column separately, and is expected to have a performance gain. 
+
+So, guessing that you get a row size of `13557 bytes (14k)` using query 1),
+you can get an approximate of RAM needed for the block of operations 2).
+
+1)
+
+```
+time psql -h rs-clusterandhash.us-east-1.redshift.amazonaws.com           -p 5439 -U redshift reportdb  -Antq --variable="FETCH_COUNT=1000000" -F $'\t' <<EOF | wc -c
+select
+  *
+from big_table
+LIMIT 1
+EOF
+13835
+```
+
+2) 
+```
+SELECT formatReadableSize((((2 * 6) * 100) * 8192) * 13557)
+┌─formatReadableSize(multiply(multiply(multiply(multiply(2, 6), 100), 8192), 13557))─┐
+│ 124.12 GiB                                                                         │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+ 
+More information on this [google groups thread](https://groups.google.com/forum/#!topic/clickhouse/SLlMNwIOtmY).
+
+
+Unfortunately, client can't handle this properly yet. Even limiting the memory usage
+with `--max_memory_usage 5GB` (i.e), you will get a different error like this:
+
+```
+Code: 241. DB::Exception: 
+Received from localhost:9000, 127.0.0.1. 
+DB::Exception: Memory limit (for query) exceeded: 
+would use 1.00 MiB (attempt to allocate chunk of 1048576 bytes), maximum: 5.00 B.
+```
+
+If the necessary RAM is very close to your current resource, a possible solution would be using `ReplacingMergeTree` engine, 
+but deduplication is not warranted and indeed you will play in very small limits (you should be 
+very close to the above calculation).
+Also, there are several settings at engine level for tuning the mergetree engine through configuration
+at [MergeTreeSettings.h](https://github.com/yandex/ClickHouse/blob/9de4d8facb412fa178cd8380a4411c30da43acc7/dbms/src/Storages/MergeTree/MergeTreeSettings.h)
+
+i.e., the bellow will reduce the RAM consumption considerably:
+ 
+```
+    <merge_tree>
+        <max_suspicious_broken_parts>20</max_suspicious_broken_parts>
+        <enable_vertical_merge_algorithm>1</enable_vertical_merge_algorithm>
+        <max_delay_to_insert>5</max_delay_to_insert>
+        <parts_to_delay_insert>100</parts_to_delay_insert>
+    </merge_tree>
+```
+
+
+## The explanation
 
 - Why TabSeparated?
 
@@ -150,4 +233,3 @@ Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes
 Instance CH: single EC2 r4.2xlarge, volume 3000 iops EBS
 
 I hope you find this tip  useful!
-
