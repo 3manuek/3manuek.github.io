@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2017-07-03T15:06:40-03:00</updated>
+ <updated>2017-07-03T17:43:25-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -28,7 +28,9 @@ It supports indexing by Primary Key and it is mandatory to have a column of &lt;
 type (used for automatic partitioning).&lt;/p&gt;
 
 &lt;p&gt;Is the only engine that supports sampling, and only &lt;em&gt;if the sampling expression was defined
-at table creation&lt;/em&gt;.&lt;/p&gt;
+at table creation&lt;/em&gt;. So, the rul of the thumb is that &lt;strong&gt;if the dataset does not fit in RAM you will prefer to
+create the table with sampling support&lt;/strong&gt;. Otherwise, &lt;strong&gt;there is no performance gain by using sampling
+on relatively small tables that fit in RAM&lt;/strong&gt;.&lt;/p&gt;
 
 &lt;p&gt;Sampling expression uses a hash function over a chosen column in order to generate pseudo randomly
 data on each of the selected columns defined in the primary key. Then you can enable this feature by accesing
@@ -259,13 +261,10 @@ which pushes the output into S3 files. Not surprisingly, Redshift does not suppo
 &lt;code class=&quot;highlighter-rouge&quot;&gt;COPY (&amp;lt;query&amp;gt;) TO STDOUT&lt;/code&gt;, which could make life easier (as it 
 Postgres version 8.0.2 based, quite ol’). Info about this, &lt;a href=&quot;http://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p&gt;Clickhouse supports several engines but so far, you will for
-sure start with MergeTree. The supported types are more finite,
-although they should be enough for plain analytics. At table
-creation, I will recommend to add sampling support which is added 
-in the engine parameters through any hash function returning unsigned integers after the key definition.
-In this case I’ve choosen cityHash64 as it is not cryptographic 
-, it has a decent accuracy and better performance.&lt;/p&gt;
+&lt;p&gt;Clickhouse supports several engines but so far, you will for sure start with MergeTree. The supported types are more finite,
+although they should be enough for plain analytics. It’s recommended to add sampling support at table
+creation, in the engine parameters through corresponding hash function with the column type that &lt;em&gt;return unsigned integers&lt;/em&gt; after the key definition.
+In this case I’ve choosen cityHash64 as it is not cryptographic, it has a decent accuracy and better performance.&lt;/p&gt;
 
 &lt;p&gt;The table in CH is the following:&lt;/p&gt;
 
@@ -298,9 +297,8 @@ the primary key (datefield,id) and the index granularity.&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;p&gt;As you may see, there is an additional column in CH. The reason
-is that in Clickhouse is a requirement to have a Date column
-defined as explained in the note above. For more information,
+&lt;p&gt;ClickHouse requires a Date column, which ends up to be an additional
+column in your table structure. For more information,
 check out the &lt;a href=&quot;https://clickhouse.yandex/reference_en.html#MergeTree&quot;&gt;MergeTree doc&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h2 id=&quot;the-magic&quot;&gt;The magic&lt;/h2&gt;
@@ -329,12 +327,12 @@ EOF
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
-&lt;h2 id=&quot;amount-of-ram-needed-and-calculation&quot;&gt;Amount of RAM needed and calculation&lt;/h2&gt;
+&lt;h2 id=&quot;calculation-of-ram&quot;&gt;Calculation of RAM&lt;/h2&gt;
 
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MergeTree&lt;/code&gt; engine is indeed an interesting implementation. Is not an LSM as it
-does not process in &lt;em&gt;memtables&lt;/em&gt;. It already process the data in batches and write
-directly to the file system. This consumes a significant amount of RAM at the cost
-of saving disk operations by background workers that do the merges.&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MergeTree&lt;/code&gt; engine is indeed an interesting implementation. It is not an LSM as it
+does not process in &lt;em&gt;memtables&lt;/em&gt; nor neither &lt;em&gt;log&lt;/em&gt;. It process the data in batches and write
+directly to the file system, consuming a significant amount of RAM at the cost
+of saving disk operations (and occasionally CPU cycles) by background workers that do the merges.&lt;/p&gt;
 
 &lt;p&gt;A common error when you run out of memory due to this merge processes eating RAM is:&lt;/p&gt;
 
@@ -344,7 +342,7 @@ Cannot mremap., errno: 12, strerror: Cannot allocate memory
 &lt;/div&gt;
 
 &lt;p&gt;The reason on why this happens is due to the RAM consumed on background merges.
-There are five elements to have in mind to calculate the needed memory:&lt;/p&gt;
+There are five elements to have in mind in order to calculate the needed memory:&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;background_pool_size&lt;/code&gt; is 6, determining the maximum number of background merges.&lt;/li&gt;
@@ -358,9 +356,11 @@ There are five elements to have in mind to calculate the needed memory:&lt;/p&gt
 together. i.e. &lt;code class=&quot;highlighter-rouge&quot;&gt;SELECT formatReadableSize( 2* 6 * 100 * 8192 * 1024);&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;The current issue is that the merge algorithm process by row instead each
-column separately, and is expected to have a performance gain.&lt;/p&gt;
+column separately, and is expected to have a performance gain. You can try
+the &lt;em&gt;vertical algorithm&lt;/em&gt; by setting &lt;code class=&quot;highlighter-rouge&quot;&gt;enable_vertical_merge_algorithm&lt;/code&gt; in the
+configuration file.&lt;/p&gt;
 
-&lt;p&gt;So, guessing that you get a row size of &lt;code class=&quot;highlighter-rouge&quot;&gt;13557 bytes (14k)&lt;/code&gt; using query 1),
+&lt;p&gt;So, guessing that you get a row size of &lt;code class=&quot;highlighter-rouge&quot;&gt;13557 bytes (14k)&lt;/code&gt; measured using query 1),
 you can get an approximate of RAM needed for the block of operations 2).&lt;/p&gt;
 
 &lt;p&gt;1)&lt;/p&gt;
@@ -401,7 +401,8 @@ very close to the above calculation).
 Also, there are several settings at engine level for tuning the mergetree engine through configuration
 at &lt;a href=&quot;https://github.com/yandex/ClickHouse/blob/9de4d8facb412fa178cd8380a4411c30da43acc7/dbms/src/Storages/MergeTree/MergeTreeSettings.h&quot;&gt;MergeTreeSettings.h&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;i.e., the bellow will reduce the RAM consumption considerably:&lt;/p&gt;
+&lt;p&gt;i.e., the bellow will reduce the RAM consumption considerably, at a cost of reducing 
+durability and changing merge algorithm:&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &amp;lt;merge_tree&amp;gt;
         &amp;lt;max_suspicious_broken_parts&amp;gt;20&amp;lt;/max_suspicious_broken_parts&amp;gt;
@@ -418,7 +419,7 @@ at &lt;a href=&quot;https://github.com/yandex/ClickHouse/blob/9de4d8facb412fa178
   &lt;li&gt;Why TabSeparated?&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;Clickhouse offers several &lt;a href=&quot;https://clickhouse.yandex/reference_en.html#Formats&quot;&gt;formats&lt;/a&gt;, a lot.
+&lt;p&gt;Clickhouse offers several input/output &lt;a href=&quot;https://clickhouse.yandex/reference_en.html#Formats&quot;&gt;formats&lt;/a&gt;, a lot.
 Even tho, the tab in this case seemed enough for importing plain
 texts (until a magic JSON with tabs and newlines broke the import).&lt;/p&gt;
 
@@ -435,8 +436,8 @@ texts (until a magic JSON with tabs and newlines broke the import).&lt;/p&gt;
 &lt;p&gt;We are importing using TSV, which by standard it does not
 support newlines and obviously, tabs. Unfortunately, is 
 not possible at the moment to use enconding/decoding using
-base64 for inserting without replacing (by inserting the
-data encoded).&lt;/p&gt;
+base64 for inserting without replacing (by streaming in the
+data encoded and decode on fly by Clickhouse).&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;Why &lt;code class=&quot;highlighter-rouge&quot;&gt;--variable=&quot;FETCH_COUNT=1000000&quot;&lt;/code&gt;?&lt;/li&gt;
@@ -456,26 +457,23 @@ which means that it needs to be the character itself. On UNIX
 &lt;code class=&quot;highlighter-rouge&quot;&gt;Ctrl-V tab&lt;/code&gt; should do the thing.&lt;/p&gt;
 
 &lt;p&gt;You can do a small try abuot this with &lt;code class=&quot;highlighter-rouge&quot;&gt;echo&lt;/code&gt;. The option &lt;code class=&quot;highlighter-rouge&quot;&gt;-e&lt;/code&gt;
-&lt;em&gt;enables the interpretation of backslash escapes&lt;/em&gt;.&lt;/p&gt;
+&lt;em&gt;enables the interpretation of backslash escapes&lt;/em&gt;. Also &lt;code class=&quot;highlighter-rouge&quot;&gt;printf&lt;/code&gt;
+is a clean option for printing special characters.&lt;/p&gt;
 
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;gp&quot;&gt;ubuntu@host:~$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$'&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'
-
 
 ubuntu@host:~$ echo '&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'
 \n
 ubuntu@host:~$ echo -e '&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'
-
 
 &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 
 &lt;h2 id=&quot;rogue-numbers&quot;&gt;Rogue numbers&lt;/h2&gt;
 
-&lt;p&gt;The process itself is consirably fast: it moved a 150GB
-table into a Clickhouse MergeTree of around 11GB (&lt;em&gt;wow
-such compression much wow&lt;/em&gt; ) in 20 minutes.&lt;/p&gt;
+&lt;p&gt;The process itself is consirably fast: it moved a 15GB table into a Clickhouse MergeTree of around 11GB in 20 minutes.&lt;/p&gt;
 
-&lt;p&gt;Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes
+&lt;p&gt;Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes + 1 coordinator
 Instance CH: single EC2 r4.2xlarge, volume 3000 iops EBS&lt;/p&gt;
 
 &lt;p&gt;I hope you find this tip  useful!&lt;/p&gt;
@@ -557,7 +555,7 @@ FDW table.&lt;/p&gt;
 
 &lt;p&gt;With 5 connections for RO connections over all the tests:&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/tpsfdwro_5.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/posts/tpsfdwro_5.png&quot; alt=&quot;RO TPS&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;[Fig. 2] RO TPS throughput (5 connections) with/without updatable option.&lt;/figcaption&gt;
 
 &lt;blockquote&gt;
@@ -690,7 +688,7 @@ and TPS excluding connections):&lt;/p&gt;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = postgres_fdw estimated overhead.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -755,7 +753,7 @@ solution available in the core version. To be fair, 9.6 supports &lt;em&gt;strea
 and logical decoding, which is used by the &lt;code class=&quot;highlighter-rouge&quot;&gt;pglogical&lt;/code&gt; tool for providing advanced
 logical replication per table basis.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/fdwsharding1.jpg&quot; alt=&quot;TPS&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://localhost:4000/assets/posts/fdwsharding1.jpg&quot; alt=&quot;TPS&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;[Fig. 1] Manual sharding with FDW current implementation.&lt;/figcaption&gt;
 
 &lt;h2 id=&quot;foreign-tables&quot;&gt;Foreign tables&lt;/h2&gt;
@@ -967,7 +965,7 @@ a price with a visible &lt;a href=&quot;http://www.3manuek.com/fdwoverhead&quot;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Simple and manual sharding on PostgreSQL.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1164,7 +1162,7 @@ server.properties file.&lt;/p&gt;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Playing with Postgres and Kafka.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1401,7 +1399,7 @@ an EXPLAIN as proof that none of the other foreign tables have been examined.&lt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Highlighting Postgres 10 new features: Logical Replication and Partitioning.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1490,7 +1488,7 @@ nohup atom &amp;amp;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Go-Plus and Atom GOPATH fix; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1740,7 +1738,7 @@ PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases&lt;/em&gt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -1918,7 +1916,7 @@ esas cosas que descargamos, en especial aquellas que están en la mira.&lt;/p&gt
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Verificando descargas a traves de hashes y firmas; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -2038,7 +2036,7 @@ mysql&amp;gt;
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = HOWTO Percona Server with docker; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -2508,7 +2506,7 @@ To learn more, see &lt;a href=&quot;http://rmarkdown.rstudio.com/authoring_shiny
 
 
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = MySQL 5.7 InnoDB's Full Text Search overview.; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 
@@ -3172,7 +3170,7 @@ Zoloft'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span clas
 &lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
 &lt;script&gt;
 var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
+this.page.url = http://localhost:4000;  // Replace PAGE_URL with your page's canonical URL variable
 this.page.identifier = Multi source data injection to Postgres RDS with encryption and FTS support; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
 };
 

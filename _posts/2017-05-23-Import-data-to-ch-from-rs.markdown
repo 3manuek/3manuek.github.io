@@ -26,13 +26,10 @@ which pushes the output into S3 files. Not surprisingly, Redshift does not suppo
 `COPY (<query>) TO STDOUT`, which could make life easier (as it 
 Postgres version 8.0.2 based, quite ol'). Info about this, [here](http://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html).
 
-Clickhouse supports several engines but so far, you will for
-sure start with MergeTree. The supported types are more finite,
-although they should be enough for plain analytics. At table
-creation, I will recommend to add sampling support which is added 
-in the engine parameters through any hash function returning unsigned integers after the key definition.
-In this case I've choosen cityHash64 as it is not cryptographic 
-, it has a decent accuracy and better performance.  
+Clickhouse supports several engines but so far, you will for sure start with MergeTree. The supported types are more finite,
+although they should be enough for plain analytics. It's recommended to add sampling support at table
+creation, in the engine parameters through corresponding hash function with the column type that _return unsigned integers_ after the key definition.
+In this case I've choosen cityHash64 as it is not cryptographic, it has a decent accuracy and better performance.
 
 The table in CH is the following:
 
@@ -50,7 +47,6 @@ ENGINE = MergeTree(normdate,cityHash64(id), (datefield, id,cityHash64(id)),8192)
 > NOTE: The engine parameters are: a date column, the optional sampling expression (cityHash64)
 > the primary key (datefield,id) and the index granularity.
 
-
 The table in Redshift is:
 
 ```sql
@@ -64,9 +60,8 @@ Indexes:
     "thetable_pkey1" PRIMARY KEY, btree (id)
 ```
 
-As you may see, there is an additional column in CH. The reason
-is that in Clickhouse is a requirement to have a Date column
-defined as explained in the note above. For more information,
+ClickHouse requires a Date column, which ends up to be an additional
+column in your table structure. For more information,
 check out the [MergeTree doc](https://clickhouse.yandex/reference_en.html#MergeTree).
 
 
@@ -91,13 +86,12 @@ from theoriginaltable
 EOF
 ```
 
-## Amount of RAM needed and calculation 
+## Calculation of RAM  
 
-`MergeTree` engine is indeed an interesting implementation. Is not an LSM as it
-does not process in _memtables_. It already process the data in batches and write
-directly to the file system. This consumes a significant amount of RAM at the cost
-of saving disk operations by background workers that do the merges.
-
+`MergeTree` engine is indeed an interesting implementation. It is not an LSM as it
+does not process in _memtables_ nor neither _log_. It process the data in batches and write
+directly to the file system, consuming a significant amount of RAM at the cost
+of saving disk operations (and occasionally CPU cycles) by background workers that do the merges.
 
 A common error when you run out of memory due to this merge processes eating RAM is:
 
@@ -107,7 +101,7 @@ Cannot mremap., errno: 12, strerror: Cannot allocate memory
 ```
 
 The reason on why this happens is due to the RAM consumed on background merges.
-There are five elements to have in mind to calculate the needed memory:
+There are five elements to have in mind in order to calculate the needed memory:
 
 - `background_pool_size` is 6, determining the maximum number of background merges.
 - Maximum number of merge pieces during merge (default 100)
@@ -119,9 +113,11 @@ You can assume a row size of 1024 bytes and multiply all of the above
 together. i.e. `SELECT formatReadableSize( 2* 6 * 100 * 8192 * 1024);`
 
 The current issue is that the merge algorithm process by row instead each
-column separately, and is expected to have a performance gain. 
+column separately, and is expected to have a performance gain. You can try
+the _vertical algorithm_ by setting `enable_vertical_merge_algorithm` in the
+configuration file.
 
-So, guessing that you get a row size of `13557 bytes (14k)` using query 1),
+So, guessing that you get a row size of `13557 bytes (14k)` measured using query 1),
 you can get an approximate of RAM needed for the block of operations 2).
 
 1)
@@ -163,7 +159,8 @@ very close to the above calculation).
 Also, there are several settings at engine level for tuning the mergetree engine through configuration
 at [MergeTreeSettings.h](https://github.com/yandex/ClickHouse/blob/9de4d8facb412fa178cd8380a4411c30da43acc7/dbms/src/Storages/MergeTree/MergeTreeSettings.h)
 
-i.e., the bellow will reduce the RAM consumption considerably:
+i.e., the bellow will reduce the RAM consumption considerably, at a cost of reducing 
+durability and changing merge algorithm:
  
 ```
     <merge_tree>
@@ -179,21 +176,21 @@ i.e., the bellow will reduce the RAM consumption considerably:
 
 - Why TabSeparated?
 
-Clickhouse offers several [formats](https://clickhouse.yandex/reference_en.html#Formats), a lot.
+Clickhouse offers several input/output [formats](https://clickhouse.yandex/reference_en.html#Formats), a lot.
 Even tho, the tab in this case seemed enough for importing plain
 texts (until a magic JSON with tabs and newlines broke the import).
 
 - Why casting with no microseconds `::timestamp(0)`?
 
-CH does not support microseconds.  
+CH does not support microseconds. 
 
 - Why doing replace `regexp_replace(data,'\\t|\\n','')`?
 
 We are importing using TSV, which by standard it does not
 support newlines and obviously, tabs. Unfortunately, is 
 not possible at the moment to use enconding/decoding using
-base64 for inserting without replacing (by inserting the
-data encoded). 
+base64 for inserting without replacing (by streaming in the
+data encoded and decode on fly by Clickhouse). 
 
 - Why `--variable="FETCH_COUNT=1000000"`?
 
@@ -202,6 +199,7 @@ set in memory, making the box explode within a few minutes
 after start running. Within this, it creates a server-side cursor, allowing us to import result set bigger than the client
 machine.
 
+
 - Why `-F $'\t'`?
 
 Depending on your shell, you may consider [this](https://www.postgresql.org/message-id/455C54FE.5090902@numerixtechnology.de). You need to use a _literal tab_, 
@@ -209,27 +207,24 @@ which means that it needs to be the character itself. On UNIX
 `Ctrl-V tab` should do the thing.
 
 You can do a small try abuot this with `echo`. The option `-e`
-_enables the interpretation of backslash escapes_.
+_enables the interpretation of backslash escapes_. Also `printf`
+is a clean option for printing special characters.
 
 
 ```bash
 ubuntu@host:~$ echo $'\n'
 
-
 ubuntu@host:~$ echo '\n'
 \n
 ubuntu@host:~$ echo -e '\n'
-
 
 ```
 
 ## Rogue numbers
 
-The process itself is consirably fast: it moved a 150GB
-table into a Clickhouse MergeTree of around 11GB (_wow
-such compression much wow_ ) in 20 minutes. 
+The process itself is consirably fast: it moved a 15GB table into a Clickhouse MergeTree of around 11GB in 20 minutes. 
 
-Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes
+Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes + 1 coordinator
 Instance CH: single EC2 r4.2xlarge, volume 3000 iops EBS
 
 I hope you find this tip  useful!

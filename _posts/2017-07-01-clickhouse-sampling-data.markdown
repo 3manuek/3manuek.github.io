@@ -25,7 +25,9 @@ It supports indexing by Primary Key and it is mandatory to have a column of `Dat
 type (used for automatic partitioning).
 
 Is the only engine that supports sampling, and only _if the sampling expression was defined
-at table creation_.
+at table creation_. So, the rul of the thumb is that **if the dataset does not fit in RAM you will prefer to
+create the table with sampling support**. Otherwise, **there is no performance gain by using sampling
+on relatively small tables that fit in RAM**.
 
 Sampling expression uses a hash function over a chosen column in order to generate pseudo randomly
 data on each of the selected columns defined in the primary key. Then you can enable this feature by accesing
@@ -210,7 +212,6 @@ ORDER BY count(*) DESC
 └─────────────────┴──────────────────────┘
 12 rows in set. Elapsed: 2.344 sec. Processed 96.41 million rows, 6.00 GB (41.13 million rows/s., 2.56 GB/s.)
 ```
-
 
 ## Performance heads up
 
