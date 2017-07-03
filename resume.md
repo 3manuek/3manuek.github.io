@@ -89,8 +89,6 @@ Customers: iMedicare, Eloquentix.
 
 Providing advise regarding tangent technologies and community support.
 
-
-
 ----
 
 ## Past Experience
