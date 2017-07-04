@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2017-07-04T11:30:52-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://www.3manuek.com/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://www.3manuek.com/clickhouse-sampling-data</id><content type="html" xml:base="http://www.3manuek.com/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2017-07-04T11:44:17-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://www.3manuek.com/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://www.3manuek.com/clickhouse-sampling-data</id><content type="html" xml:base="http://www.3manuek.com/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
 
 &lt;p&gt;When dealing with very large amount of data, you probably want to run your 
 queries only for a smaller dataset in your current tables. Specially if your dataset
@@ -228,9 +228,10 @@ The bellow is an example of a bigger result set using no-sampling and sampling.&
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Clickhouse" /><summary type="html">Why sampling is important and what you need to be aware of?</summary></entry><entry><title type="html">Import data from Redshift into Clickhouse in a single command.</title><link href="http://www.3manuek.com/redshiftclickhouse" rel="alternate" type="text/html" title="Import data from Redshift into Clickhouse in a single command." /><published>2017-03-06T00:00:00-03:00</published><updated>2017-03-06T00:00:00-03:00</updated><id>http://www.3manuek.com/Import-data-to-ch-from-rs</id><content type="html" xml:base="http://www.3manuek.com/redshiftclickhouse">&lt;h2 id=&quot;scope&quot;&gt;Scope&lt;/h2&gt;
 
-&lt;p&gt;If you heard about Clickhouse and you are wondering how
-to test with your residing data in Redshift, here is a command
+&lt;p&gt;If you heard about Clickhouse and you are wondering how to test with your residing data in Redshift, here is a command
 that will show you a few tips to make you speed up.&lt;/p&gt;
+
+&lt;p&gt;Update (July 4th): There is a serie of posts about Clickhouse vs Redshift comparisons, the first post is &lt;a href=&quot;https://www.altinity.com/blog/2017/6/20/clickhouse-vs-redshift&quot;&gt;this one&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;The standard wat to move your data out of Redshift is by using &lt;a href=&quot;http://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html&quot;&gt;UNLOAD&lt;/a&gt; command,
 which pushes the output into S3 files. Not surprisingly, Redshift does not support
@@ -341,7 +342,8 @@ you can get an approximate of RAM needed for the block of operations 2).&lt;/p&g
 
 &lt;p&gt;1)&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;time psql -h rs-clusterandhash.us-east-1.redshift.amazonaws.com           -p 5439 -U redshift reportdb  -Antq --variable=&quot;FETCH_COUNT=1000000&quot; -F $'\t' &amp;lt;&amp;lt;EOF | wc -c
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;time psql -h rs-clusterandhash.us-east-1.redshift.amazonaws.com\
+ -p 5439 -U redshift reportdb  -Antq --variable=&quot;FETCH_COUNT=1000000&quot; -F $'\t' &amp;lt;&amp;lt;EOF | wc -c
 select
   *
 from big_table

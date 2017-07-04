@@ -17,9 +17,10 @@ author: 3manuek
 
 ## Scope 
 
-If you heard about Clickhouse and you are wondering how
-to test with your residing data in Redshift, here is a command
+If you heard about Clickhouse and you are wondering how to test with your residing data in Redshift, here is a command
 that will show you a few tips to make you speed up.
+
+Update (July 4th): There is a serie of posts about Clickhouse vs Redshift comparisons, the first post is [this one][1].
 
 The standard wat to move your data out of Redshift is by using [UNLOAD](http://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html) command,
 which pushes the output into S3 files. Not surprisingly, Redshift does not support
@@ -123,7 +124,8 @@ you can get an approximate of RAM needed for the block of operations 2).
 1)
 
 ```
-time psql -h rs-clusterandhash.us-east-1.redshift.amazonaws.com           -p 5439 -U redshift reportdb  -Antq --variable="FETCH_COUNT=1000000" -F $'\t' <<EOF | wc -c
+time psql -h rs-clusterandhash.us-east-1.redshift.amazonaws.com\
+ -p 5439 -U redshift reportdb  -Antq --variable="FETCH_COUNT=1000000" -F $'\t' <<EOF | wc -c
 select
   *
 from big_table
@@ -228,3 +230,6 @@ Instance details for RS: dc1.large 15GB RAM, vCPU 2, 2 nodes + 1 coordinator
 Instance CH: single EC2 r4.2xlarge, volume 3000 iops EBS
 
 I hope you find this tip  useful!
+
+
+[1]: https://www.altinity.com/blog/2017/6/20/clickhouse-vs-redshift
