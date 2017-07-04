@@ -89,6 +89,12 @@ SAMPLE 1 / 10
 1 rows in set. Elapsed: 1.442 sec. Processed 96.41 million rows, 4.15 GB (66.84 million rows/s., 2.87 GB/s.)
 ```
 
+The path of the execution on sampling can be seen in the following animation:
+
+
+<div style="position:relative;height:0;padding-bottom:75.0%"><iframe src="https://www.youtube.com/embed/ah9sXSnMTcQ?ecver=2" width="480" height="360" frameborder="0" style="position:absolute;width:100%;height:100%;left:0" allowfullscreen></iframe></div>
+
+
 ## Hasing functions for sampling Int and Strings
 
 You have several hashing functions (intHash32 for integers and cityHash64 for strings) although
@@ -240,3 +246,6 @@ ORDER BY count(*) DESC
 [...]
 15 rows in set. Elapsed: 2.123 sec. Processed 96.41 million rows, 5.90 GB (45.41 million rows/s., 2.78 GB/s.)
 ```
+
+
+[1]: http://www.3manuek.com/assets/posts/clickhouse_sample.gif
