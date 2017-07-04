@@ -229,7 +229,7 @@ SELECT
     some_type,
     count(*)
 FROM database_report.stats_table_distributed
-GROUP BY resource_type
+GROUP BY some_type
 HAVING count(*) > 1000000
 ORDER BY count(*) DESC
 [...]
@@ -240,7 +240,7 @@ SELECT
     count(*) * 10
 FROM database_report.stats_table_distributed
 SAMPLE 1 / 10
-GROUP BY resource_type
+GROUP BY some_type
 HAVING (count(*) * 10) > 1000000
 ORDER BY count(*) DESC
 [...]
