@@ -3,7 +3,6 @@ title: About
 layout: page
 ---
 
-
 <p>
 <pre>
 Disclaimer
@@ -14,8 +13,15 @@ do not represent those of my employer.
 </p>
 
 
-<h2>Skills</h2>
+<h2>About</h2>
 
+<ul class="skill-list">
+	<li>Father and husband</li>
+	<li>Libertarian</li>
+	<li>Argentinian/Spaniard</li>
+</ul>
+
+<h2>Technologies</h2>
 
 <ul class="skill-list">
 	<li>PostgreSQL and extensions, MySQL/MariaDB, XtraDB Cluster, Sphinx Search, MongoDB, Elasticsearch, Cassandra, etcd, Apache Kafka</li>
@@ -26,12 +32,3 @@ do not represent those of my employer.
 	<li>Git/Others</li>
 	<li>Linux/Unix based OS/LXC/Docker</li>
 </ul>
-
-
-<!--<h2>Projects</h2> -->
-
-<!-- <ul> -->
-<!--	<li><a href="https://github.com/">Lorem Lorem</a></li> -->
-<!--	<li><a href="https://github.com/">Ipsum Dolor</a></li> -->
-<!--	<li><a href="https://github.com/">Dolor Lorem</a></li> -->
-<!-- </ul> -->

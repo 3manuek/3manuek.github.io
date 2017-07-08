@@ -37,7 +37,7 @@ disqus:
 # if you don't have any of social below, comment the line
 # facebook: myfacebook
 twitter: 3manuek
-# google: mygoogle
+google: EmanuelCalvoFranco
 # instagram: myinstagram
 # pinterest: mypinterest
 linkedin: ecbcbcb
@@ -46,25 +46,21 @@ linkedin: ecbcbcb
 github: 3manuek
 #stackoverflow: 7044681/mystackoverflow
 # quora: userquora
-# reddit: username
+reddit: 3manuek
 # medium: medium
 # vimeo: myvimeo
-email: nospam++3manuek@gmail.com
+email: nospam+_+3manuek@gmail.com
 
 authors:
     3manuek:
         name: Emanuel Calvo
-        bio: Open Source Data Base Engineer  
+        bio: Open Source Data Specialist  
         external-image: false
         picture: assets/images/profile4.jpeg #profile3.jpg
         twitter: 3manuek
-        #    jamesfoster:
-        # name: James Foster
-        # bio: A Man who develops software with coffee
         #external-image: false
         #picture: assets/images/james.jpg
-        #twitter: jamesfoster
-
+        
 # do you want a larger site? change the option below
 # options: [normal, large] | default: normal
 # normal = 560px / large = 810px
