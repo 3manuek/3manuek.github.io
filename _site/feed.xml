@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2017-07-08T02:10:37-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://www.3manuek.com/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://www.3manuek.com/clickhouse-sampling-data</id><content type="html" xml:base="http://www.3manuek.com/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2017-08-01T22:06:15-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://www.3manuek.com/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://www.3manuek.com/clickhouse-sampling-data</id><content type="html" xml:base="http://www.3manuek.com/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
 
 &lt;p&gt;When dealing with very large amount of data, you probably want to run your 
 queries only for a smaller dataset in your current tables. Specially if your dataset
@@ -940,14 +940,18 @@ s.setAttribute('data-timestamp', +new Date());
 
 &lt;p&gt;&lt;a href=&quot;https://kafka.apache.org/&quot;&gt;Apache Kafka&lt;/a&gt; is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for
-several purposes. I found interesting &lt;a href=&quot;https://robertovitillo.com/2017/01/23/an-overview-of-mozillas-data-pipeline/&quot;&gt;Mozilla’s Data pipeline implementation&lt;/a&gt;,
-particularly as it shows Kafka as an entry point of the flow.&lt;/p&gt;
+several purposes by consuming and producing them.&lt;/p&gt;
+
+&lt;p&gt;One of the examples of a nice implementation, is the &lt;a href=&quot;https://robertovitillo.com/2017/01/23/an-overview-of-mozillas-data-pipeline/&quot;&gt;Mozilla’s Data pipeline implementation&lt;/a&gt;,
+particularly as it shows Kafka as an entry point of the data flow. This allows you to plug
+new data stores bellow its stream, making it easy to use different data store formats (
+such as DRBMS or Document, etc. ) for retrieving and writing data efficiently.&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://www.confluent.io/blog/bottled-water-real-time-integration-of-postgresql-and-kafka/&quot;&gt;Postgres Bottled water&lt;/a&gt; is a different approach that deserves a mention. In this
-case, Postgres instances are the producers and brokers consume the streams for
-propagating to other platforms. The advantage here is the well known Postgres’
-ACID capabilities combined with a advance SQL features. As it comes as an extension,
-it can run within other existing features.&lt;/p&gt;
+case, Postgres instances are the producers, brokers consume the streams and keep the message
+store available for any action. The advantage here is the well known Postgres’
+ACID capabilities, combined with advanced SQL features. This project is an extension,
+meaning that is possible to use new upcoming Postgres features easily portable.&lt;/p&gt;
 
 &lt;p&gt;It is possible also, to consume and produce data to a broker by using a new feature
 that extended the COPY tool for executing shell commands for input/output operations.

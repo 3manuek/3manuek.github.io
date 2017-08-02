@@ -19,14 +19,18 @@ author: 3manuek
 
 [Apache Kafka][5] is a well known distributed streaming platform for data processing
 and consistent messaging. It allows you to consistently centralize data streams for
-several purposes. I found interesting [Mozilla's Data pipeline implementation][6],
-particularly as it shows Kafka as an entry point of the flow.
+several purposes by consuming and producing them. 
+
+One of the examples of a nice implementation, is the [Mozilla's Data pipeline implementation][6],
+particularly as it shows Kafka as an entry point of the data flow. This allows you to plug
+new data stores bellow its stream, making it easy to use different data store formats (
+such as DRBMS or Document, etc. ) for retrieving and writing data efficiently. 
 
 [Postgres Bottled water][3] is a different approach that deserves a mention. In this
-case, Postgres instances are the producers and brokers consume the streams for
-propagating to other platforms. The advantage here is the well known Postgres'
-ACID capabilities combined with a advance SQL features. As it comes as an extension,
-it can run within other existing features.
+case, Postgres instances are the producers, brokers consume the streams and keep the message
+store available for any action. The advantage here is the well known Postgres'
+ACID capabilities, combined with advanced SQL features. This project is an extension,
+meaning that is possible to use new upcoming Postgres features easily portable.
 
 It is possible also, to consume and produce data to a broker by using a new feature
 that extended the COPY tool for executing shell commands for input/output operations.
