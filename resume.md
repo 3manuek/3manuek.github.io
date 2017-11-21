@@ -67,13 +67,13 @@ DataScience Specialization, Coursera (80% completed):
 
 ## Current positions
 
-### Percona -  Senior Technical Services Engineer _[main position]_
-> Buenos Aires, Argentina
-> August 2016 - Current
+### Ongres Inc. (ex 8kdata)
+> Remote. New York/Madrid
+> September 2017
 
-Full description of the role [here](https://www.percona.com/about-percona/careers/senior-technical-services-engineer).
-
-Remote DBA for MySQL and forks around several customers (Team Atlas).
+I'm currently working as a Senior Consultant at Ongres Inc.
+SRE Data implementation and Devops work mostly. Technologies:
+Ansible, Google Cloud, PostgreSQL. 
 
 ### Ayres.io - Root and Data Engineer
 > El Rio de la Plata, Argentina
@@ -82,16 +82,26 @@ Remote DBA for MySQL and forks around several customers (Team Atlas).
 Ayres became as a local project for Data Engineers aroud Open Source solutions.  
 Customers: iMedicare, Eloquentix.
 
-
-### 8kData - Data External Advisor
-> Madrid, Spain
-> January 2016 - Current
-
-Providing advise regarding tangent technologies and community support.
-
 ----
 
 ## Past Experience
+
+
+### Percona -  Senior Technical Services Engineer _[main position]_
+> Buenos Aires, Argentina
+> August 2016 - September 2017
+
+Full description of the role [here](https://www.percona.com/about-percona/careers/senior-technical-services-engineer).
+
+Remote DBA for MySQL and forks around several customers (Team Atlas).
+
+
+### 8kData - Data External Advisor
+> Madrid, Spain
+> January 2016 - September 2017
+
+Providing advise regarding tangent technologies and community support.
+
 
 ### UDE - Open Source Source Undergraduate Degree Associate Professor
 > La Plata, Argentina
