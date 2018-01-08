@@ -1,0 +1,12 @@
+- name: "Percona Live 2017"
+  alt: "https://www.percona.com/sites/default/files/118x239_PLSpeaking_17.png"
+  title: "https://www.percona.com/sites/default/files/118x239_PLSpeaking_17.png"
+  url: "https://articulo.mercadolibre.com.ar/MLA-660128512-led-full-spectrum-1000w-indoor-nuevo-en-caja-_JM"
+  image: "https://www.percona.com/sites/default/files/118x239_PLSpeaking_17.png"
+
+- name: "PgDay Santa Fe 2017"
+  alt: "PgDay 2017 - Santa Fe"
+  title: "PostgreSQL"
+  url: "http://www.pgday.com.ar"
+  image: "http://www.3manuek.com/assets/images/pgday_ar.png"
+

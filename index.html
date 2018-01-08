@@ -6,12 +6,19 @@ title: Home
 <br /><br /><br />
 
 <ul class="list"> 
-  <li class="item"> Upcoming Events
+  <li class="item"> Upcoming/Not_so_past Events
   <table style="width:100%">
     <tr>
+      {% for event in site.data.events %}
+      <th><a href="{{event.url}}"><img align="middle"  src="{{event.image}}"  alt="{{event.alt}}" title="{{event.title}}" /></a>
+      </th>
+      <!--
       <th><a href="http://www.pgday.com.ar"><img align="middle"  src="http://www.3manuek.com/assets/images/pgday_ar.png"  alt="PgDay 2017 - Santa Fe" title="PostgreSQL" /></a>
       </th> 
       <th><a href="https://www.percona.com/live/17/content/demystifying-postgres-logical-replication" align="middle"><img align="middle"  src="https://www.percona.com/sites/default/files/118x239_PLSpeaking_17.png"  alt="Percona Live 2017, Open Source Database Conference, April 24-27, 2017" title="MySQL, MongoDB, PostgreSQL, ODBMS" /></a></th> 
+      <th></th>
+      -->
+      {% endfor %}
       <th></th>
     </tr>
   </table>
