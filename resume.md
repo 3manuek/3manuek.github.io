@@ -75,6 +75,14 @@ I'm currently working as a Senior Consultant at Ongres Inc.
 SRE Data implementation and Devops work mostly. Technologies:
 Ansible, Google Cloud, PostgreSQL. 
 
+Highlighted projects: 
+
+- BBM (Blackberry - Emtek - Google Cloud): Live migration from Oracle to full Patroni automated cluster, from a premise
+  based environment to Google Cloud. PgBouncer-Consul-Postgres
+- Conrad (Google Cloud Partner): Full implementation of Patroni HA using etcd as consensus cluster, Load Balancing through 
+  Google iLB with API configuration with Patroni, and PgBouncer.
+
+
 ### Ayres.io - Root and Data Engineer
 > El Rio de la Plata, Argentina
 > September, 2016 - Current
