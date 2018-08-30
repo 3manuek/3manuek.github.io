@@ -73,7 +73,7 @@ DataScience Specialization, Coursera (80% completed):
 
 I'm currently working as a Senior Consultant at Ongres Inc.
 SRE Data implementation and Devops work mostly. Technologies:
-Ansible, Google Cloud, PostgreSQL. 
+Ansible, Google Cloud, PostgreSQL, Consul. 
 
 Highlighted projects: 
 
@@ -81,6 +81,7 @@ Highlighted projects:
   based environment to Google Cloud. PgBouncer-Consul-Postgres
 - Conrad (Google Cloud Partner): Full implementation of Patroni HA using etcd as consensus cluster, Load Balancing through 
   Google iLB with API configuration with Patroni, and PgBouncer.
+- GitLab support
 
 
 ### Ayres.io - Root and Data Engineer

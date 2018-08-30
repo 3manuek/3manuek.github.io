@@ -1,8 +1,16 @@
+- name: "Nerdear.la 2018"
+  alt:  "https://nerdear.la/#speakers"
+  title: "https://nerdear.la/#speakers"
+  url:   "https://nerdear.la/#speakers"
+  image: "https://nerdear.la/static/images/Ca00PoCfNdFO.png"
+  width: "252"
+          
 - name: "Percona Live 2017"
   alt: "https://www.percona.com/sites/default/files/118x239_PLSpeaking_17.png"
   title: "https://www.percona.com/sites/default/files/118x239_PLSpeaking_17.png"
-  url: "https://articulo.mercadolibre.com.ar/MLA-660128512-led-full-spectrum-1000w-indoor-nuevo-en-caja-_JM"
+  url: "https://www.percona.com/live/17/users/emanuel-calvo"
   image: "https://www.percona.com/sites/default/files/118x239_PLSpeaking_17.png"
+  width: "100"
 
 - name: "PgDay Santa Fe 2017"
   alt: "PgDay 2017 - Santa Fe"
