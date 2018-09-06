@@ -1,36 +1,48 @@
 ---
 title: Resume
+subtitle: Emanuel Calvo
 layout: post
 author: 3manuek
 comments: false
 ---
 
-
-
 For professional contact, you can send a contact request or message through my
-[LinkedIn Profile](https://www.linkedin.com/in/ecbcbcb).
+[LinkedIn Profile](https://www.linkedin.com/in/ecbcbcb) or email me at 3manuek [at] 3manuek [dot] com.
+
+[GitHub](https://github.com/3manuek) and [Gitlab](https://gitlab.com/3manuek) profiles.
 
 
 
 ## Summary
 
-- Since 2006, I've worked with a very heterogeneous set of technologies  and companies, from boutique services to large consulting firms, telecommunications companies for training and consulting.
-- Mostly focused on Open Source Databases/Datastores and related patterns for data manipulation from pipelines, workers and queues.
-- Code fixing in several languages is something that I do on a daily basis (Python, Perl, Go, R, Bash and other shells).
-- Although I've played with Windows in the past, I consider that at least 98% of the servers that I have played with, run Linux, Unix BSD or Solaris.
-- Postgres and MySQL/MariaDB are my most known database systems. However, I've hands on others DB/DS experience in Oracle, Vertica, MongoDB, Redis, Greenplum, among others.
-- Good AWS experience.
+Since 2006, I've worked with a vast heterogeneous set of technologies and companies, from boutique 
+services to large consulting firms, companies in the telco field bot for training, consulting and support.
 
-My technology stack is:
-- PostgreSQL and extensions, MySQL/MariaDB, XtraDB Cluster, Sphinx, MongoDB, Elasticsearch, Cassandra, etcd
-- Vertica and Redshift
+I'm mostly focused on Open Source Databases/Datastores Reliability and Scalability and also, related technologies
+for data manipulation from pipelines, streaming, workers and queues. Postgres and MySQL/MariaDB are my most known 
+database systems. However I had also other type of engines and components that I'm into too. 
+
+I do also have extensive experience on automation through Ansible and Docker, and had build large HA systems
+fully automated and continous integrated.
+
+Linux is the Operating System that I have most of the experience.
+
+My language toolset is Python, Go, Perl, R, Bash and other shells.
+
+AWS experience and extra plus on Google Cloud.
+
+My Stack is:
+
+- PostgreSQL and extensions, MySQL/MariaDB, XtraDB Cluster 
+- Sphinx, MongoDB, Elasticsearch, Cassandra, RocksDB (in MyRocks and Cockroachdb). 
+- Consul and etcd
+- ClickHouseDB, Vertica, Redshift
 - Ansible
 - Rabbitmq, ZeroMQ and PQ(Python implementation)
 - Apache Kafka
 - Linux and Unix
 - Bash, Python, Golang, R
-- lxc and Docker
-
+- lxc and Docker platforms
 
 _As a previous and totally unrelated experience, I worked at Federal Penitentiary Argentinian Force,
 as officer in several institutions, from medium to high security._
@@ -42,10 +54,10 @@ July 2nd, 2013: [AWS - Postgres in AWS](http://media.amazonwebservices.com/AWS_R
 
 [Download AWS in Postgres from local](assets/AWS_RDBMS_PostgreSQL.pdf)
 
+
 ## Certifications
 
 [PostgreSQL 9.4 Associate Certification](http://www.enterprisedb.com/store/products/dba-training/01t50000001Nyi7AAC), `EDB33986`.
-
 
 DataScience Specialization, Coursera (80% completed):
 
@@ -81,14 +93,14 @@ Highlighted projects:
   based environment to Google Cloud. PgBouncer-Consul-Postgres
 - Conrad (Google Cloud Partner): Full implementation of Patroni HA using etcd as consensus cluster, Load Balancing through 
   Google iLB with API configuration with Patroni, and PgBouncer.
-- GitLab support
+- GitLab as part of the Database Reliability Team.
 
 
 ### Ayres.io - Root and Data Engineer
 > El Rio de la Plata, Argentina
 > September, 2016 - Current
 
-Ayres became as a local project for Data Engineers aroud Open Source solutions.  
+Ayres became as a local project for Data Engineers aroud Open Source Database solutions.  
 Customers: iMedicare, Eloquentix.
 
 ----
@@ -109,8 +121,7 @@ Remote DBA for MySQL and forks around several customers (Team Atlas).
 > Madrid, Spain
 > January 2016 - September 2017
 
-Providing advise regarding tangent technologies and community support.
-
+External technical advisor and consultant for Postgres and other related technologies.
 
 ### UDE - Open Source Source Undergraduate Degree Associate Professor
 > La Plata, Argentina
@@ -120,7 +131,6 @@ Open Source Source Undergraduate Degree Associate Professor, PostgreSQL Database
 
 
 ### Pythian - Lead DB / MySQL Database Consultant and ACTG member
-
 > Ottawa, Canada
 > January 2015 - June 2016
 
@@ -169,8 +179,9 @@ Open Source Source Undergraduate Degree Associate Professor, PostgreSQL Database
 > Buenos Aires, Argentina
 > July 2009 - July 2010
 
-- Provided trainings and support  to the national universities (as UNLP, UNC, UNNE, UNNOBA, UNCU, UNPA, UNR, etc) , support developers in DB modeling, administration of Postgresql-Informix-Mysql databases.
-- Data Architect tasks and server revisions. Planing migrations and future strategies to board new releases.
+- Provided traning and support to national universities (as UNLP, UNC, UNNE, UNNOBA, UNCU, UNPA, UNR, etc), 
+support developers in DB modeling and administration of Postgresql-Informix-Mysql databases.
+- Data Architect tasks and server revisions. Planning migrations and future strategies to board new releases.
 - Coordinated teams for database support to enhance the compliant between apps of SIU.
 - Developing the production and pre-prod following plan for all the SIU apps. Server metrics and other stuff for high performance servers.
 
