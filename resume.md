@@ -15,34 +15,21 @@ For professional contact, you can send a contact request or message through my
 
 ## Summary
 
+
+Frequently, this section is full of easily searchable keywords that bots and humans anxiously 
+require to commit the inherited task of joining manpower to their organizations. Instead, I'm going 
+to center the speech about where I'm standing right now.
+
+I'm not actively looking any position, although I'm open to very specific projects and mostly related 
+with analytics and building infrastructure. I do also technical and communication skills mentoring for 
+people joining into tech companies, for speeding up the transition and get the communication flow clear and direct.
+
 Since 2006, I've worked with a vast heterogeneous set of technologies and companies, from boutique 
 services to large consulting firms, companies in the telco field bot for training, consulting and support.
 
 I'm mostly focused on Open Source Databases/Datastores Reliability and Scalability and also, related technologies
-for data manipulation from pipelines, streaming, workers and queues. Postgres and MySQL/MariaDB are my most known 
-database systems. However I had also other type of engines and components that I'm into too. 
-
-I do also have extensive experience on automation through Ansible and Docker, and had build large HA systems
-fully automated and continous integrated.
-
-Linux is the Operating System that I have most of the experience.
-
-My language toolset is Python, Go, Perl, R, Bash and other shells.
-
-AWS experience and extra plus on Google Cloud.
-
-My Stack is:
-
-- PostgreSQL and extensions, MySQL/MariaDB, XtraDB Cluster 
-- Sphinx, MongoDB, Elasticsearch, Cassandra, RocksDB (in MyRocks and Cockroachdb). 
-- Consul and etcd
-- ClickHouseDB, Vertica, Redshift
-- Ansible
-- Rabbitmq, ZeroMQ and PQ(Python implementation)
-- Apache Kafka
-- Linux and Unix
-- Bash, Python, Golang, R
-- lxc and Docker platforms
+for data manipulation from pipelines, streaming, workers and queues. I do manage daily several types of Cloud providers,
+programming languages for tool developing and architecture design work.
 
 _As a previous and totally unrelated experience, I worked at Federal Penitentiary Argentinian Force,
 as officer in several institutions, from medium to high security._
@@ -85,7 +72,7 @@ DataScience Specialization, Coursera (80% completed):
 
 I'm currently working as a Senior Consultant at Ongres Inc.
 SRE Data implementation and Devops work mostly. Technologies:
-Ansible, Google Cloud, PostgreSQL, Consul. 
+Ansible, Terraform, Packer, Google Cloud, PostgreSQL/Patroni, Consul. 
 
 Highlighted projects: 
 
@@ -94,6 +81,7 @@ Highlighted projects:
 - Conrad (Google Cloud Partner): Full implementation of Patroni HA using etcd as consensus cluster, Load Balancing through 
   Google iLB with API configuration with Patroni, and PgBouncer.
 - GitLab as part of the Database Reliability Team.
+- Google Cloud as partner.
 
 
 ### Ayres.io - Root and Data Engineer
