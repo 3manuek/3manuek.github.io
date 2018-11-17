@@ -210,6 +210,7 @@ DEPENDENCIES
   github-pages
   html-proofer
   jekyll-feed
+  nokogiri
 
 BUNDLED WITH
-   1.11.2
+   1.16.0
