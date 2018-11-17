@@ -15,14 +15,12 @@ For professional contact, you can send a contact request or message through my
 
 ## Summary
 
-
-Frequently, this section is full of easily searchable keywords that bots and humans anxiously 
+Frequently, this section is full of easily searchable keywords that bots and humans anxiously
 require to commit the inherited task of joining manpower to their organizations. Instead, I'm going 
 to center the speech about where I'm standing right now.
 
 I'm not actively looking any position, although I'm open to very specific projects and mostly related 
-with analytics and building infrastructure. I do also technical and communication skills mentoring for 
-people joining into tech companies, for speeding up the transition and get the communication flow clear and direct.
+with analytics and building infrastructure for it. 
 
 Since 2006, I've worked with a vast heterogeneous set of technologies and companies, from boutique 
 services to large consulting firms, companies in the telco field bot for training, consulting and support.
@@ -66,13 +64,14 @@ DataScience Specialization, Coursera (80% completed):
 
 ## Current positions
 
-### Ongres Inc. (ex 8kdata)
+### Ongres Inc. (ex 8kdata) - CBT (Chief for Blaming Tools)
 > Remote. New York/Madrid
 > September 2017
 
-I'm currently working as a Senior Consultant at Ongres Inc.
-SRE Data implementation and Devops work mostly. Technologies:
-Ansible, Terraform, Packer, Google Cloud, PostgreSQL/Patroni, Consul. 
+I'm the guy that when someone asks "Does this shit works?" I break it,
+find that it does not work or it does either.
+
+Database and SRE for fancy companies like Gitlab, BBM, Conrad Electronics and Postmastes. 
 
 Highlighted projects: 
 
@@ -88,10 +87,13 @@ Highlighted projects:
 > El Rio de la Plata, Argentina
 > September, 2016 - Current
 
-Ayres became as a local project for Data Engineers aroud Open Source Database solutions.  
+Ayres is an analytics company, working on custom targeted problems of certain complexity.
+We do all in cloud, high privacy, _company as a code_.
+
 Customers: iMedicare, Eloquentix.
 
 ----
+
 
 ## Past Experience
 
@@ -200,9 +202,11 @@ support developers in DB modeling and administration of Postgresql-Informix-Mysq
 Admitel Platform developer. Consists in  PHP + (Javascript, Ajax, x/Html, xml) - Oracle 8i.
 Some of the 'extra' task was made some Perl scripts for support area.
 
+
 ### Huenei - Application Support
 > Monte Grande , Argentina
 > October 2007 - January 2008
+
 
 - Terminal administration in W/NT and 2K remote servers. Configuration, control, monitoring. Attend Remedy tickets for fix problems and others.
 - The application was in Paradox and Oracle databases, in which my tasks consisted in repair tables, fix some wrong data and others.
@@ -214,10 +218,12 @@ Some of the 'extra' task was made some Perl scripts for support area.
 
 ## Customers History
 
-As a consultant, I provided independent database consulting services for the following companies (in non-particular order):
+As a consultant, I provided independent database consulting services for the following companies (in non-particular order).
+Thanks to every customer that trusted in me!
 
 - iMedicare (USA)
 - Eloquentix (USA)
+- Ericsson/EDB (USA)
 - Pic-pic (USA)
 - PFA (Argentina)
 - Autofarma (Arg)
@@ -235,6 +241,5 @@ As a consultant, I provided independent database consulting services for the fol
 - BTS (Usa - Zaragoza)
 - LCRCOM.net (Madrid)
 - Pampa Business Solutions - Telecentro (Argentina)
-- Ericsson/EDB (USA)
 - Sindicato de Pasteleros y afines (Arg)
 - 8kdata (Spain, Madrid)
