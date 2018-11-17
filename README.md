@@ -7,6 +7,3 @@ download no matter the internet speed and without political or geographical limi
 
 
 ## I'm declared guilty of procastinating
-
-
-![Profile Image]({{ site.url }}/{{ site.picture }})
