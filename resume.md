@@ -71,7 +71,7 @@ DataScience Specialization, Coursera (80% completed):
 I'm the guy that when someone asks "Does this shit works?" I break it,
 find that it does not work or it does either.
 
-Database and SRE for fancy companies like Gitlab, BBM, Conrad Electronics and Postmastes. 
+Database and SRE for fancy companies like Gitlab, BBM, Conrad Electronics and Postmates. 
 
 Highlighted projects: 
 
