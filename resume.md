@@ -12,25 +12,32 @@ For professional contact, you can send a contact request or message through my
 [GitHub](https://github.com/3manuek) and [Gitlab](https://gitlab.com/3manuek) profiles.
 
 
+## Bio
 
-## Summary
+Since early years in my professional career, Databases and Open Source had both a considerable predominance
+at work, and it eventually they turned into my specialization over other IT techonologies and areas. As any
+other IT components, Open Source Databases, are not isolated from the inherent and forced evolution of
+the technology stacks and, as a DB professional, my main concern was to not split the database component from
+the whole archicture as it used to be an odd piece due to its complexity. That is, mostly, the reason of my profile being
+mutated during the last years and positions, converging into a Database Reliability Engineer with consistent knowledge 
+of architecture and infrastructure - emphatically IaaC (Infra as a Code) - , manipulating databases as any other 
+component through CD/CI and following the most modern HA concepts. Not mentioned, at least directly, I managed
+to support and implement full architectures on bare metal premises and major cloud providers (being OnGres, Google 
+Cloud partner), both in virtualized environements as dedicated hosting.
 
-Frequently, this section is full of easily searchable keywords that bots and humans anxiously
-require to commit the inherited task of joining manpower to their organizations. Instead, I'm going 
-to center the speech about where I'm standing right now.
+Even tho relational databases are frequently mentioned in this resume (MySQL and Postgres respectively, among others),
+I do not circumscribe around these exclusively, as nowadays all different engines (KV, FTS, analytics/columnar store)
+are integrated in complex stacks and need to synergy efficiently in the data workflow.
 
-I'm not actively looking any position, although I'm open to very specific projects and mostly related 
-with analytics and building infrastructure for it. 
+Part of this mutation, I'm currently walking through Data Engineering role, integrating components and setting
+up Data Lakes for stream analytics and experiencing with different engines and models.
 
-Since 2006, I've worked with a vast heterogeneous set of technologies and companies, from boutique 
-services to large consulting firms, companies in the telco field bot for training, consulting and support.
-
-I'm mostly focused on Open Source Databases/Datastores Reliability and Scalability and also, related technologies
-for data manipulation from pipelines, streaming, workers and queues. I do manage daily several types of Cloud providers,
-programming languages for tool developing and architecture design work.
+I had also co-founded CanalDBA, with the intention of agglomerating specialists and advocate Open Source Databases 
+in Latam.
 
 _As a previous and totally unrelated experience, I worked at Federal Penitentiary Argentinian Force,
 as officer in several institutions, from medium to high security._
+
 
 ## External publications
 
@@ -62,18 +69,18 @@ DataScience Specialization, Coursera (80% completed):
 
 -----
 
-## Current positions
+## Current position/s
 
-### Ongres Inc. (ex 8kdata) - CBT (Chief for Blaming Tools)
+### Ongres Inc. (ex 8kdata) - Principal Data-Engineer
 > Remote. New York/Madrid
-> September 2017
+> Since September 2017 as OnGres, previously working as Consultant in 8kdata
 
 I'm the guy that when someone asks "Does this shit works?" I break it,
 find that it does not work or it does either.
 
-Database and SRE for fancy companies like Gitlab, BBM, Conrad Electronics and Postmates. 
+Database and SRE for fancy companies like Gitlab, BBM, Conrad Electronics and Postmates.
 
-Highlighted projects: 
+Highlighted projects:
 
 - BBM (Blackberry - Emtek - Google Cloud): Live migration from Oracle to full Patroni automated cluster, from a premise
   based environment to Google Cloud. PgBouncer-Consul-Postgres
@@ -81,6 +88,13 @@ Highlighted projects:
   Google iLB with API configuration with Patroni, and PgBouncer.
 - GitLab as part of the Database Reliability Team.
 - Google Cloud as partner.
+
+Techs:
+
+- Infra and CD/CI: HCL (Terraform, Packer), Ansible, Kubernetes, Docker.
+- Databases: Postgres (and extensions), MySQL, Oracle (to migrate out *wink, wink*)
+- Languages: Python, bash
+- Cloud Providers: Google Cloud, AWS
 
 
 ### Ayres.io - Root and Data Engineer
@@ -91,6 +105,11 @@ Ayres is an analytics company, working on custom targeted problems of certain co
 We do all in cloud, high privacy, _company as a code_.
 
 Customers: iMedicare, Eloquentix.
+
+Techs:
+
+- Databases: Presto, ClickHouse, Elastic, Prometheus, Redshift, Kafka, Postgres (for analytics)
+- Languages: Python, R and Golang
 
 ----
 
@@ -120,14 +139,14 @@ External technical advisor and consultant for Postgres and other related technol
 Open Source Source Undergraduate Degree Associate Professor, PostgreSQL Database specialist.
 
 
-### Pythian - Lead DB / MySQL Database Consultant and ACTG member
+### Pythian - Technical Lead / MySQL Database Consultant and ACTG member
 > Ottawa, Canada
 > January 2015 - June 2016
 
 - Support to Pythian’s External Profile.
 - Member of the Advanced Consulting Team Group (PostgreSQL).
 - Other Technologies: MySQL/MariaDB, xtraDB, Galera, Docker, Ansible, MongoDB, PostgreSQL, Vertica, Oracle.
-- Part of the Advance Consulting Team for Postgres implementations, solutions and architecture.
+- Part of the ACTG (Advance Consulting Team Group) for PostgreSQL implementations, solutions and architecture.
 - Lead Database Consultant T73
 
 
