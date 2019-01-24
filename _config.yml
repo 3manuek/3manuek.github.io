@@ -102,6 +102,14 @@ gems:
   - jekyll-seo-tag
   - jekyll-gist
   - jekyll-feed
+  - jekyll-mermaid
+
+# https://github.com/jasonbellamy/jekyll-mermaid/issues/9
+# curl https://unpkg.com/mermaid@8.0.0/dist/mermaid.min.js > mermaid.min.js
+# curl https://unpkg.com/mermaid@8.0.0/dist/mermaid.min.js.map > mermaid.min.js.map
+
+mermaid:
+    src: './assets/js/vendor/mermaid.min.js'
 
 jekyll-mentions:
     base_url: https://github.com

@@ -1,4 +1,177 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2019-01-16T13:16:06-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://www.3manuek.com/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://www.3manuek.com/clickhouse-sampling-data</id><content type="html" xml:base="http://www.3manuek.com/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="http://jekyllrb.com" version="3.3.1">Jekyll</generator><link href="http://www.3manuek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="http://www.3manuek.com/" rel="alternate" type="text/html" /><updated>2019-01-24T19:32:22-03:00</updated><id>http://www.3manuek.com/</id><title type="html">Emanuel Calvo</title><subtitle>A few experiments and articles on OSDB</subtitle><entry><title type="html">Avoiding legacy Terraform resources on GCP i[nternal]LB with HTTP checks setup.</title><link href="http://www.3manuek.com/terraformgcpilb" rel="alternate" type="text/html" title="Avoiding legacy Terraform resources on GCP i[nternal]LB with HTTP checks setup." /><published>2019-01-24T00:00:00-03:00</published><updated>2019-01-24T00:00:00-03:00</updated><id>http://www.3manuek.com/ilb-internal-gcp</id><content type="html" xml:base="http://www.3manuek.com/terraformgcpilb">&lt;h2 id=&quot;gcp-ilb-and-terraform-integration&quot;&gt;GCP iLB and Terraform integration&lt;/h2&gt;
+
+&lt;p&gt;Implementing an Internal Load Balancing in GCP through Terraform wasn’t smooth,
+specially if your resources rely on http health checks. I do emphasis on the &lt;em&gt;internal&lt;/em&gt; as
+even tho the Google console web assistant looks pretty much the similar with its
+&lt;em&gt;external&lt;/em&gt; conterpart, its Terraform implementation vary between.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;It is recommended a full read of &lt;a href=&quot;https://cloud.google.com/load-balancing/docs/internal/&quot;&gt;Google Cloud load balancing&lt;/a&gt; documentation&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;iLB is widely used for backend services such as Database components or stateful components
+that require an entity or snapshot consistency and that are not accessible to the world. This characteristic
+discards certain resources such as the Target Pool for the iLB, meaning that all the routing and scaling
+of the connections from the Load balancer will be provided by the Backend Service resource.&lt;/p&gt;
+
+&lt;p&gt;Setting up a Load Balancer will depend on which resources have been choose for spinning the computes. That is,
+&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_instance_group_manager&lt;/code&gt; and single computes. In this particular post
+I’m going to stick to &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; for the sake of abstraction.&lt;/p&gt;
+
+&lt;h2 id=&quot;arranging-resources&quot;&gt;Arranging resources&lt;/h2&gt;
+
+&lt;p&gt;The flight view of the basic architecture of an iLB will look like this in a diagram:&lt;/p&gt;
+
+&lt;script src=&quot;./assets/js/vendor/mermaid.min.js&quot;&gt;&lt;/script&gt;
+&lt;div class=&quot;mermaid&quot;&gt;
+graph TD;
+    google_compute_address--&amp;gt;google_compute_forwarding_rule;
+    google_compute_forwarding_rule--&amp;gt;google_compute_region_backend_service;
+    google_compute_region_backend_service--&amp;gt;google_compute_instange_group_manager;
+    google_compute_region_backend_service--&amp;gt;google_compute_health_check;
+    google_compute_instange_group_manager--&amp;gt;google_compute_health_check;
+    google_compute_instange_template--&amp;gt;google_compute_instange_group_manager;
+    style google_compute_instange_template fill:#ccf,stroke:#f66,stroke-width:2px,stroke-dasharray: 5, 5
+&lt;/div&gt;
+
+&lt;h2 id=&quot;instance-managed-groups&quot;&gt;Instance Managed Groups&lt;/h2&gt;
+
+&lt;p&gt;For the internal Load Balancing, there is nothing to parametrize here except for the AutoHealing section, which
+will point to the corresponding Health Check (the same that will be used for setting the LB). It is important to define
+an initial delay for checking the service, specially on stateful components that could spend certain time before they
+are available due to data transfers or provisioning. During development, you may want to wipe this block out, until 
+your services are available, in the contrary the computes will be destroy in an endless loop.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;  auto_healing_policies {
+    health_check = &quot;${google_compute_health_check.http_hc.self_link}&quot;
+    initial_delay_sec = &quot;${var.initial_delay_sec}&quot;
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;http-health-check&quot;&gt;[HTTP] Health Check&lt;/h2&gt;
+
+&lt;p&gt;The Health Check defines the Request Path/Port for issuing the check. It can be used for both AutoHealing and
+the Backend Service. In this particular case, we are interested on the HTTP check, as the service provides an 
+API under this protocol.&lt;/p&gt;
+
+&lt;p&gt;It is important to clarify that creating Health Check does not affect the other resources unless linked. You will
+prefer to define this resource even if your services aren’t up and running, as you can &lt;em&gt;plug it&lt;/em&gt; once they are 
+available (as it will be shown in the Backend Service section).&lt;/p&gt;
+
+&lt;p&gt;There is a legacy resource called &lt;a href=&quot;https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_http_health_check&lt;/code&gt;&lt;/a&gt;, which contains the following note:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note: google_compute_http_health_check is a legacy health check. The newer google_compute_health_check 
+should be preferred for all uses except Network Load Balancers which still require the legacy version.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Even tho, it is possible to setup iLB using the new resource and using its corresponding setup through
+the &lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&gt; block:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_health_check&quot; &quot;http_hc&quot; {
+  name                = &quot;${var.name}-health-check&quot;
+  check_interval_sec  = 10
+  timeout_sec         = 10
+  healthy_threshold   = 2
+  unhealthy_threshold = 10
+
+  http_health_check {
+    request_path = &quot;/${var.reqpath}&quot;
+    port         = &quot;${var.hcport}&quot;
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;More read available at &lt;a href=&quot;https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks&quot;&gt;Health Check/ Legacy Health Checks&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;backend-service&quot;&gt;Backend Service&lt;/h2&gt;
+
+&lt;p&gt;Particularly in this case, the corresponding resource for &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; is &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_backend_service&lt;/code&gt;.
+This resource needs: 1) Which instances are in the backend, 2) which health check is in use to determine the available nodes.&lt;/p&gt;
+
+&lt;p&gt;An example of this would be the following:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;resource &quot;google_compute_region_backend_service&quot; &quot;instance_group_backendservice&quot; {
+  name             = &quot;${var.name}-rig-bs&quot;
+  description      = &quot;Region Instance Group Backend Service&quot;
+  protocol         = &quot;TCP&quot;
+  timeout_sec      = 10
+  session_affinity = &quot;NONE&quot;
+
+  backend {
+    group = &quot;${google_compute_region_instance_group_manager.instance_group_manager.instance_group}&quot;
+  }
+
+  health_checks = [&quot;${google_compute_health_check.http_hc.self_link}&quot;]
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;backend&lt;/code&gt; block provices the instances created by &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;health_checks&lt;/code&gt;
+point to the predefined HC above.&lt;/p&gt;
+
+&lt;h2 id=&quot;forwarding-rule&quot;&gt;Forwarding Rule&lt;/h2&gt;
+
+&lt;p&gt;The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are: 1) load_balancing_scheme and
+2) backend_service. The &lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; change will require considerable changes on the architecture, so you need to 
+define this before hand when blackboarding your infra. Regarding the backend_service, this needs to point to the corresponding 
+backend_service than you spin for the Instance Managed Group.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_forwarding_rule&quot; &quot;main_fr&quot; {
+  project               = &quot;${var.project}&quot;
+  name                  = &quot;fw-rule-${var.name}&quot;
+  region       = &quot;${var.region}&quot;
+  network               = &quot;${var.network}&quot;
+
+  backend_service       = &quot;${google_compute_region_backend_service.instance_group_backendservice.self_link}&quot;
+  load_balancing_scheme = &quot;INTERNAL&quot;
+  ports                 = [&quot;${var.forwarding_port_ranges}&quot;]
+
+  ip_address            = [&quot;${google_compute_address.ilb_ip.address}&quot;]
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You can also predefine a compute address instead generating a random one or, going further, you can prevent 
+this resource to be destroyed accidentaly, as this IP is an entrypoint that you may want to keep straight:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_address&quot; &quot;ilb_ip&quot; {
+  name         = &quot;${var.name}-theIP&quot;
+  project      = &quot;${var.project}&quot;
+
+  region       = &quot;${var.region}&quot;
+  address_type = &quot;INTERNAL&quot; 
+
+  lifecycle {
+    prevent_destroy = true
+  }
+  
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;dont-forget-the-firewall-rules&quot;&gt;Don’t forget the Firewall Rules!&lt;/h2&gt;
+
+&lt;p&gt;All the above resources are core to the iLB setup, although there is one resource that even tho isn’t strictly
+part of the component, it must be specified to allow services and computes talk to each other. In this case, the
+source_ranges should match the corresponding subnet setup of all the above resources. If you happen to be in development
+phase, you can use &lt;code class=&quot;highlighter-rouge&quot;&gt;0.0.0.0/0&lt;/code&gt; for wide opening the rule, although you may want to specify a narrow IP range in production.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;resource &quot;google_compute_firewall&quot; &quot;default-lb-fw&quot; {
+  project = &quot;${var.project}&quot;
+  name    = &quot;${format(&quot;%v-%v-fw-ilb&quot;,var.name,count.index)}&quot;
+  network = &quot;${var.network}&quot;
+
+  allow {
+    protocol = &quot;tcp&quot;
+    ports    = [&quot;${var.forwarding_port_ranges}&quot;]
+  }
+
+  source_ranges = [&quot;0.0.0.0/0&quot;]
+  target_tags   = [&quot;${var.tags}&quot;]
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Hope you liked this post, do not hesitate to point questions and comments!&lt;/p&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="Terraform" /><summary type="html">GCP iLB and Terraform integration</summary></entry><entry><title type="html">Clickhouse sampling on MergeTree engine.</title><link href="http://www.3manuek.com/clickhousesample" rel="alternate" type="text/html" title="Clickhouse sampling on MergeTree engine." /><published>2017-07-01T00:00:00-03:00</published><updated>2017-07-01T00:00:00-03:00</updated><id>http://www.3manuek.com/clickhouse-sampling-data</id><content type="html" xml:base="http://www.3manuek.com/clickhousesample">&lt;h2 id=&quot;why-sampling-is-important-and-what-you-need-to-be-aware-of&quot;&gt;Why sampling is important and what you need to be aware of?&lt;/h2&gt;
 
 &lt;p&gt;When dealing with very large amount of data, you probably want to run your 
 queries only for a smaller dataset in your current tables. Specially if your dataset
@@ -1663,172 +1836,4 @@ s.setAttribute('data-timestamp', +new Date());
 })();
 &lt;/script&gt;
 
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="RDS" /><summary type="html">What does it change and why is so important?</summary></entry><entry><title type="html">Verificando descargas a traves de hashes y firmas</title><link href="http://www.3manuek.com/pgp-bitcoint-sha" rel="alternate" type="text/html" title="Verificando descargas a traves de hashes y firmas" /><published>2016-08-18T00:00:00-03:00</published><updated>2016-08-18T00:00:00-03:00</updated><id>http://www.3manuek.com/verificar-hashes-y-firmas-en-binarios</id><content type="html" xml:base="http://www.3manuek.com/pgp-bitcoint-sha">&lt;h2 id=&quot;la-razón&quot;&gt;La razón&lt;/h2&gt;
-
-&lt;p&gt;Bitcoin es en mi opinión, la más reciente y revolucionaria tecnología, que permite
-monetizar la capacidad de computo. No voy a entrar en detalles con respecto a
-como funciona o como se utiliza, ya que estimo que si llegaste a esta página, es
-porque te has topado con &lt;a href=&quot;https://bitcoin.org/en/alert/2016-08-17-binary-safety&quot;&gt;algo como esto&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;El &lt;em&gt;hasheo&lt;/em&gt; de binarios y las firmas digitales han estado dando vuelta desde hace
-años. Sin embargo, es sorprendente la cantidad de personas que aún no lo toman en serio.&lt;/p&gt;
-
-&lt;p&gt;La única herramienta que tenemos como ciudadanos contra la vigilancia de estado
-y el ciberterrorismo, es nuestro propio conocimiento. Ya que los estados no pueden
-garantizar la protección de datos de sus ciudadanos debido a la constante mejora
-de los sistemas de espionaje y avances en materia de ciberataques.&lt;/p&gt;
-
-&lt;p&gt;Hay un muy buen tutorial &lt;em&gt;exclusivo para el Bitcoin Core&lt;/em&gt; en &lt;a href=&quot;https://www.reddit.com/r/Bitcoin/wiki/verifying_bitcoin_core&quot;&gt;reddit&lt;/a&gt;,
-pero está en inglés.&lt;/p&gt;
-
-&lt;p&gt;Más allá de Bitcoin, tené en cuenta que la firma de binarios es algo más que rutinario y por consecuencia, recomendable verificar antes de poner código
-en producción.&lt;/p&gt;
-
-&lt;h2 id=&quot;obteniendo-los-hashes&quot;&gt;Obteniendo los &lt;em&gt;hashes&lt;/em&gt;&lt;/h2&gt;
-
-&lt;p&gt;Cada proyecto tiene sus formas, pero vamos a seguir las del Bitcoin Core. Al
-ir a la página de los &lt;a href=&quot;https://bitcoin.org/en/download&quot;&gt;&lt;em&gt;downloads&lt;/em&gt;&lt;/a&gt;, vamos a ver
-un link a &lt;a href=&quot;https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc&quot;&gt;Verify release signatures&lt;/a&gt;, que contiene un archivo con un mensaje en texto claro y una firma codificada. La parte codificada, contiene el texto claro codificado con la firma que descargaremos/importaremos más adelante:&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# Descargo:&lt;/span&gt;
-curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc &amp;gt; SHA256SUMS.asc
-
-
-&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA256
-
-abf0e7336621250702d7a55487c85b8de33c07a30fbc3ecf7f56c97007fcb4ce  bitcoin-0.12.1-linux32.tar.gz
-54aca14b7512801ab78cc93f8576e1b66364a890e8017e8a187e4bf0209fd28c  bitcoin-0.12.1-linux64.tar.gz
-91d14dcb9b88ca845df450ceb94250bb5c9a0d514d8ca0c55eb480d0ac77ef32  bitcoin-0.12.1-osx64.tar.gz
-e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
-08fc3b6c05c39fb975bba1f6dd49992df46511790ce8dc67398208af9565e199  bitcoin-0.12.1.tar.gz
-fba73e4825a6421ce6cc1e48b67ff5f2847ae1b520d26272e69f7f25de4f36d1  bitcoin-0.12.1-win32-setup.exe
-148fb438a32f1706a366a7825bbc5e770e5f9a20e5694f724a443275976a0791  bitcoin-0.12.1-win32.zip
-c6e06f90e41c36c9a447f065952869e2d7d571ab34b86d061ae19ec25b2799d4  bitcoin-0.12.1-win64-setup.exe
-d8e1ab9ff65b79c130ec6af8e36626310ffdaf6aacb7a40cfb76e7a63bdfcfd5  bitcoin-0.12.1-win64.zip
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;GNU/Linux&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
-
-iQIcBAEBCAAGBQJXEIwgAAoJEJDIAZ42wulkXNcP/Re0iawPi8muiq6J36ZUZKws
-KL2nwjCImj91on8wGoTUir1IytuIafA4JMHslos2Ak3za2UKAEZrEfx0dXm/FVql
-AgRneYLYedMQ8127UkSho4rxuwjB3h2gR/FGPpPT0PmbNTWOFsKtV1V9zwsCeA9Q
-br/ly2BfZHWsS1tpSK5ukP5W0q+Ii2fO4pcfaAsS2y/gc5kyj5hTiKQivwBVXoVA
-cyH1splq1foM5BYwOuT/cUKGrpA8fWo7+xOaEhhFBlW0oJaSXcNSK9mVTSI/dQ/2
-lINXcWBtotnH6/evS35pAIOe4PHg/URhXNT/Sdfwts4YL5nMtF+SPBrJWadPvx3C
-qdSDZKMuM0cDjVg1F4rjoWAxyshWNKKU2J+qkNUBZ1LbpVyDR3Gl4LFwRjaw0wyZ
-n6zHonPCtp33ErhsaY0GryHV1pKvL1h6uyDNWHbYpKny4F+TvbyQ6XNVHrx1IAn5
-+9UMPB3Q962/8hrRqK95Cs6AJ/D1Wdw9rwEqOC48waDzttYCVknn4L6rGECDdRM4
-6pbWNTf3m9lzThWjiuEdNnPoNuKoBD9/UHWW/WRHjT6tbcGqstoyRKTsi8jjmwnC
-9g4xWRsTdqYIAL4PBv32T+QYW/YcyRNTT97t/M0aukXxxxjCObehWVmBXVeNn0/9
-lvvCgGgSJXtJHxzqcJ2I
-&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;a2/6
------END PGP SIGNATURE-----
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Podemos observar que el hash es un algoritmo de SHA256 (justo debajo del &lt;em&gt;BEGIN PGP SIGNED MESSAGE&lt;/em&gt;). En Linux tenemos el comando &lt;code class=&quot;highlighter-rouge&quot;&gt;sha256sum&lt;/code&gt;,
-pero en Mac vamos a usar (no hay mucha diferencia en el proceso) &lt;code class=&quot;highlighter-rouge&quot;&gt;shasum&lt;/code&gt;. Lo que vamos a hacer es
-hashear los binarios que descargamos y compararlos con la tabla anterior:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ grep $(shasum -a 256 bitcoin-0.12.1-osx.dmg) SHA256SUMS.asc
-SHA256SUMS.asc:e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Hay varios algoritmos de hashing, por lo que dependiendo el proyecto o binarios
-que necesites verificar, deberás utilizar uno u otro. Por ejemplo, &lt;code class=&quot;highlighter-rouge&quot;&gt;md5sum&lt;/code&gt; o &lt;code class=&quot;highlighter-rouge&quot;&gt;md5&lt;/code&gt; (Mac) son las
-herramientas para otro algoritmo llamado &lt;em&gt;Message-Digest Algorithm 5&lt;/em&gt;.&lt;/p&gt;
-
-&lt;p&gt;¡Joya! Ahora vamos a verificar la firma.&lt;/p&gt;
-
-&lt;h2 id=&quot;la-firma&quot;&gt;La &lt;em&gt;firma&lt;/em&gt;&lt;/h2&gt;
-
-&lt;p&gt;Para la versión que yo tenía bajada, la firma es la key &lt;code class=&quot;highlighter-rouge&quot;&gt;36C2E964&lt;/code&gt;. En la página
-de las descargas, podrás ver las firmas para cada versión. En este caso, la firma
-es la de &lt;a href=&quot;https://bitcoin.org/laanwj.asc&quot;&gt;Wladimir&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;Importo:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ gpg --import Downloads/laanwj-releases.asc
-gpg: key 36C2E964: public key &quot;Wladimir J. van der Laan (Bitcoin Core binary release signing key) &amp;lt;laanwj@gmail.com&amp;gt;&quot; imported
-gpg: Total number processed: 1
-gpg:               imported: 1  (RSA: 1)
-gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
-gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Verifico el fingerprint (podrás ver el fingerprint en el &lt;a href=&quot;https://bitcoin.org/en/alert/2016-08-17-binary-safety&quot;&gt;anuncio&lt;/a&gt; o cuando decodifiques el mensaje):&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ gpg --fingerprint 01EA5486DE18A882D4C2684590C8019E36C2E964
-pub   4096R/36C2E964 2015-06-24 [expires: 2017-02-13]
-      Key fingerprint = 01EA 5486 DE18 A882 D4C2  6845 90C8 019E 36C2 E964
-uid                  Wladimir J. van der Laan (Bitcoin Core binary release signing key) &amp;lt;laanwj@gmail.com&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Con esto sabemos que la firma es válida. Lo que no sabemos es si el mensaje fue
-firmado con esta firma. Por suerte esto es más que sencillo, solo necesitamos
-ver que podemos decodificar el mensaje utilizando la firma que importamos:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Emanuels-iMac:~ emanuel$ gpg --output mensaje  -d Downloads/SHA256SUMS.asc
-gpg: Signature made Fri Apr 15 03:37:20 2016 ART using RSA key ID 36C2E964
-gpg: Good signature from &quot;Wladimir J. van der Laan (Bitcoin Core binary release signing key) &amp;lt;laanwj@gmail.com&amp;gt;&quot;
-gpg: WARNING: This key is not certified with a trusted signature!
-gpg:          There is no indication that the signature belongs to the owner.
-Primary key fingerprint: 01EA 5486 DE18 A882 D4C2  6845 90C8 019E 36C2 E964
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;Podemos ver que el fingerprint concuerda con el del anuncio. Eso es una buena señal.&lt;/p&gt;
-
-&lt;p&gt;Contenido del mensaje decodificado éxitosamente:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cat mensaje
-abf0e7336621250702d7a55487c85b8de33c07a30fbc3ecf7f56c97007fcb4ce  bitcoin-0.12.1-linux32.tar.gz
-54aca14b7512801ab78cc93f8576e1b66364a890e8017e8a187e4bf0209fd28c  bitcoin-0.12.1-linux64.tar.gz
-91d14dcb9b88ca845df450ceb94250bb5c9a0d514d8ca0c55eb480d0ac77ef32  bitcoin-0.12.1-osx64.tar.gz
-e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
-08fc3b6c05c39fb975bba1f6dd49992df46511790ce8dc67398208af9565e199  bitcoin-0.12.1.tar.gz
-fba73e4825a6421ce6cc1e48b67ff5f2847ae1b520d26272e69f7f25de4f36d1  bitcoin-0.12.1-win32-setup.exe
-148fb438a32f1706a366a7825bbc5e770e5f9a20e5694f724a443275976a0791  bitcoin-0.12.1-win32.zip
-c6e06f90e41c36c9a447f065952869e2d7d571ab34b86d061ae19ec25b2799d4  bitcoin-0.12.1-win64-setup.exe
-d8e1ab9ff65b79c130ec6af8e36626310ffdaf6aacb7a40cfb76e7a63bdfcfd5  bitcoin-0.12.1-win64.zip
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h3 id=&quot;para-los-oneliners&quot;&gt;Para los &lt;em&gt;oneLiners&lt;/em&gt;&lt;/h3&gt;
-
-&lt;p&gt;Siempre hay algun &lt;em&gt;freak&lt;/em&gt; que quiere cosas como estas (está para Mac, usar &lt;code class=&quot;highlighter-rouge&quot;&gt;wget&lt;/code&gt; y &lt;code class=&quot;highlighter-rouge&quot;&gt;sha256sum&lt;/code&gt; para Linux):&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; curl https://bitcoin.org/bin/bitcoin-core-0.12.1/SHA256SUMS.asc  | gpg -d ; &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 2&amp;gt; /dev/null  | grep &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;shasum -a 256 bitcoin-0.12.1-osx.dmg | cut -f1 -d&lt;span class=&quot;s1&quot;&gt;' '&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;
-e1bc86d24dd978d64b511ada68be31057c20789fb9a6a86c40043a32bf77cb05  bitcoin-0.12.1-osx.dmg
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h2 id=&quot;unas-últimas-sugerencias&quot;&gt;Unas últimas sugerencias&lt;/h2&gt;
-
-&lt;p&gt;‘ta jodida la mano, así que mejor arremangarse y empezar a corroborar toda
-esas cosas que descargamos, en especial aquellas que están en la mira.&lt;/p&gt;
-
-&lt;p&gt;Listo el pollo. ¡Espero que te haya servido!&lt;/p&gt;
-
-&lt;div id=&quot;disqus_thread&quot;&gt;&lt;/div&gt;
-&lt;script&gt;
-
-
-var disqus_config = function () {
-this.page.url = http://www.3manuek.com;  // Replace PAGE_URL with your page's canonical URL variable
-this.page.identifier = Verificando descargas a traves de hashes y firmas; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
-};
-
-(function() { // DON'T EDIT BELOW THIS LINE
-var d = document, s = d.createElement('script');
-s.src = '//3manuek.disqus.com/embed.js';
-s.setAttribute('data-timestamp', +new Date());
-(d.head || d.body).appendChild(s);
-})();
-&lt;/script&gt;
-
-&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PGP" /><category term="SHA" /><category term="Bitcoin" /><summary type="html">La razón</summary></entry></feed>
+&lt;noscript&gt;Please enable JavaScript to view the &lt;a href=&quot;https://disqus.com/?ref_noscript&quot;&gt;comments powered by Disqus.&lt;/a&gt;&lt;/noscript&gt;</content><author><name>3manuek</name></author><category term="blog" /><category term="PostgreSQL" /><category term="RDS" /><summary type="html">What does it change and why is so important?</summary></entry></feed>

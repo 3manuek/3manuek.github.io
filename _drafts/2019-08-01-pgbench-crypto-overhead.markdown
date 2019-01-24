@@ -9,8 +9,7 @@ categories:
 permalink: pgcryptoppgbench
 ---
 
-There are certain scenarios where using certain features (LISTEN/NOTIFY [isn't cheap](http://johtopg.blogspot.com.ar/2015/11/listening-connections-arent-cheap.html)) and contribs (like pgcrypto due to encryption libraries) that consume an extra amount of CPU processing that you may want to be aware. Certainly, processing scale-up isn't limited to CPUs (known as homogenous scaling): _heterogenous scaling up_ with GPUs is implemented in [PG-Strom](https://wiki.postgresql.org/wiki/PGStrom). So the answer will depend your requirements.
-http://dba.stackexchange.com/questions/17092/is-the-cpu-performance-relevant-for-a-database-server
+There are certain scenarios where using certain features (LISTEN/NOTIFY [isn't cheap](http://johtopg.blogspot.com.ar/2015/11/listening-connections-arent-cheap.html)) and contribs (like pgcrypto due to encryption libraries) that consume an extra amount of CPU processing that you may want to be aware. Certainly, vertical processing scale-up isn't limited to CPUs (known as homogenous scaling): _heterogenous scaling up_ with GPUs is implemented in [PG-Strom](https://wiki.postgresql.org/wiki/PGStrom). So the [answer](http://dba.stackexchange.com/questions/17092/is-the-cpu-performance-relevant-for-a-database-server) will depend your requirements.
 
 
 Hey there again! This post will be covering simple benchmarks for [PgCrypto](https://www.postgresql.org/docs/9.5/static/pgcrypto.html) under

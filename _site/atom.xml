@@ -4,13 +4,195 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2019-01-16T13:16:06-03:00</updated>
+ <updated>2019-01-24T19:32:22-03:00</updated>
  <id></id>
  <author>
    <name></name>
    <email></email>
  </author>
 
+ 
+ <entry>
+   <title>Avoiding legacy Terraform resources on GCP i[nternal]LB with HTTP checks setup.</title>
+   <link href="/terraformgcpilb"/>
+   <updated>2019-01-24T00:00:00-03:00</updated>
+   <id>/ilb-internal-gcp</id>
+   <content type="html">&lt;h2 id=&quot;gcp-ilb-and-terraform-integration&quot;&gt;GCP iLB and Terraform integration&lt;/h2&gt;
+
+&lt;p&gt;Implementing an Internal Load Balancing in GCP through Terraform wasn’t smooth,
+specially if your resources rely on http health checks. I do emphasis on the &lt;em&gt;internal&lt;/em&gt; as
+even tho the Google console web assistant looks pretty much the similar with its
+&lt;em&gt;external&lt;/em&gt; conterpart, its Terraform implementation vary between.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;It is recommended a full read of &lt;a href=&quot;https://cloud.google.com/load-balancing/docs/internal/&quot;&gt;Google Cloud load balancing&lt;/a&gt; documentation&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;iLB is widely used for backend services such as Database components or stateful components
+that require an entity or snapshot consistency and that are not accessible to the world. This characteristic
+discards certain resources such as the Target Pool for the iLB, meaning that all the routing and scaling
+of the connections from the Load balancer will be provided by the Backend Service resource.&lt;/p&gt;
+
+&lt;p&gt;Setting up a Load Balancer will depend on which resources have been choose for spinning the computes. That is,
+&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_instance_group_manager&lt;/code&gt; and single computes. In this particular post
+I’m going to stick to &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; for the sake of abstraction.&lt;/p&gt;
+
+&lt;h2 id=&quot;arranging-resources&quot;&gt;Arranging resources&lt;/h2&gt;
+
+&lt;p&gt;The flight view of the basic architecture of an iLB will look like this in a diagram:&lt;/p&gt;
+
+&lt;script src=&quot;./assets/js/vendor/mermaid.min.js&quot;&gt;&lt;/script&gt;
+&lt;div class=&quot;mermaid&quot;&gt;
+graph TD;
+    google_compute_address--&amp;gt;google_compute_forwarding_rule;
+    google_compute_forwarding_rule--&amp;gt;google_compute_region_backend_service;
+    google_compute_region_backend_service--&amp;gt;google_compute_instange_group_manager;
+    google_compute_region_backend_service--&amp;gt;google_compute_health_check;
+    google_compute_instange_group_manager--&amp;gt;google_compute_health_check;
+    google_compute_instange_template--&amp;gt;google_compute_instange_group_manager;
+    style google_compute_instange_template fill:#ccf,stroke:#f66,stroke-width:2px,stroke-dasharray: 5, 5
+&lt;/div&gt;
+
+&lt;h2 id=&quot;instance-managed-groups&quot;&gt;Instance Managed Groups&lt;/h2&gt;
+
+&lt;p&gt;For the internal Load Balancing, there is nothing to parametrize here except for the AutoHealing section, which
+will point to the corresponding Health Check (the same that will be used for setting the LB). It is important to define
+an initial delay for checking the service, specially on stateful components that could spend certain time before they
+are available due to data transfers or provisioning. During development, you may want to wipe this block out, until 
+your services are available, in the contrary the computes will be destroy in an endless loop.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;  auto_healing_policies {
+    health_check = &quot;${google_compute_health_check.http_hc.self_link}&quot;
+    initial_delay_sec = &quot;${var.initial_delay_sec}&quot;
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;http-health-check&quot;&gt;[HTTP] Health Check&lt;/h2&gt;
+
+&lt;p&gt;The Health Check defines the Request Path/Port for issuing the check. It can be used for both AutoHealing and
+the Backend Service. In this particular case, we are interested on the HTTP check, as the service provides an 
+API under this protocol.&lt;/p&gt;
+
+&lt;p&gt;It is important to clarify that creating Health Check does not affect the other resources unless linked. You will
+prefer to define this resource even if your services aren’t up and running, as you can &lt;em&gt;plug it&lt;/em&gt; once they are 
+available (as it will be shown in the Backend Service section).&lt;/p&gt;
+
+&lt;p&gt;There is a legacy resource called &lt;a href=&quot;https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_http_health_check&lt;/code&gt;&lt;/a&gt;, which contains the following note:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note: google_compute_http_health_check is a legacy health check. The newer google_compute_health_check 
+should be preferred for all uses except Network Load Balancers which still require the legacy version.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Even tho, it is possible to setup iLB using the new resource and using its corresponding setup through
+the &lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&gt; block:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_health_check&quot; &quot;http_hc&quot; {
+  name                = &quot;${var.name}-health-check&quot;
+  check_interval_sec  = 10
+  timeout_sec         = 10
+  healthy_threshold   = 2
+  unhealthy_threshold = 10
+
+  http_health_check {
+    request_path = &quot;/${var.reqpath}&quot;
+    port         = &quot;${var.hcport}&quot;
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;More read available at &lt;a href=&quot;https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks&quot;&gt;Health Check/ Legacy Health Checks&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;backend-service&quot;&gt;Backend Service&lt;/h2&gt;
+
+&lt;p&gt;Particularly in this case, the corresponding resource for &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; is &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_backend_service&lt;/code&gt;.
+This resource needs: 1) Which instances are in the backend, 2) which health check is in use to determine the available nodes.&lt;/p&gt;
+
+&lt;p&gt;An example of this would be the following:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;resource &quot;google_compute_region_backend_service&quot; &quot;instance_group_backendservice&quot; {
+  name             = &quot;${var.name}-rig-bs&quot;
+  description      = &quot;Region Instance Group Backend Service&quot;
+  protocol         = &quot;TCP&quot;
+  timeout_sec      = 10
+  session_affinity = &quot;NONE&quot;
+
+  backend {
+    group = &quot;${google_compute_region_instance_group_manager.instance_group_manager.instance_group}&quot;
+  }
+
+  health_checks = [&quot;${google_compute_health_check.http_hc.self_link}&quot;]
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;backend&lt;/code&gt; block provices the instances created by &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;health_checks&lt;/code&gt;
+point to the predefined HC above.&lt;/p&gt;
+
+&lt;h2 id=&quot;forwarding-rule&quot;&gt;Forwarding Rule&lt;/h2&gt;
+
+&lt;p&gt;The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are: 1) load_balancing_scheme and
+2) backend_service. The &lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; change will require considerable changes on the architecture, so you need to 
+define this before hand when blackboarding your infra. Regarding the backend_service, this needs to point to the corresponding 
+backend_service than you spin for the Instance Managed Group.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_forwarding_rule&quot; &quot;main_fr&quot; {
+  project               = &quot;${var.project}&quot;
+  name                  = &quot;fw-rule-${var.name}&quot;
+  region       = &quot;${var.region}&quot;
+  network               = &quot;${var.network}&quot;
+
+  backend_service       = &quot;${google_compute_region_backend_service.instance_group_backendservice.self_link}&quot;
+  load_balancing_scheme = &quot;INTERNAL&quot;
+  ports                 = [&quot;${var.forwarding_port_ranges}&quot;]
+
+  ip_address            = [&quot;${google_compute_address.ilb_ip.address}&quot;]
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You can also predefine a compute address instead generating a random one or, going further, you can prevent 
+this resource to be destroyed accidentaly, as this IP is an entrypoint that you may want to keep straight:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_address&quot; &quot;ilb_ip&quot; {
+  name         = &quot;${var.name}-theIP&quot;
+  project      = &quot;${var.project}&quot;
+
+  region       = &quot;${var.region}&quot;
+  address_type = &quot;INTERNAL&quot; 
+
+  lifecycle {
+    prevent_destroy = true
+  }
+  
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;dont-forget-the-firewall-rules&quot;&gt;Don’t forget the Firewall Rules!&lt;/h2&gt;
+
+&lt;p&gt;All the above resources are core to the iLB setup, although there is one resource that even tho isn’t strictly
+part of the component, it must be specified to allow services and computes talk to each other. In this case, the
+source_ranges should match the corresponding subnet setup of all the above resources. If you happen to be in development
+phase, you can use &lt;code class=&quot;highlighter-rouge&quot;&gt;0.0.0.0/0&lt;/code&gt; for wide opening the rule, although you may want to specify a narrow IP range in production.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;resource &quot;google_compute_firewall&quot; &quot;default-lb-fw&quot; {
+  project = &quot;${var.project}&quot;
+  name    = &quot;${format(&quot;%v-%v-fw-ilb&quot;,var.name,count.index)}&quot;
+  network = &quot;${var.network}&quot;
+
+  allow {
+    protocol = &quot;tcp&quot;
+    ports    = [&quot;${var.forwarding_port_ranges}&quot;]
+  }
+
+  source_ranges = [&quot;0.0.0.0/0&quot;]
+  target_tags   = [&quot;${var.tags}&quot;]
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Hope you liked this post, do not hesitate to point questions and comments!&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Clickhouse sampling on MergeTree engine.</title>
