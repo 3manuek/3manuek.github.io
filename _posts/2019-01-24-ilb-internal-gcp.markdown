@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Avoiding legacy Terraform resources on GCP i[nternal]LB with HTTP checks setup."
+title:  "Internal Load Balancing in GCP with Terraform"
 subtitle: "Avoiding legacy code and briefing what is propagated in hundreds of documentation pages"
 date:   2019-01-24
 description: Avoiding legacy code and briefing what is propagated in hundreds of documentation pages.
@@ -18,9 +18,9 @@ author: 3manuek
 ## GCP iLB and Terraform integration
 
 Implementing an Internal Load Balancing in GCP through Terraform wasn't smooth,
-specially if your resources rely on http health checks. I do emphasis on the _internal_ as
+specially if your resources rely on HTTP health checks. I do emphasis on the _internal_ as
 even tho the Google console web assistant looks pretty much the similar with its
-_external_ conterpart, its Terraform implementation vary between.
+_external_ conterpart, its Terraform implementation vary in between strongly.
 
 > It is recommended a full read of [Google Cloud load balancing](https://cloud.google.com/load-balancing/docs/internal/) documentation
 
@@ -33,9 +33,22 @@ Setting up a Load Balancer will depend on which resources have been choose for s
 `google_compute_region_instance_group_manager`, `google_compute_instance_group_manager` and single computes. In this particular post
 I'm going to stick to `google_compute_region_instance_group_manager` for the sake of abstraction.
 
+There is a legacy resource called [`google_compute_http_health_check`](https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html), which contains the following note:
+
+> Note: google_compute_http_health_check is a legacy health check. The newer google_compute_health_check 
+> should be preferred for all uses except Network Load Balancers which still require the legacy version.
+
+The final resource will end up with an iLB pointing to those nodes that return OK to the corresponding Health Check
+(reqpath + port through HTTP in this case). This is pretty useful if the state of the computes are served through
+an API backed with a DCS, meaning that the whole cluster of computes will be consistent to that view. In stateful
+services you will access a single machine of the cluster for RW transactions or, access only certain group of machines
+that return OK on the requested method/port. 
+
+If you happen to use Consul agents, you can provide such API to make your architecture consistent through consensus, erradicating
+split brain scenarios or data inconsitency during failovers.
 
 
-## Arranging resources
+## Resource Map of an iLB
 
 The flight view of the basic architecture of an iLB will look like this in a diagram:
 
@@ -46,7 +59,7 @@ The flight view of the basic architecture of an iLB will look like this in a dia
 
 ## Instance Managed Groups
 
-For the internal Load Balancing, there is nothing to parametrize here except for the AutoHealing section, which
+For the internal Load Balancing, there is nothing to parametrize here except for the AutoHealing block, which
 will point to the corresponding Health Check (the same that will be used for setting the LB). It is important to define
 an initial delay for checking the service, specially on stateful components that could spend certain time before they
 are available due to data transfers or provisioning. During development, you may want to wipe this block out, until 
@@ -59,21 +72,18 @@ your services are available, in the contrary the computes will be destroy in an 
   }
 ```
 
+As we are setting up an iLB, `google_compute_region_instance_group_manager` has been choose as it is compatible with its 
+setup. This resource manages computes across a region, through several availability zones.
 
-## [HTTP] Health Check
+## Health Check
 
 The Health Check defines the Request Path/Port for issuing the check. It can be used for both AutoHealing and
 the Backend Service. In this particular case, we are interested on the HTTP check, as the service provides an 
-API under this protocol. 
+API under this protocol.
 
 It is important to clarify that creating Health Check does not affect the other resources unless linked. You will
 prefer to define this resource even if your services aren't up and running, as you can _plug it_ once they are 
 available (as it will be shown in the Backend Service section).
-
-There is a legacy resource called [`google_compute_http_health_check`](https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html), which contains the following note:
-
-> Note: google_compute_http_health_check is a legacy health check. The newer google_compute_health_check 
-> should be preferred for all uses except Network Load Balancers which still require the legacy version.
 
 Even tho, it is possible to setup iLB using the new resource and using its corresponding setup through
 the `http_health_check` block:
@@ -92,6 +102,9 @@ resource "google_compute_health_check" "http_hc" {
   }
 }
 ```
+
+This resource allows TCP and HTTP blocks, meaning that you can _reuse_ the resource `google_compute_health_check` no matter
+the check it lays inside, making our code more reusable. 
 
 More read available at [Health Check/ Legacy Health Checks](https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks).
 
@@ -119,8 +132,43 @@ resource "google_compute_region_backend_service" "instance_group_backendservice"
 ```
 
 The `backend` block provices the instances created by `google_compute_region_instance_group_manager` and `health_checks`
-point to the predefined HC above.
+point to the predefined HC above. One backend service can point to several Health Checks like built in the [google-lb-internal](https://github.com/GoogleCloudPlatform/terraform-google-lb-internal/blob/master/main.tf#L42-L71):
 
+
+```
+resource "google_compute_region_backend_service" "default" {
+...
+  health_checks    = ["${element(compact(concat(google_compute_health_check.tcp.*.self_link,google_compute_health_check.http.*.self_link)), 0)}"]
+}
+
+resource "google_compute_health_check" "tcp" {
+  count = "${var.http_health_check ? 0 : 1}"
+  project = "${var.project}"
+  name    = "${var.name}-hc"
+
+  tcp_health_check {
+    port = "${var.health_port}"
+  }
+}
+
+resource "google_compute_health_check" "http" {
+  count = "${var.http_health_check ? 1 : 0}"
+  project = "${var.project}"
+  name    = "${var.name}-hc"
+
+  http_health_check {
+    port = "${var.health_port}"
+  }
+}
+```
+
+Keep in mind that we are setting an internal Load Balancer, which is compatible with `google_compute_region_backend_service` ,
+diverging from the external Load Balancer that require `google_compute_backend_service`. The difference is the level of the abstraction
+when provisioning nodes, which in the external, you need to end up defining resources more explicitely than using internal.
+
+
+> Note: Region backend services can only be used when using internal load balancing. For external load balancing, 
+> use google_compute_backend_service instead. [Terraform Doc](https://www.terraform.io/docs/providers/google/r/compute_region_backend_service.html)
 
 ## Forwarding Rule
 
@@ -134,7 +182,7 @@ backend_service than you spin for the Instance Managed Group.
 resource "google_compute_forwarding_rule" "main_fr" {
   project               = "${var.project}"
   name                  = "fw-rule-${var.name}"
-  region       = "${var.region}"
+  region                = "${var.region}"
   network               = "${var.network}"
 
   backend_service       = "${google_compute_region_backend_service.instance_group_backendservice.self_link}"
