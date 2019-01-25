@@ -39,18 +39,9 @@ I'm going to stick to `google_compute_region_instance_group_manager` for the sak
 
 The flight view of the basic architecture of an iLB will look like this in a diagram:
 
-{% mermaid %}
-graph TD;
-    google_compute_address-->google_compute_forwarding_rule;
-    google_compute_forwarding_rule-->google_compute_region_backend_service;
-    google_compute_region_backend_service-->google_compute_instange_group_manager;
-    google_compute_region_backend_service-->google_compute_health_check;
-    google_compute_instange_group_manager-->google_compute_health_check;
-    google_compute_instange_template-->google_compute_instange_group_manager;
-    style google_compute_instange_template fill:#ccf,stroke:#f66,stroke-width:2px,stroke-dasharray: 5, 5
-{% endmermaid %}
 
-
+![iLB Image][1]{: class="bigger-image" }
+<figcaption class="caption">Flight view of the iLB Terraform resources.</figcaption>
 
 
 ## Instance Managed Groups
@@ -197,3 +188,6 @@ resource "google_compute_firewall" "default-lb-fw" {
 
 
 Hope you liked this post, do not hesitate to point questions and comments!
+
+
+[1]: http://www.3manuek.com/assets/posts/ilb.png

@@ -5,8 +5,8 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Fri, 25 Jan 2019 11:51:24 -0300</lastBuildDate>
-        <pubDate>Fri, 25 Jan 2019 11:51:24 -0300</pubDate>
+        <lastBuildDate>Fri, 25 Jan 2019 12:01:27 -0300</lastBuildDate>
+        <pubDate>Fri, 25 Jan 2019 12:01:27 -0300</pubDate>
         <ttl>60</ttl>
 
 
@@ -36,17 +36,8 @@ I’m going to stick to &lt;code class=&quot;highlighter-rouge&quot;&gt;google_c
 
 &lt;p&gt;The flight view of the basic architecture of an iLB will look like this in a diagram:&lt;/p&gt;
 
-&lt;script src=&quot;./assets/js/vendor/mermaid.min.js&quot;&gt;&lt;/script&gt;
-&lt;div class=&quot;mermaid&quot;&gt;
-graph TD;
-    google_compute_address--&amp;gt;google_compute_forwarding_rule;
-    google_compute_forwarding_rule--&amp;gt;google_compute_region_backend_service;
-    google_compute_region_backend_service--&amp;gt;google_compute_instange_group_manager;
-    google_compute_region_backend_service--&amp;gt;google_compute_health_check;
-    google_compute_instange_group_manager--&amp;gt;google_compute_health_check;
-    google_compute_instange_template--&amp;gt;google_compute_instange_group_manager;
-    style google_compute_instange_template fill:#ccf,stroke:#f66,stroke-width:2px,stroke-dasharray: 5, 5
-&lt;/div&gt;
+&lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/ilb.png&quot; alt=&quot;iLB Image&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
+&lt;figcaption class=&quot;caption&quot;&gt;Flight view of the iLB Terraform resources.&lt;/figcaption&gt;
 
 &lt;h2 id=&quot;instance-managed-groups&quot;&gt;Instance Managed Groups&lt;/h2&gt;
 
@@ -184,6 +175,7 @@ phase, you can use &lt;code class=&quot;highlighter-rouge&quot;&gt;0.0.0.0/0&lt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;Hope you liked this post, do not hesitate to point questions and comments!&lt;/p&gt;
+
 </description>
                 <link>/terraformgcpilb</link>
                 <guid>/ilb-internal-gcp</guid>
