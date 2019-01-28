@@ -42,7 +42,7 @@ The final resource will end up with an iLB pointing to those nodes that return O
 (reqpath + port through HTTP in this case). This is pretty useful if the state of the computes are served through
 an API backed with a DCS, meaning that the whole cluster of computes will be consistent to that view. In stateful
 services you will access a single machine of the cluster for RW transactions or, access only certain group of machines
-that return OK on the requested method/port. 
+that return OK on the requested method/port.
 
 If you happen to use Consul agents, you can provide such API to make your architecture consistent through consensus, erradicating
 split brain scenarios or data inconsitency during failovers.
@@ -57,17 +57,22 @@ The flight view of the basic architecture of an iLB will look like this in a dia
 <figcaption class="caption">Flight view of the iLB Terraform resources.</figcaption>
 
 
+
 ## Instance Managed Groups
 
 For the internal Load Balancing, there is nothing to parametrize here except for the AutoHealing block, which
-will point to the corresponding Health Check (the same that will be used for setting the LB). It is important to define
-an initial delay for checking the service, specially on stateful components that could spend certain time before they
+will point to the corresponding Health Check. Usually, for stateless services, we use the same Health Check 
+for the autohealing (or, at least is functional to do so); although, stateful services such databases, can 
+return _not available_ (503) response code from the API but it does not mean that the service is down, as it might have more 
+complex statuses depending the request path/method (service is up, but can't receive writes).
+
+It is important to define an initial delay for checking the service, specially on stateful components that could spend certain time before they
 are available due to data transfers or provisioning. During development, you may want to wipe this block out, until 
 your services are available, in the contrary the computes will be destroy in an endless loop.
 
 ```hcl
   auto_healing_policies {
-    health_check = "${google_compute_health_check.http_hc.self_link}"
+    health_check = "${google_compute_health_check.tcp_hc.self_link}"
     initial_delay_sec = "${var.initial_delay_sec}"
   }
 ```
@@ -75,18 +80,30 @@ your services are available, in the contrary the computes will be destroy in an 
 As we are setting up an iLB, `google_compute_region_instance_group_manager` has been choose as it is compatible with its 
 setup. This resource manages computes across a region, through several availability zones.
 
-## Health Check
+## Health Checks
 
-The Health Check defines the Request Path/Port for issuing the check. It can be used for both AutoHealing and
-the Backend Service. In this particular case, we are interested on the HTTP check, as the service provides an 
-API under this protocol.
+Consider an API through port 8008, wether it returns 503/200 response codes over master/replica methods.
+The bellow output shows the responses for both methods over the same **master** node:
+
+```
+curl -sSL -D -  http://127.0.0.1:8008/master
+HTTP/1.0 200 OK
+...
+
+curl -sSL -D -  http://127.0.0.1:8008/replica
+HTTP/1.0 503 Service Unavailable
+...
+```
+
+These methods can be used for the Backend Service configuration for refreshing the iLB node that act as master
+or those for replicas (for RO iLB).
 
 It is important to clarify that creating Health Check does not affect the other resources unless linked. You will
 prefer to define this resource even if your services aren't up and running, as you can _plug it_ once they are 
 available (as it will be shown in the Backend Service section).
 
 Even tho, it is possible to setup iLB using the new resource and using its corresponding setup through
-the `http_health_check` block:
+the `http_health_check`/`tcp_health_check` block:
 
 ```hcl
 resource "google_compute_health_check" "http_hc" {
@@ -96,15 +113,31 @@ resource "google_compute_health_check" "http_hc" {
   healthy_threshold   = 2
   unhealthy_threshold = 10
 
+  description = "this HC returns OK depending on the method"
+
   http_health_check {
     request_path = "/${var.reqpath}"
     port         = "${var.hcport}"
   }
 }
+
+resource "google_compute_health_check" "tcp_hc" {
+  name                = "${var.name}-health-check"
+  check_interval_sec  = 10
+  timeout_sec         = 10
+  healthy_threshold   = 2
+  unhealthy_threshold = 10
+
+  description = "this HC is for autohealing and returns OK if service is up"
+
+  tcp_health_check {
+    port         = "${var.hcport}"
+  }
+}
 ```
 
-This resource allows TCP and HTTP blocks, meaning that you can _reuse_ the resource `google_compute_health_check` no matter
-the check it lays inside, making our code more reusable. 
+> The autohealing health check can either be TCP or HTTP, just make sure that the HTTP API method
+> returns _not available_ **only** if the service is completely down.
 
 More read available at [Health Check/ Legacy Health Checks](https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks).
 
@@ -173,8 +206,8 @@ when provisioning nodes, which in the external, you need to end up defining reso
 ## Forwarding Rule
 
 
-The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are: 1) load_balancing_scheme and
-2) backend_service. The `load_balancing_scheme` change will require considerable changes on the architecture, so you need to 
+The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are: 1) `load_balancing_scheme` and
+2) `backend_service`. The `load_balancing_scheme` change will require considerable changes on the architecture, so you need to 
 define this before hand when blackboarding your infra. Regarding the backend_service, this needs to point to the corresponding 
 backend_service than you spin for the Instance Managed Group.
 
@@ -193,8 +226,9 @@ resource "google_compute_forwarding_rule" "main_fr" {
 }
 ```
 
-You can also predefine a compute address instead generating a random one or, going further, you can prevent 
-this resource to be destroyed accidentaly, as this IP is an entrypoint that you may want to keep straight:
+It is a common practice to predefine a compute address for the iLB instead leaving GCP choose one for us and, going further, you can prevent 
+this resource to be destroyed accidentaly, as this IP is an entrypoint for your application and might be coded in a different 
+piece of architecture:
 
 ```hcl
 resource "google_compute_address" "ilb_ip" {

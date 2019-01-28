@@ -1,3 +1,122 @@
 # For local testing, run:
 # bundle exec jekyll serve --config _config.yml,_config-dev.yml
+#url: http://localhost:4000
+
+
+# main text of home
+name: Emanuel Calvo
+bio: Open Source Data Base Engineer
+
+# twitter summary info
+description: A few experiments and articles on OSDB
+
+# if it's an external image, update below for true
+# better with square images
+external-image: false
+picture: assets/images/profile5.jpg #profile3.jpg
+
+# If you want to include your resume, set to true
+# and specify source (external or local).
+resume: true
+resume-external: true
+resume-url: http://www.3manuek.com/resume
+
 url: http://localhost:4000
+# url: http://www.3manuek.com #www.3manuek.com
+# your url: http://USERNAME.github.io
+
+permalink: /:title/
+
+# To enable google analytics, supply your token below
+# analytics-google: 'UA-79505389-1'
+# yandex-metrica: '45243729'
+
+# To enable piwik tracking, supply your url & site ID below
+# analytics-piwik-url: 'piwik.my-host.com'
+# analytics-piwik-id: 1
+
+# if you don't want comments in your posts, leave categories empty
+disqus:
+  shortname: 3manuek  # enter this from your disqus account
+  categories: [blog] # only show disqus for posts that have these categories
+
+# if you don't have any of social below, comment the line
+# facebook: myfacebook
+twitter: 3manuek
+google: EmanuelCalvoFranco
+# instagram: myinstagram
+# pinterest: mypinterest
+linkedin: ecbcbcb
+# youtube: myyoutube
+# spotify: myspotify
+github: 3manuek
+#stackoverflow: 7044681/mystackoverflow
+# quora: userquora
+reddit: 3manuek
+# medium: medium
+# vimeo: myvimeo
+email: nospam+_+3manuek@gmail.com
+
+authors:
+    3manuek:
+        name: Emanuel Calvo
+        bio: Open Source Data Specialist  
+        external-image: false
+        picture: assets/images/profile4.jpeg #profile3.jpg
+        twitter: 3manuek
+        #external-image: false
+        #picture: assets/images/james.jpg
+        
+# do you want a larger site? change the option below
+# options: [normal, large] | default: normal
+# normal = 560px / large = 810px
+# {: class="bigger-image" }
+width: large
+
+# if you don't need pagination, comment the *paginate* configs below
+# paginate: 5
+# paginate_path: "blog/:num/"
+
+# if you don't need projects, comment the *projects* configs below
+projects: true
+
+# if you don't need "about" or "blog", comment them out below
+about: true
+blog: true
+refund: true
+slides: true
+
+# do you want to show the "read time" of the posts?
+read-time: true
+
+# do you want to show the "tags" inside the posts?
+show-tags: true
+
+# related posts inside a post?
+related: true
+
+# Display links for next and previous posts for the specified categories
+post-advance-links: [blog]
+
+# show author block at the end of a post ?
+show-author: true
+
+# do you want some animations?
+animation: true
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-gist
+  - jekyll-feed
+  - jekyll-mermaid
+
+# https://github.com/jasonbellamy/jekyll-mermaid/issues/9
+# curl https://unpkg.com/mermaid@8.0.0/dist/mermaid.min.js > mermaid.min.js
+# curl https://unpkg.com/mermaid@8.0.0/dist/mermaid.min.js.map > mermaid.min.js.map
+
+mermaid:
+    src: './assets/js/vendor/mermaid.min.js'
+
+jekyll-mentions:
+    base_url: https://github.com
+

@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2019-01-25T13:15:17-03:00</updated>
+ <updated>2019-01-28T15:55:09-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -63,13 +63,17 @@ split brain scenarios or data inconsitency during failovers.&lt;/p&gt;
 &lt;h2 id=&quot;instance-managed-groups&quot;&gt;Instance Managed Groups&lt;/h2&gt;
 
 &lt;p&gt;For the internal Load Balancing, there is nothing to parametrize here except for the AutoHealing block, which
-will point to the corresponding Health Check (the same that will be used for setting the LB). It is important to define
-an initial delay for checking the service, specially on stateful components that could spend certain time before they
+will point to the corresponding Health Check. Usually, for stateless services, we use the same Health Check 
+for the autohealing (or, at least is functional to do so); although, stateful services such databases, can 
+return &lt;em&gt;not available&lt;/em&gt; (503) response code from the API but it does not mean that the service is down, as it might have more 
+complex statuses depending the request path/method (service is up, but can’t receive writes).&lt;/p&gt;
+
+&lt;p&gt;It is important to define an initial delay for checking the service, specially on stateful components that could spend certain time before they
 are available due to data transfers or provisioning. During development, you may want to wipe this block out, until 
 your services are available, in the contrary the computes will be destroy in an endless loop.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;  auto_healing_policies {
-    health_check = &quot;${google_compute_health_check.http_hc.self_link}&quot;
+    health_check = &quot;${google_compute_health_check.tcp_hc.self_link}&quot;
     initial_delay_sec = &quot;${var.initial_delay_sec}&quot;
   }
 &lt;/code&gt;&lt;/pre&gt;
@@ -77,18 +81,29 @@ your services are available, in the contrary the computes will be destroy in an 
 &lt;p&gt;As we are setting up an iLB, &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; has been choose as it is compatible with its 
 setup. This resource manages computes across a region, through several availability zones.&lt;/p&gt;
 
-&lt;h2 id=&quot;health-check&quot;&gt;Health Check&lt;/h2&gt;
+&lt;h2 id=&quot;health-checks&quot;&gt;Health Checks&lt;/h2&gt;
 
-&lt;p&gt;The Health Check defines the Request Path/Port for issuing the check. It can be used for both AutoHealing and
-the Backend Service. In this particular case, we are interested on the HTTP check, as the service provides an 
-API under this protocol.&lt;/p&gt;
+&lt;p&gt;Consider an API through port 8008, wether it returns 503/200 response codes over master/replica methods.
+The bellow output shows the responses for both methods over the same &lt;strong&gt;master&lt;/strong&gt; node:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;curl -sSL -D -  http://127.0.0.1:8008/master
+HTTP/1.0 200 OK
+...
+
+curl -sSL -D -  http://127.0.0.1:8008/replica
+HTTP/1.0 503 Service Unavailable
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;These methods can be used for the Backend Service configuration for refreshing the iLB node that act as master
+or those for replicas (for RO iLB).&lt;/p&gt;
 
 &lt;p&gt;It is important to clarify that creating Health Check does not affect the other resources unless linked. You will
 prefer to define this resource even if your services aren’t up and running, as you can &lt;em&gt;plug it&lt;/em&gt; once they are 
 available (as it will be shown in the Backend Service section).&lt;/p&gt;
 
 &lt;p&gt;Even tho, it is possible to setup iLB using the new resource and using its corresponding setup through
-the &lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&gt; block:&lt;/p&gt;
+the &lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&gt;/&lt;code class=&quot;highlighter-rouge&quot;&gt;tcp_health_check&lt;/code&gt; block:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_health_check&quot; &quot;http_hc&quot; {
   name                = &quot;${var.name}-health-check&quot;
@@ -97,15 +112,33 @@ the &lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&g
   healthy_threshold   = 2
   unhealthy_threshold = 10
 
+  description = &quot;this HC returns OK depending on the method&quot;
+
   http_health_check {
     request_path = &quot;/${var.reqpath}&quot;
     port         = &quot;${var.hcport}&quot;
   }
 }
+
+resource &quot;google_compute_health_check&quot; &quot;tcp_hc&quot; {
+  name                = &quot;${var.name}-health-check&quot;
+  check_interval_sec  = 10
+  timeout_sec         = 10
+  healthy_threshold   = 2
+  unhealthy_threshold = 10
+
+  description = &quot;this HC is for autohealing and returns OK if service is up&quot;
+
+  tcp_health_check {
+    port         = &quot;${var.hcport}&quot;
+  }
+}
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;This resource allows TCP and HTTP blocks, meaning that you can &lt;em&gt;reuse&lt;/em&gt; the resource &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_health_check&lt;/code&gt; no matter
-the check it lays inside, making our code more reusable.&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;The autohealing health check can either be TCP or HTTP, just make sure that the HTTP API method
+returns &lt;em&gt;not available&lt;/em&gt; &lt;strong&gt;only&lt;/strong&gt; if the service is completely down.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;p&gt;More read available at &lt;a href=&quot;https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks&quot;&gt;Health Check/ Legacy Health Checks&lt;/a&gt;.&lt;/p&gt;
 
@@ -171,8 +204,8 @@ use google_compute_backend_service instead. &lt;a href=&quot;https://www.terrafo
 
 &lt;h2 id=&quot;forwarding-rule&quot;&gt;Forwarding Rule&lt;/h2&gt;
 
-&lt;p&gt;The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are: 1) load_balancing_scheme and
-2) backend_service. The &lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; change will require considerable changes on the architecture, so you need to 
+&lt;p&gt;The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are: 1) &lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; and
+2) &lt;code class=&quot;highlighter-rouge&quot;&gt;backend_service&lt;/code&gt;. The &lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; change will require considerable changes on the architecture, so you need to 
 define this before hand when blackboarding your infra. Regarding the backend_service, this needs to point to the corresponding 
 backend_service than you spin for the Instance Managed Group.&lt;/p&gt;
 
@@ -190,8 +223,9 @@ backend_service than you spin for the Instance Managed Group.&lt;/p&gt;
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;You can also predefine a compute address instead generating a random one or, going further, you can prevent 
-this resource to be destroyed accidentaly, as this IP is an entrypoint that you may want to keep straight:&lt;/p&gt;
+&lt;p&gt;It is a common practice to predefine a compute address for the iLB instead leaving GCP choose one for us and, going further, you can prevent 
+this resource to be destroyed accidentaly, as this IP is an entrypoint for your application and might be coded in a different 
+piece of architecture:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_address&quot; &quot;ilb_ip&quot; {
   name         = &quot;${var.name}-theIP&quot;
