@@ -12,31 +12,8 @@ For professional contact, you can send a contact request or message through my
 [GitHub](https://github.com/3manuek) and [Gitlab](https://gitlab.com/3manuek) profiles.
 
 
-## Bio
-
-Since early years in my professional career, Databases and Open Source had both a considerable predominance
-at work, and it eventually they turned into my specialization over other IT technologies and areas. As any
-other IT components, Open Source Databases, are not isolated from the inherent and forced evolution of
-the technology stacks and, as a DB professional, my main concern was to not split the database component from
-the whole architecture as it used to be an odd piece due to its complexity. That is, mostly, the reason of my profile being
-mutated during the last years and positions, converging into a Database Reliability Engineer with consistent knowledge 
-of architecture and infrastructure - emphatically IaaC (Infra as a Code), manipulating databases as any other 
-component through CD/CI and following the most modern HA concepts. Not mentioned, at least directly, I managed
-to support and implement full architectures on bare metal premises and major cloud providers (being OnGres, Google 
-Cloud partner), both in virtualized environments as dedicated hosting.
-
-Even tho relational databases are frequently mentioned in this resume (MySQL and Postgres respectively, among others),
-I do not circumscribe around these exclusively, as nowadays all different engines (KV, FTS, analytics/columnar store)
-are integrated in complex stacks and need to synergy efficiently in the data workflow.
-
-Part of this mutation, I'm currently walking through Data Engineering role, integrating components and setting
-up Data Lakes for stream analytics and experiencing with different engines and models.
-
-I had also co-founded CanalDBA, with the intention of agglomerating specialists and advocate Open Source Databases 
-in Latam.
-
-_As a previous and totally unrelated experience, I worked at Federal Penitentiary Argentinian Force,
-as officer in several institutions, from medium to high security._
+> _As a previous and totally unrelated experience, I worked as Officer (Adjutor Principal was my last grade) at Federal Penitentiary Argentinian Force,
+> in several institutions, from medium to high security._
 
 
 ## External publications
@@ -69,16 +46,16 @@ DataScience Specialization, Coursera (80% completed):
 
 -----
 
-## Current position/s
+## Current positions
 
 ### Ongres Inc. (ex 8kdata) - Principal Data-Engineer
 > Remote. New York/Madrid
 > Since September 2017 as OnGres, previously working as Consultant in 8kdata
 
-I'm the guy that when someone asks "Does this shit works?" I break it,
-find that it does not work or it does either.
+Architecture, Infrastructure and Database expert. Concerned in all the aspects and components in a Data Stack, in
+high end/traffic customers and platforms.
 
-Database and SRE for fancy companies like Gitlab, BBM, Conrad Electronics and Postmates.
+Database and SRE for fancy companies like **Gitlab**, **BBM (Blackberry)**, **Conrad Electronics** and **Postmates**.
 
 Highlighted projects:
 
