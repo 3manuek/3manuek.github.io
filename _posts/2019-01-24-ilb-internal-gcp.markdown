@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "Internal Load Balancing in GCP with Terraform"
-subtitle: "Avoiding legacy code and briefing what is propagated in hundreds of documentation pages"
+title:  "TCP Internal Load Balancing with HTTP Health Checks in GCP with Terraform for stateful services"
+subtitle: "Mixing protocols for getting TCP network balancers with HTTP health checks."
 date:   2019-01-24
-description: Avoiding legacy code and briefing what is propagated in hundreds of documentation pages.
+description: Components and HCL code snippets to plug in iLB with your stateful services through HTTP API and TCP protocol.
 tags : [Terraform]
 categories:
 - Terraform
@@ -56,6 +56,8 @@ The flight view of the basic architecture of an iLB will look like this in a dia
 ![iLB Image][1]{: class="bigger-image" }
 <figcaption class="caption">Flight view of the iLB Terraform resources.</figcaption>
 
+> Note: Keep in mind that the iLB protocol is still **TCP**, although its health check (HC) is HTTP based. The other HC, TCP, is used
+> for autoscaling purposes, and it re-spins compute if the API service is down.
 
 
 ## Instance Managed Groups

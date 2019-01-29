@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2019-01-29T13:42:09-03:00</updated>
+ <updated>2019-01-29T13:49:56-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -13,7 +13,7 @@
 
  
  <entry>
-   <title>Internal Load Balancing in GCP with Terraform</title>
+   <title>TCP Internal Load Balancing with HTTP Health Checks in GCP with Terraform for stateful services</title>
    <link href="/terraformgcpilb"/>
    <updated>2019-01-24T00:00:00-03:00</updated>
    <id>/ilb-internal-gcp</id>
@@ -59,6 +59,11 @@ split brain scenarios or data inconsitency during failovers.&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/ilb.png&quot; alt=&quot;iLB Image&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;Flight view of the iLB Terraform resources.&lt;/figcaption&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note: Keep in mind that the iLB protocol is still &lt;strong&gt;TCP&lt;/strong&gt;, although its health check (HC) is HTTP based. The other HC, TCP, is used
+for autoscaling purposes, and it re-spins compute if the API service is down.&lt;/p&gt;
+&lt;/blockquote&gt;
 
 &lt;h2 id=&quot;instance-managed-groups&quot;&gt;Instance Managed Groups&lt;/h2&gt;
 
