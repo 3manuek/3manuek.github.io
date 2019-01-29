@@ -11,10 +11,10 @@ HTTP/1.0 503 Service Unavailable
 ...
 </code></pre></div></div> <p>These methods can be used for the Backend Service configuration for refreshing the iLB node that act as master or those for replicas (for RO iLB).</p> <p>It is important to clarify that creating Health Check does not affect the other resources unless linked. You will prefer to define this resource even if your services aren’t up and running, as you can <em>plug it</em> once they are available (as it will be shown in the Backend Service section).</p> <p>Even tho, it is possible to setup iLB using the new resource and using its corresponding setup through the <code class="highlighter-rouge">http_health_check</code>/<code class="highlighter-rouge">tcp_health_check</code> block:</p><pre><code class="language-hcl">resource "google_compute_health_check" "http_hc" {
   name                = "${var.name}-health-check"
-  check_interval_sec  = 10
-  timeout_sec         = 10
+  check_interval_sec  = 4
+  timeout_sec         = 4
   healthy_threshold   = 2
-  unhealthy_threshold = 10
+  unhealthy_threshold = 4
 
   description = "this HC returns OK depending on the method"
 
@@ -26,10 +26,10 @@ HTTP/1.0 503 Service Unavailable
 
 resource "google_compute_health_check" "tcp_hc" {
   name                = "${var.name}-health-check"
-  check_interval_sec  = 10
-  timeout_sec         = 10
+  check_interval_sec  = 4
+  timeout_sec         = 4
   healthy_threshold   = 2
-  unhealthy_threshold = 10
+  unhealthy_threshold = 4
 
   description = "this HC is for autohealing and returns OK if service is up"
 
@@ -37,7 +37,7 @@ resource "google_compute_health_check" "tcp_hc" {
     port         = "${var.hcport}"
   }
 }
-</code></pre><blockquote> <p>The autohealing health check can either be TCP or HTTP, just make sure that the HTTP API method returns <em>not available</em> <strong>only</strong> if the service is completely down.</p> </blockquote> <p>More read available at <a href="https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks">Health Check/ Legacy Health Checks</a>.</p> <h2 id="backend-service">Backend Service</h2> <p>Particularly in this case, the corresponding resource for <code class="highlighter-rouge">google_compute_region_instance_group_manager</code> is <code class="highlighter-rouge">google_compute_region_backend_service</code>. This resource needs: 1) Which instances are in the backend, 2) which health check is in use to determine the available nodes.</p> <p>An example of this would be the following:</p> <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>resource "google_compute_region_backend_service" "instance_group_backendservice" {
+</code></pre><blockquote> <p>The autohealing health check can either be TCP or HTTP, just make sure that the HTTP API method returns <em>not available</em> <strong>only</strong> if the service is completely down.</p> </blockquote> <p>Another recommendation is to keep your thresholds and check intervals relatively low, as it can amplificate the downtime per each added second.</p> <p>More read available at <a href="https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks">Health Check/ Legacy Health Checks</a>.</p> <h2 id="backend-service">Backend Service</h2> <p>Particularly in this case, the corresponding resource for <code class="highlighter-rouge">google_compute_region_instance_group_manager</code> is <code class="highlighter-rouge">google_compute_region_backend_service</code>. This resource needs: 1) Which instances are in the backend, 2) which health check is in use to determine the available nodes.</p> <p>An example of this would be the following:</p> <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>resource "google_compute_region_backend_service" "instance_group_backendservice" {
   name             = "${var.name}-rig-bs"
   description      = "Region Instance Group Backend Service"
   protocol         = "TCP"

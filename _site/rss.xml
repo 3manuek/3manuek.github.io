@@ -5,8 +5,8 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Mon, 28 Jan 2019 15:55:21 -0300</lastBuildDate>
-        <pubDate>Mon, 28 Jan 2019 15:55:21 -0300</pubDate>
+        <lastBuildDate>Tue, 29 Jan 2019 13:42:09 -0300</lastBuildDate>
+        <pubDate>Tue, 29 Jan 2019 13:42:09 -0300</pubDate>
         <ttl>60</ttl>
 
 
@@ -102,10 +102,10 @@ the &lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&g
 
 &lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_health_check&quot; &quot;http_hc&quot; {
   name                = &quot;${var.name}-health-check&quot;
-  check_interval_sec  = 10
-  timeout_sec         = 10
+  check_interval_sec  = 4
+  timeout_sec         = 4
   healthy_threshold   = 2
-  unhealthy_threshold = 10
+  unhealthy_threshold = 4
 
   description = &quot;this HC returns OK depending on the method&quot;
 
@@ -117,10 +117,10 @@ the &lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&g
 
 resource &quot;google_compute_health_check&quot; &quot;tcp_hc&quot; {
   name                = &quot;${var.name}-health-check&quot;
-  check_interval_sec  = 10
-  timeout_sec         = 10
+  check_interval_sec  = 4
+  timeout_sec         = 4
   healthy_threshold   = 2
-  unhealthy_threshold = 10
+  unhealthy_threshold = 4
 
   description = &quot;this HC is for autohealing and returns OK if service is up&quot;
 
@@ -134,6 +134,9 @@ resource &quot;google_compute_health_check&quot; &quot;tcp_hc&quot; {
   &lt;p&gt;The autohealing health check can either be TCP or HTTP, just make sure that the HTTP API method
 returns &lt;em&gt;not available&lt;/em&gt; &lt;strong&gt;only&lt;/strong&gt; if the service is completely down.&lt;/p&gt;
 &lt;/blockquote&gt;
+
+&lt;p&gt;Another recommendation is to keep your thresholds and check intervals relatively low, as it can amplificate
+the downtime per each added second.&lt;/p&gt;
 
 &lt;p&gt;More read available at &lt;a href=&quot;https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks&quot;&gt;Health Check/ Legacy Health Checks&lt;/a&gt;.&lt;/p&gt;
 

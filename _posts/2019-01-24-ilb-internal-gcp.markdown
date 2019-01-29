@@ -108,10 +108,10 @@ the `http_health_check`/`tcp_health_check` block:
 ```hcl
 resource "google_compute_health_check" "http_hc" {
   name                = "${var.name}-health-check"
-  check_interval_sec  = 10
-  timeout_sec         = 10
+  check_interval_sec  = 4
+  timeout_sec         = 4
   healthy_threshold   = 2
-  unhealthy_threshold = 10
+  unhealthy_threshold = 4
 
   description = "this HC returns OK depending on the method"
 
@@ -123,10 +123,10 @@ resource "google_compute_health_check" "http_hc" {
 
 resource "google_compute_health_check" "tcp_hc" {
   name                = "${var.name}-health-check"
-  check_interval_sec  = 10
-  timeout_sec         = 10
+  check_interval_sec  = 4
+  timeout_sec         = 4
   healthy_threshold   = 2
-  unhealthy_threshold = 10
+  unhealthy_threshold = 4
 
   description = "this HC is for autohealing and returns OK if service is up"
 
@@ -138,6 +138,9 @@ resource "google_compute_health_check" "tcp_hc" {
 
 > The autohealing health check can either be TCP or HTTP, just make sure that the HTTP API method
 > returns _not available_ **only** if the service is completely down.
+
+Another recommendation is to keep your thresholds and check intervals relatively low, as it can amplificate
+the downtime per each added second.
 
 More read available at [Health Check/ Legacy Health Checks](https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks).
 
