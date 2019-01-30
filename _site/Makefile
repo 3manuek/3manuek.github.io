@@ -5,7 +5,7 @@ install-req:
 	bundle install
 
 build:
-	bundle exec jekyll build
+	bundle exec jekyll build && echo "Build Done"
 
 build-watch:
 	bundle exec jekyll serve --watch --config=_config-dev.yml
