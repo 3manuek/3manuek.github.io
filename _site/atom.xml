@@ -4,7 +4,7 @@
  <title></title>
  <link href="" rel="self"/>
  <link href=""/>
- <updated>2019-01-29T14:39:46-03:00</updated>
+ <updated>2019-01-30T14:17:02-03:00</updated>
  <id></id>
  <author>
    <name></name>
@@ -13,49 +13,42 @@
 
  
  <entry>
-   <title>TCP Internal Load Balancing with HTTP Health Checks in GCP with Terraform for stateful services</title>
+   <title>Google Cloud TCP Internal Load Balancing with HTTP Health Checks in Terraform for stateful services</title>
    <link href="/terraformgcpilb"/>
    <updated>2019-01-24T00:00:00-03:00</updated>
    <id>/ilb-internal-gcp</id>
-   <content type="html">&lt;h2 id=&quot;gcp-ilb-and-terraform-integration&quot;&gt;GCP iLB and Terraform integration&lt;/h2&gt;
+   <content type="html">&lt;h2 id=&quot;gcp-ilb-and-terraform-integration-general-considerations&quot;&gt;GCP iLB and Terraform integration general considerations&lt;/h2&gt;
 
-&lt;p&gt;Implementing an Internal Load Balancing in GCP through Terraform wasn’t smooth,
-specially if your resources rely on HTTP health checks. I do emphasis on the &lt;em&gt;internal&lt;/em&gt; as
-even tho the Google console web assistant looks pretty much the similar with its
-&lt;em&gt;external&lt;/em&gt; conterpart, its Terraform implementation vary in between strongly.&lt;/p&gt;
+&lt;p&gt;Implementing an Internal Network Load Balancer in GCP trhough HCL (Terraform) requires
+to place a set of resources as lego pieces, in order to make it work inside your architecture.&lt;/p&gt;
+
+&lt;p&gt;We are excluding the &lt;em&gt;external&lt;/em&gt; option in this post as it is not oftenly being use for stateful
+services or backend architectures such as databases, which is the concern here. Also, its Terraform 
+implementation vary in between strongly, e.g. certain resources such as the Target Pool aren’t used
+in the &lt;em&gt;internal&lt;/em&gt; scheme mode, making the autoscaling configuration tied differently with its counterpart.&lt;/p&gt;
 
 &lt;blockquote&gt;
   &lt;p&gt;It is recommended a full read of &lt;a href=&quot;https://cloud.google.com/load-balancing/docs/internal/&quot;&gt;Google Cloud load balancing&lt;/a&gt; documentation&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;p&gt;iLB is widely used for backend services such as Database components or stateful components
-that require an entity or snapshot consistency and that are not accessible to the world. This characteristic
-discards certain resources such as the Target Pool for the iLB, meaning that all the routing and scaling
-of the connections from the Load balancer will be provided by the Backend Service resource.&lt;/p&gt;
-
 &lt;p&gt;Setting up a Load Balancer will depend on which resources have been choose for spinning the computes. That is,
-&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_instance_group_manager&lt;/code&gt; and single computes. In this particular post
+&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_instance_group_manager&lt;/code&gt; or single computes. In this particular post
 I’m going to stick to &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; for the sake of abstraction.&lt;/p&gt;
 
-&lt;p&gt;There is a legacy resource called &lt;a href=&quot;https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_http_health_check&lt;/code&gt;&lt;/a&gt;, which contains the following note:&lt;/p&gt;
+&lt;p&gt;The iLB as shown in the current post, points to &lt;strong&gt;the&lt;/strong&gt; node (through the Backend Service) that return 
+&lt;code class=&quot;highlighter-rouge&quot;&gt;OK&lt;/code&gt; to its corresponding Health Check  (internal mechanics of this are commented in the &lt;a href=&quot;#health-checks&quot;&gt;Health Check section&lt;/a&gt; bellow ). 
+Differently from a stateless fleet, for stateful services, only one node can hold the &lt;strong&gt;leader lock&lt;/strong&gt; for receiving writting transactions. 
+DCS provides a way to have a consistent configuration and k/v over a cluster of nodes, centralizing it and providing a consensus for them, avoiding
+split-brain scenarios or different configuration in the nodes. That is, it ensures that a single leader is acting in a cluster at 
+all time. It may sound very simplistic at the task, but on Cloud environments this turn out to be crucial not only in the matter of consistency,
+but also in the level of provisioning and automatic configuration which makes an architecture resilient and reliable.&lt;/p&gt;
 
-&lt;blockquote&gt;
-  &lt;p&gt;Note: google_compute_http_health_check is a legacy health check. The newer google_compute_health_check 
-should be preferred for all uses except Network Load Balancers which still require the legacy version.&lt;/p&gt;
-&lt;/blockquote&gt;
+&lt;p&gt;DCS provides a way to deploy consistent configuration to all the components related in the architecture, not only the Health Checks.
+e.g. Consul agents can watch and apply configuration to certain services that need to refresh endpoints or propagate a new configuration to all nodes.&lt;/p&gt;
 
-&lt;p&gt;The final resource will end up with an iLB pointing to those nodes that return OK to the corresponding Health Check
-(reqpath + port through HTTP in this case). This is pretty useful if the state of the computes are served through
-an API backed with a DCS, meaning that the whole cluster of computes will be consistent to that view. In stateful
-services you will access a single machine of the cluster for RW transactions or, access only certain group of machines
-that return OK on the requested method/port.&lt;/p&gt;
+&lt;h2 id=&quot;resource-organization-of-ilb-components&quot;&gt;Resource organization of iLB components&lt;/h2&gt;
 
-&lt;p&gt;If you happen to use Consul agents, you can provide such API to make your architecture consistent through consensus, erradicating
-split brain scenarios or data inconsitency during failovers.&lt;/p&gt;
-
-&lt;h2 id=&quot;resource-map-of-an-ilb&quot;&gt;Resource Map of an iLB&lt;/h2&gt;
-
-&lt;p&gt;The flight view of the basic architecture of an iLB will look like this in a diagram:&lt;/p&gt;
+&lt;p&gt;The flight view of exposed architecture of the iLB will look like this in a diagram:&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://www.3manuek.com/assets/posts/ilb.png&quot; alt=&quot;iLB Image&quot; class=&quot;bigger-image&quot; /&gt;&lt;/p&gt;
 &lt;figcaption class=&quot;caption&quot;&gt;Flight view of the iLB Terraform resources.&lt;/figcaption&gt;
@@ -67,9 +60,9 @@ for autoscaling purposes, and it re-spins compute if the API service is down.&lt
 
 &lt;h2 id=&quot;instance-managed-groups&quot;&gt;Instance Managed Groups&lt;/h2&gt;
 
-&lt;p&gt;For the internal Load Balancing, there is nothing to parametrize here except for the AutoHealing block, which
-will point to the corresponding Health Check. Usually, for stateless services, we use the same Health Check 
-for the autohealing (or, at least is functional to do so); although, stateful services such databases, can 
+&lt;p&gt;There is no iLB configuration being parametrized in this resource, but it worth mentioning that the Autohealing
+block will point to its specific Health Check to check wether a service is available or not. Usually, for stateless services, 
+we can use the same Health Check for the autohealing (or, at least is functional to do so); although, stateful services such databases, can 
 return &lt;em&gt;not available&lt;/em&gt; (503) response code from the API but it does not mean that the service is down, as it might have more 
 complex statuses depending the request path/method (service is up, but can’t receive writes).&lt;/p&gt;
 
@@ -88,7 +81,7 @@ setup. This resource manages computes across a region, through several availabil
 
 &lt;h2 id=&quot;health-checks&quot;&gt;Health Checks&lt;/h2&gt;
 
-&lt;p&gt;Consider an API through port 8008, wether it returns 503/200 response codes over master/replica methods.
+&lt;p&gt;Consider an API through port 8008, wether it returns 503/200 response over &lt;code class=&quot;highlighter-rouge&quot;&gt;master/replica&lt;/code&gt; methods.
 The bellow output shows the responses for both methods over the same &lt;strong&gt;master&lt;/strong&gt; node:&lt;/p&gt;
 
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;curl -sSL -D -  http://127.0.0.1:8008/master
@@ -107,8 +100,16 @@ or those for replicas (for RO iLB).&lt;/p&gt;
 prefer to define this resource even if your services aren’t up and running, as you can &lt;em&gt;plug it&lt;/em&gt; once they are 
 available (as it will be shown in the Backend Service section).&lt;/p&gt;
 
-&lt;p&gt;Even tho, it is possible to setup iLB using the new resource and using its corresponding setup through
-the &lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&gt;/&lt;code class=&quot;highlighter-rouge&quot;&gt;tcp_health_check&lt;/code&gt; block:&lt;/p&gt;
+&lt;p&gt;There is a legacy resource called &lt;a href=&quot;https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_http_health_check&lt;/code&gt;&lt;/a&gt;, 
+which contains the following note:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note: google_compute_http_health_check is a legacy health check. The newer google_compute_health_check 
+should be preferred for all uses &lt;strong&gt;except Network Load Balancers which still require the legacy version.&lt;/strong&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Even tho, for iLB, it is possible to use the newer resource (&lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_health_check&lt;/code&gt;) and use its corresponding
+&lt;code class=&quot;highlighter-rouge&quot;&gt;http_health_check&lt;/code&gt;/&lt;code class=&quot;highlighter-rouge&quot;&gt;tcp_health_check&lt;/code&gt; block accordingly:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-hcl&quot;&gt;resource &quot;google_compute_health_check&quot; &quot;http_hc&quot; {
   name                = &quot;${var.name}-health-check&quot;
@@ -150,10 +151,15 @@ the downtime per each added second.&lt;/p&gt;
 
 &lt;p&gt;More read available at &lt;a href=&quot;https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks&quot;&gt;Health Check/ Legacy Health Checks&lt;/a&gt;.&lt;/p&gt;
 
-&lt;h2 id=&quot;backend-service&quot;&gt;Backend Service&lt;/h2&gt;
+&lt;h2 id=&quot;backend-service-resource-backend-of-the-ilb&quot;&gt;Backend Service Resource (BackEnd of the iLB)&lt;/h2&gt;
 
 &lt;p&gt;Particularly in this case, the corresponding resource for &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_instance_group_manager&lt;/code&gt; is &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_backend_service&lt;/code&gt;.
-This resource needs: 1) Which instances are in the backend, 2) which health check is in use to determine the available nodes.&lt;/p&gt;
+This resource needs:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Which instances are in the backend tier (&lt;code class=&quot;highlighter-rouge&quot;&gt;${google_compute_region_instance_group_manager.instance_group_manager.instance_group}&lt;/code&gt;),&lt;/li&gt;
+  &lt;li&gt;which health check is in use to determine the available node (&lt;code class=&quot;highlighter-rouge&quot;&gt;${google_compute_health_check.http_hc.self_link}&lt;/code&gt;).&lt;/li&gt;
+&lt;/ol&gt;
 
 &lt;p&gt;An example of this would be the following:&lt;/p&gt;
 
@@ -201,6 +207,9 @@ resource &quot;google_compute_health_check&quot; &quot;http&quot; {
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
+&lt;p&gt;This is not the case we want to configure here, but is an interesting heads up if you want to add more checks over more than
+one port.&lt;/p&gt;
+
 &lt;p&gt;Keep in mind that we are setting an internal Load Balancer, which is compatible with &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_region_backend_service&lt;/code&gt; ,
 diverging from the external Load Balancer that require &lt;code class=&quot;highlighter-rouge&quot;&gt;google_compute_backend_service&lt;/code&gt;. The difference is the level of the abstraction
 when provisioning nodes, which in the external, you need to end up defining resources more explicitely than using internal.&lt;/p&gt;
@@ -210,10 +219,15 @@ when provisioning nodes, which in the external, you need to end up defining reso
 use google_compute_backend_service instead. &lt;a href=&quot;https://www.terraform.io/docs/providers/google/r/compute_region_backend_service.html&quot;&gt;Terraform Doc&lt;/a&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;h2 id=&quot;forwarding-rule&quot;&gt;Forwarding Rule&lt;/h2&gt;
+&lt;h2 id=&quot;forwarding-rule-frontend-of-the-ilb&quot;&gt;Forwarding Rule (FrontEnd of the iLB)&lt;/h2&gt;
 
-&lt;p&gt;The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are: 1) &lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; and
-2) &lt;code class=&quot;highlighter-rouge&quot;&gt;backend_service&lt;/code&gt;. The &lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; change will require considerable changes on the architecture, so you need to 
+&lt;p&gt;The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; and&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;backend_service&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;load_balancing_scheme&lt;/code&gt; change will require considerable changes on the architecture, so you need to 
 define this before hand when blackboarding your infra. Regarding the backend_service, this needs to point to the corresponding 
 backend_service than you spin for the Instance Managed Group.&lt;/p&gt;
 
