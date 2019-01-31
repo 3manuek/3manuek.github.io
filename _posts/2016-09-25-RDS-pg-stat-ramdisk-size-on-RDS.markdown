@@ -6,7 +6,7 @@ description: If you are using RDS, you want to read this.
 tags : [PostgreSQL, RDS]
 categories:
 - PostgreSQL
-- RDS
+- AWS
 category: blog
 comments: true
 tagline: If you are using RDS, you want to read this.

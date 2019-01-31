@@ -6,6 +6,7 @@ description: Starting Percona 5.7 docker container and other tricks.
 tags : [MySQL, docker]
 categories:
 - MySQL
+- Docker
 category: blog
 comments: true
 tagline: A simple addition to current docs.

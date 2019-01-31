@@ -6,7 +6,6 @@ description: A fix for the unloaded GOPATH.
 tags : [Golang, Go, Atom]
 categories:
 - Golang
-- Atom
 category: blog
 comments: true
 tagline: A fix for the unloaded GOPATH.

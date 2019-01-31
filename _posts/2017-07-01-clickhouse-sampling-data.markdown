@@ -7,7 +7,6 @@ tags : [Clickhouse]
 categories:
 - Clickhouse
 - Analytics
-- Sampling
 category: blog
 comments: true
 permalink: clickhousesample

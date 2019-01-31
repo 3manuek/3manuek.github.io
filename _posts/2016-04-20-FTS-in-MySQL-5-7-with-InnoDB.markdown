@@ -6,8 +6,6 @@ description: MySQL 5.7 InnoDB's Full Text Search overview with a dynamic applica
 tags: [FTS, MySQL, InnoDB]
 categories:
 - MySQL
-- FTS
-- InnoDB
 category: blog
 comments: true
 permalink: fts-innodb

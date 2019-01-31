@@ -6,6 +6,7 @@ description: Using the dirty way.
 tags : [PostgreSQL, Kafka]
 categories:
 - PostgreSQL
+- Kafka
 category: blog
 comments: true
 permalink: kafkacatandcopypg
