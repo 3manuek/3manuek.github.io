@@ -17,7 +17,7 @@ author: 3manuek
 
 ## GCP iLB and Terraform integration general considerations
 
-Implementing an Internal Network Load Balancer in GCP trhough HCL (Terraform) requires
+Implementing an Internal Network Load Balancer in GCP through HCL (Terraform) requires
 to place a set of resources as lego pieces, in order to make it work inside your architecture.
 
 We are excluding the _external_ option in this post as it is not oftenly being use for stateful
@@ -282,8 +282,14 @@ resource "google_compute_firewall" "default-lb-fw" {
 }
 ```
 
+## More information about Google Cloud Load Balancer
+
+I found an interesting article about [Maglev, the Google's Infra Load Balancer][2], which a 
+series of posts explaining the internals, check it out.
+
 
 Hope you liked this post, do not hesitate to point questions and comments!
 
 
 [1]: http://www.3manuek.com/assets/posts/ilb.png
+[2]: https://medium.com/martinomburajr/maglev-the-load-balancer-behind-googles-infrastructure-architectural-overview-part-1-3-3b9aab736f40

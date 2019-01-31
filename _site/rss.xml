@@ -5,8 +5,8 @@
         <description> - </description>
         <link></link>
         <atom:link href="" rel="self" type="application/rss+xml" />
-        <lastBuildDate>Wed, 30 Jan 2019 14:19:37 -0300</lastBuildDate>
-        <pubDate>Wed, 30 Jan 2019 14:19:37 -0300</pubDate>
+        <lastBuildDate>Thu, 31 Jan 2019 12:20:23 -0300</lastBuildDate>
+        <pubDate>Thu, 31 Jan 2019 12:20:23 -0300</pubDate>
         <ttl>60</ttl>
 
 
@@ -14,7 +14,7 @@
                 <title>Google Cloud TCP Internal Load Balancing with HTTP Health Checks in Terraform for stateful services</title>
                 <description>&lt;h2 id=&quot;gcp-ilb-and-terraform-integration-general-considerations&quot;&gt;GCP iLB and Terraform integration general considerations&lt;/h2&gt;
 
-&lt;p&gt;Implementing an Internal Network Load Balancer in GCP trhough HCL (Terraform) requires
+&lt;p&gt;Implementing an Internal Network Load Balancer in GCP through HCL (Terraform) requires
 to place a set of resources as lego pieces, in order to make it work inside your architecture.&lt;/p&gt;
 
 &lt;p&gt;We are excluding the &lt;em&gt;external&lt;/em&gt; option in this post as it is not oftenly being use for stateful
@@ -279,6 +279,11 @@ phase, you can use &lt;code class=&quot;highlighter-rouge&quot;&gt;0.0.0.0/0&lt;
   target_tags   = [&quot;${var.tags}&quot;]
 }
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;more-information-about-google-cloud-load-balancer&quot;&gt;More information about Google Cloud Load Balancer&lt;/h2&gt;
+
+&lt;p&gt;I found an interesting article about &lt;a href=&quot;https://medium.com/martinomburajr/maglev-the-load-balancer-behind-googles-infrastructure-architectural-overview-part-1-3-3b9aab736f40&quot;&gt;Maglev, the Google’s Infra Load Balancer&lt;/a&gt;, which a 
+series of posts explaining the internals, check it out.&lt;/p&gt;
 
 &lt;p&gt;Hope you liked this post, do not hesitate to point questions and comments!&lt;/p&gt;
 
