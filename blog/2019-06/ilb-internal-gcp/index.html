@@ -1,0 +1,218 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><title>Google Cloud TCP Internal Load Balancing with HTTP Health Checks in Terraform for stateful services | tr3sma</title><meta name=description content><meta property="og:title" content="Google Cloud TCP Internal Load Balancing with HTTP Health Checks in Terraform for stateful services"><meta property="og:description" content="Components and HCL code snippets to plug in iLB with your stateful services through HTTP API and TCP protocol."><meta property="og:type" content="article"><meta property="og:url" content="/blog/2019-06/ilb-internal-gcp/"><meta property="og:image" content="/blog/assets/thumbnail_db.png"><meta property="og:image" content="/blog/assets/tachyons-logo-script-feature.png"><meta property="article:published_time" content="2019-06-19T00:00:00+00:00"><meta property="article:modified_time" content="2019-06-19T00:00:00+00:00"><meta itemprop=name content="Google Cloud TCP Internal Load Balancing with HTTP Health Checks in Terraform for stateful services"><meta itemprop=description content="Components and HCL code snippets to plug in iLB with your stateful services through HTTP API and TCP protocol."><meta itemprop=datePublished content="2019-06-19T00:00:00+00:00"><meta itemprop=dateModified content="2019-06-19T00:00:00+00:00"><meta itemprop=wordCount content="1587"><meta itemprop=image content="/blog/assets/thumbnail_db.png"><meta itemprop=image content="/blog/assets/tachyons-logo-script-feature.png"><meta itemprop=keywords content="hugo-site,"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="/blog/assets/thumbnail_db.png"><meta name=twitter:title content="Google Cloud TCP Internal Load Balancing with HTTP Health Checks in Terraform for stateful services"><meta name=twitter:description content="Components and HCL code snippets to plug in iLB with your stateful services through HTTP API and TCP protocol."><meta name=twitter:site content="@3manuek"><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','G-GY0KSNNSTL','auto');ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script><!--[if IE]><script src=//html5shiv.googlecode.com/svn/trunk/html5.js></script><![endif]--><link rel="shortcut icon" href="/img/favicon.ico?v=0" type=image/x-icon><link rel=icon href="/img/favicon.ico?v=0" type=image/x-icon><link rel=stylesheet href=/style.main.min.af051a891b2af29b5e832059f2d65564f8acece3291dcaca54df6ef06e3e084e.css integrity="sha256-rwUaiRsq8ptegyBZ8tZVZPis7OMpHcrKVN9u8G4+CE4=" media=screen></head><body><div class="grid-container single"><header class="site-header pa4 bb b--transparent" role=banner><nav class="site-nav db dt-l w-100" role=nav><a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href=/ title=Home><img src=/img/firma.png class="dib db-l h2 w-auto" alt=tr3sma></a><div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l"><a class="link f6 f5-l dib pv1 ph2" href=/ title="Home Page">Home</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/about/ title="About tr3sma">About</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/blog/ title=Blog>Blog</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/contact/ title="Contact Form">Contact</a></div></nav></header><main class="page-main pa4" role=main><section class="page-content mw7 center"><article class="post-content pa0 ph4-l"><header class=post-header><h1 class="f2 f1-m f-subheadline-l fw5-ns mv4 lh-solid tracked-tight">Google Cloud TCP Internal Load Balancing with HTTP Health Checks in Terraform for stateful services</h1><h2 class="f7 fw7 measure mv0 ttu tracked">Mixing protocols for getting TCP network balancers with HTTP health checks.</h2><p class="f6 measure lh-copy mv1">By 3manuek in <a href=/categories/theme-features>Theme Features</a></p><p class="f7 db mv0 ttu">June 19, 2019</p></header><section class="post-body pt5 pb4"><blockquote><blockquote><p><em>Happy birthday, Laura!</em> (My wife)</p></blockquote></blockquote><h2 id=gcp-ilb-and-terraform-integration-general-considerations>GCP iLB and Terraform integration general considerations</h2><p>Implementing an Internal Network Load Balancer in GCP through HCL (Terraform) requires
+to place a set of resources as lego pieces, in order to make it work inside your architecture.</p><p>We are excluding the <em>external</em> option in this post as it is not oftenly being use for stateful
+services or backend architectures such as databases, which is the concern here. Also, its Terraform
+implementation vary in between strongly, e.g. certain resources such as the Target Pool aren&rsquo;t used
+in the <em>internal</em> scheme mode, making the autoscaling configuration tied differently with its counterpart.</p><blockquote><p>It is recommended a full read of <a href=https://cloud.google.com/load-balancing/docs/internal/>Google Cloud load balancing</a> documentation</p></blockquote><p>Setting up a Load Balancer will depend on which resources have been choose for spinning the computes. That is,
+<code>google_compute_region_instance_group_manager</code>, <code>google_compute_instance_group_manager</code> or single computes. In this particular post
+I&rsquo;m going to stick to <code>google_compute_region_instance_group_manager</code> for the sake of abstraction.</p><p>The iLB as shown in the current post, points to <strong>the</strong> node (through the Backend Service) that return
+<code>OK</code> to its corresponding Health Check (internal mechanics of this are commented in the <a href=#health-checks>Health Check section</a> bellow ).
+Differently from a stateless fleet, for stateful services, only one node can hold the <strong>leader lock</strong> for receiving writting transactions.
+DCS provides a way to have a consistent configuration and k/v over a cluster of nodes, centralizing it and providing a consensus for them, avoiding
+split-brain scenarios or different configuration in the nodes. That is, it ensures that a single leader is acting in a cluster at
+all time. It may sound very simplistic at the task, but on Cloud environments this turn out to be crucial not only in the matter of consistency,
+but also in the level of provisioning and automatic configuration which makes an architecture resilient and reliable.</p><p>DCS provides a way to deploy consistent configuration to all the components related in the architecture, not only the Health Checks.
+e.g. Consul agents can watch and apply configuration to certain services that need to refresh endpoints or propagate a new configuration to all nodes.</p><h2 id=resource-organization-of-ilb-components>Resource organization of iLB components</h2><p>The flight view of exposed architecture of the iLB will look like this in a diagram:</p><p><img src=/blog/assets/2019-06/ilb.png alt=ilb></p><blockquote><p>Note: Keep in mind that the iLB protocol is still <strong>TCP</strong>, although its health check (HC) is HTTP based. The other HC, TCP, is used
+for autoscaling purposes, and it re-spins compute if the API service is down.</p></blockquote><h2 id=instance-managed-groups>Instance Managed Groups</h2><p>There is no iLB configuration being parametrized in this resource, but it worth mentioning that the Autohealing
+block will point to its specific Health Check to check wether a service is available or not. Usually, for stateless services,
+we can use the same Health Check for the autohealing (or, at least is functional to do so); although, stateful services such databases, can
+return <em>not available</em> (503) response code from the API but it does not mean that the service is down, as it might have more
+complex statuses depending the request path/method (service is up, but can&rsquo;t receive writes).</p><p>It is important to define an initial delay for checking the service, specially on stateful components that could spend certain time before they
+are available due to data transfers or provisioning. During development, you may want to wipe this block out, until
+your services are available, in the contrary the computes will be destroy in an endless loop.</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl>  <span style=color:#007020;font-weight:700>auto_healing_policies</span> {
+    health_check <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${google_compute_health_check.tcp_hc.self_link}&#34;</span>
+    initial_delay_sec <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.initial_delay_sec}&#34;</span>
+  }
+</code></pre></td></tr></table></div></div><p>As we are setting up an iLB, <code>google_compute_region_instance_group_manager</code> has been choose as it is compatible with its
+setup. This resource manages computes across a region, through several availability zones.</p><h2 id=health-checks>Health Checks</h2><p>Consider an API through port 8008, wether it returns 503/200 response over <code>master/replica</code> methods.
+The bellow output shows the responses for both methods over the same <strong>master</strong> node:</p><pre><code>curl -sSL -D -  http://127.0.0.1:8008/master
+HTTP/1.0 200 OK
+...
+
+curl -sSL -D -  http://127.0.0.1:8008/replica
+HTTP/1.0 503 Service Unavailable
+...
+</code></pre><p>These methods can be used for the Backend Service configuration for refreshing the iLB node that act as master
+or those for replicas (for RO iLB).</p><p>It is important to clarify that creating Health Check does not affect the other resources unless linked. You will
+prefer to define this resource even if your services aren&rsquo;t up and running, as you can <em>plug it</em> once they are
+available (as it will be shown in the Backend Service section).</p><p>There is a legacy resource called <a href=https://www.terraform.io/docs/providers/google/r/compute_http_health_check.html><code>google_compute_http_health_check</code></a>,
+which contains the following note:</p><blockquote><p>Note: google_compute_http_health_check is a legacy health check. The newer google_compute_health_check
+should be preferred for all uses <strong>except Network Load Balancers which still require the legacy version.</strong></p></blockquote><p>Even tho, for iLB, it is possible to use the newer resource (<code>google_compute_health_check</code>) and use its corresponding
+<code>http_health_check</code>/<code>tcp_health_check</code> block accordingly:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=color:#007020;font-weight:700>resource</span> <span style=color:#4070a0>&#34;google_compute_health_check&#34; &#34;http_hc&#34;</span> {
+  name                <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.name}-health-check&#34;</span>
+  check_interval_sec  <span style=color:#666>=</span> <span style=color:#40a070>4</span>
+  timeout_sec         <span style=color:#666>=</span> <span style=color:#40a070>4</span>
+  healthy_threshold   <span style=color:#666>=</span> <span style=color:#40a070>2</span>
+  unhealthy_threshold <span style=color:#666>=</span> <span style=color:#40a070>4</span>
+
+  description <span style=color:#666>=</span> <span style=color:#4070a0>&#34;this HC returns OK depending on the method&#34;</span>
+
+  <span style=color:#007020;font-weight:700>http_health_check</span> {
+    request_path <span style=color:#666>=</span> <span style=color:#4070a0>&#34;/${var.reqpath}&#34;</span>
+    port         <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.hcport}&#34;</span>
+  }
+}
+
+<span style=color:#007020;font-weight:700>resource</span> <span style=color:#4070a0>&#34;google_compute_health_check&#34; &#34;tcp_hc&#34;</span> {
+  name                <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.name}-health-check&#34;</span>
+  check_interval_sec  <span style=color:#666>=</span> <span style=color:#40a070>4</span>
+  timeout_sec         <span style=color:#666>=</span> <span style=color:#40a070>4</span>
+  healthy_threshold   <span style=color:#666>=</span> <span style=color:#40a070>2</span>
+  unhealthy_threshold <span style=color:#666>=</span> <span style=color:#40a070>4</span>
+
+  description <span style=color:#666>=</span> <span style=color:#4070a0>&#34;this HC is for autohealing and returns OK if service is up&#34;</span>
+
+  <span style=color:#007020;font-weight:700>tcp_health_check</span> {
+    port         <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.hcport}&#34;</span>
+  }
+}
+</code></pre></td></tr></table></div></div><blockquote><p>The autohealing health check can either be TCP or HTTP, just make sure that the HTTP API method
+returns <em>not available</em> <strong>only</strong> if the service is completely down.</p></blockquote><p>Another recommendation is to keep your thresholds and check intervals relatively low, as it can amplificate
+the downtime per each added second.</p><p>More read available at <a href=https://cloud.google.com/load-balancing/docs/health-checks#legacy_health_checks>Health Check/ Legacy Health Checks</a>.</p><h2 id=backend-service-resource-backend-of-the-ilb>Backend Service Resource (BackEnd of the iLB)</h2><p>Particularly in this case, the corresponding resource for <code>google_compute_region_instance_group_manager</code> is <code>google_compute_region_backend_service</code>.
+This resource needs:</p><ol><li>Which instances are in the backend tier (<code>${google_compute_region_instance_group_manager.instance_group_manager.instance_group}</code>),</li><li>which health check is in use to determine the available node (<code>${google_compute_health_check.http_hc.self_link}</code>).</li></ol><p>An example of this would be the following:</p><pre><code>resource &quot;google_compute_region_backend_service&quot; &quot;instance_group_backendservice&quot; {
+  name             = &quot;${var.name}-rig-bs&quot;
+  description      = &quot;Region Instance Group Backend Service&quot;
+  protocol         = &quot;TCP&quot;
+  timeout_sec      = 10
+  session_affinity = &quot;NONE&quot;
+
+  backend {
+    group = &quot;${google_compute_region_instance_group_manager.instance_group_manager.instance_group}&quot;
+  }
+
+  health_checks = [&quot;${google_compute_health_check.http_hc.self_link}&quot;]
+}
+</code></pre><p>The <code>backend</code> block provices the instances created by <code>google_compute_region_instance_group_manager</code> and <code>health_checks</code>
+point to the predefined HC above. One backend service can point to several Health Checks like built in the <a href=https://github.com/GoogleCloudPlatform/terraform-google-lb-internal/blob/master/main.tf#L42-L71>google-lb-internal</a>:</p><pre><code>resource &quot;google_compute_region_backend_service&quot; &quot;default&quot; {
+...
+  health_checks    = [&quot;${element(compact(concat(google_compute_health_check.tcp.*.self_link,google_compute_health_check.http.*.self_link)), 0)}&quot;]
+}
+
+resource &quot;google_compute_health_check&quot; &quot;tcp&quot; {
+  count = &quot;${var.http_health_check ? 0 : 1}&quot;
+  project = &quot;${var.project}&quot;
+  name    = &quot;${var.name}-hc&quot;
+
+  tcp_health_check {
+    port = &quot;${var.health_port}&quot;
+  }
+}
+
+resource &quot;google_compute_health_check&quot; &quot;http&quot; {
+  count = &quot;${var.http_health_check ? 1 : 0}&quot;
+  project = &quot;${var.project}&quot;
+  name    = &quot;${var.name}-hc&quot;
+
+  http_health_check {
+    port = &quot;${var.health_port}&quot;
+  }
+}
+</code></pre><p>This is not the case we want to configure here, but is an interesting heads up if you want to add more checks over more than
+one port.</p><p>Keep in mind that we are setting an internal Load Balancer, which is compatible with <code>google_compute_region_backend_service</code> ,
+diverging from the external Load Balancer that require <code>google_compute_backend_service</code>. The difference is the level of the abstraction
+when provisioning nodes, which in the external, you need to end up defining resources more explicitely than using internal.</p><blockquote><p>Note: Region backend services can only be used when using internal load balancing. For external load balancing,
+use google_compute_backend_service instead. <a href=https://www.terraform.io/docs/providers/google/r/compute_region_backend_service.html>Terraform Doc</a></p></blockquote><h2 id=forwarding-rule-frontend-of-the-ilb>Forwarding Rule (FrontEnd of the iLB)</h2><p>The Forwarding Rule is a resource that will define the LB options, in which the most noticeable are:</p><ol><li><code>load_balancing_scheme</code> and</li><li><code>backend_service</code>.</li></ol><p>The <code>load_balancing_scheme</code> change will require considerable changes on the architecture, so you need to
+define this before hand when blackboarding your infra. Regarding the backend_service, this needs to point to the corresponding
+backend_service than you spin for the Instance Managed Group.</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=color:#007020;font-weight:700>resource</span> <span style=color:#4070a0>&#34;google_compute_forwarding_rule&#34; &#34;main_fr&#34;</span> {
+  project               <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.project}&#34;</span>
+  name                  <span style=color:#666>=</span> <span style=color:#4070a0>&#34;fw-rule-${var.name}&#34;</span>
+  region                <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.region}&#34;</span>
+  network               <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.network}&#34;</span>
+
+  backend_service       <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${google_compute_region_backend_service.instance_group_backendservice.self_link}&#34;</span>
+  load_balancing_scheme <span style=color:#666>=</span> <span style=color:#4070a0>&#34;INTERNAL&#34;</span>
+  ports                 <span style=color:#666>=</span> [<span style=color:#4070a0>&#34;${var.forwarding_port_ranges}&#34;</span>]
+
+  ip_address            <span style=color:#666>=</span> [<span style=color:#4070a0>&#34;${google_compute_address.ilb_ip.address}&#34;</span>]
+}
+</code></pre></td></tr></table></div></div><p>It is a common practice to predefine a compute address for the iLB instead leaving GCP choose one for us and, going further, you can prevent
+this resource to be destroyed accidentaly, as this IP is an entrypoint for your application and might be coded in a different
+piece of architecture:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=color:#007020;font-weight:700>resource</span> <span style=color:#4070a0>&#34;google_compute_address&#34; &#34;ilb_ip&#34;</span> {
+  name         <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.name}-theIP&#34;</span>
+  project      <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.project}&#34;</span>
+
+  region       <span style=color:#666>=</span> <span style=color:#4070a0>&#34;${var.region}&#34;</span>
+  address_type <span style=color:#666>=</span> <span style=color:#4070a0>&#34;INTERNAL&#34;</span> 
+
+  <span style=color:#007020;font-weight:700>lifecycle</span> {
+    prevent_destroy <span style=color:#666>=</span> <span style=color:#902000>true</span>
+  }
+  
+}
+</code></pre></td></tr></table></div></div><h2 id=dont-forget-the-firewall-rules>Don&rsquo;t forget the Firewall Rules!</h2><p>All the above resources are core to the iLB setup, although there is one resource that even tho isn&rsquo;t strictly
+part of the component, it must be specified to allow services and computes talk to each other. In this case, the
+source_ranges should match the corresponding subnet setup of all the above resources. If you happen to be in development
+phase, you can use <code>0.0.0.0/0</code> for wide opening the rule, although you may want to specify a narrow IP range in production.</p><pre><code>resource &quot;google_compute_firewall&quot; &quot;default-lb-fw&quot; {
+  project = &quot;${var.project}&quot;
+  name    = &quot;${format(&quot;%v-%v-fw-ilb&quot;,var.name,count.index)}&quot;
+  network = &quot;${var.network}&quot;
+
+  allow {
+    protocol = &quot;tcp&quot;
+    ports    = [&quot;${var.forwarding_port_ranges}&quot;]
+  }
+
+  source_ranges = [&quot;0.0.0.0/0&quot;]
+  target_tags   = [&quot;${var.tags}&quot;]
+}
+</code></pre><h2 id=more-information-about-google-cloud-load-balancer>More information about Google Cloud Load Balancer</h2><p>I found an interesting article about <a href=https://medium.com/martinomburajr/maglev-the-load-balancer-behind-googles-infrastructure-architectural-overview-part-1-3-3b9aab736f40>Maglev, the Google&rsquo;s Infra Load Balancer</a>, which a
+series of posts explaining the internals, check it out.</p><p>Hope you liked this post, do not hesitate to point questions and comments!</p><details closed class="f6 fw7 input-reset"><dl class="f6 lh-copy"><dt class=fw7>Posted on:</dt><dd class="fw5 ml0">June 19, 2019</dd></dl><dl class="f6 lh-copy"><dt class=fw7>Length:</dt><dd class="fw5 ml0">8 minute read, 1587 words</dd></dl><dl class="f6 lh-copy"><dt class=fw7>Categories:</dt><dd class="fw5 ml0"><a href=/categories/theme-features>Theme Features</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>Series:</dt><dd class="fw5 ml0"><a href=/series/getting-started>Getting Started</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>Tags:</dt><dd class="fw5 ml0"><a href=/tags/hugo-site>hugo-site</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>See Also:</dt><dd class="fw5 ml0"><a href=/blog/2020-01/openlabs/>Open Labs</a></dd><dd class="fw5 ml0"><a href=/blog/2019-07/terraformwithpostgres/>What are the perks of using Postgres as a Terraform backend?</a></dd><dd class="fw5 ml0"><a href=/blog/2019-07/ansiblekubernetes/>Ansible and Kubernetes</a></dd></dl></details></section><footer class=post-footer><div class="post-pagination dt w-100 mt4 mb2"><a class="prev dtc pr2 tl v-top fw6" href=/blog/2019-06/clickhouse-sampling-data/>&larr; Clickhouse sampling on MergeTree engine.</a>
+<a class="next dtc pl2 tr v-top fw6" href=/blog/2019-07/ansiblekubernetes/>Ansible and Kubernetes &rarr;</a></div></footer></article></section></main><footer class="site-footer pa4 bt b--transparent" role=contentinfo><nav class="db dt-l w-100"><p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">&copy; 2022 tr3sma, Madrid, Spain<br></p><div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0"><a class="dib pv1 ph2 link" href=/index.xml title="RSS Feed">RSS</a></div></nav></footer></div></body></html>

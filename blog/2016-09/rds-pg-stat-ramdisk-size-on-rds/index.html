@@ -1,0 +1,111 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><title>PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations | tr3sma</title><meta name=description content><meta property="og:title" content="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations"><meta property="og:description" content="IMPORTANT NOTE
+  This has been already addressed in PostgreSQL core, but this option
+  is still available in RDS.
+ What does it change and why is so important? Tracking databases and not just tables counters in Postgres isn&rsquo;t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by stat_temp_directory GUC variable. That directory places a global."><meta property="og:type" content="article"><meta property="og:url" content="/blog/2016-09/rds-pg-stat-ramdisk-size-on-rds/"><meta property="og:image" content="/blog/assets/thumbnail_db.png"><meta property="og:image" content="/blog/assets/tachyons-logo-script-feature.png"><meta property="article:published_time" content="2016-09-25T00:00:00+00:00"><meta property="article:modified_time" content="2016-09-25T00:00:00+00:00"><meta itemprop=name content="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations"><meta itemprop=description content="IMPORTANT NOTE
+  This has been already addressed in PostgreSQL core, but this option
+  is still available in RDS.
+ What does it change and why is so important? Tracking databases and not just tables counters in Postgres isn&rsquo;t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by stat_temp_directory GUC variable. That directory places a global."><meta itemprop=datePublished content="2016-09-25T00:00:00+00:00"><meta itemprop=dateModified content="2016-09-25T00:00:00+00:00"><meta itemprop=wordCount content="1125"><meta itemprop=image content="/blog/assets/thumbnail_db.png"><meta itemprop=image content="/blog/assets/tachyons-logo-script-feature.png"><meta itemprop=keywords content="hugo-site,"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="/blog/assets/thumbnail_db.png"><meta name=twitter:title content="PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations"><meta name=twitter:description content="IMPORTANT NOTE
+  This has been already addressed in PostgreSQL core, but this option
+  is still available in RDS.
+ What does it change and why is so important? Tracking databases and not just tables counters in Postgres isn&rsquo;t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by stat_temp_directory GUC variable. That directory places a global."><meta name=twitter:site content="@3manuek"><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','G-GY0KSNNSTL','auto');ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script><!--[if IE]><script src=//html5shiv.googlecode.com/svn/trunk/html5.js></script><![endif]--><link rel="shortcut icon" href="/img/favicon.ico?v=0" type=image/x-icon><link rel=icon href="/img/favicon.ico?v=0" type=image/x-icon><link rel=stylesheet href=/style.main.min.af051a891b2af29b5e832059f2d65564f8acece3291dcaca54df6ef06e3e084e.css integrity="sha256-rwUaiRsq8ptegyBZ8tZVZPis7OMpHcrKVN9u8G4+CE4=" media=screen></head><body><div class="grid-container single"><header class="site-header pa4 bb b--transparent" role=banner><nav class="site-nav db dt-l w-100" role=nav><a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href=/ title=Home><img src=/img/firma.png class="dib db-l h2 w-auto" alt=tr3sma></a><div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l"><a class="link f6 f5-l dib pv1 ph2" href=/ title="Home Page">Home</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/about/ title="About tr3sma">About</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/blog/ title=Blog>Blog</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/contact/ title="Contact Form">Contact</a></div></nav></header><main class="page-main pa4" role=main><section class="page-content mw7 center"><article class="post-content pa0 ph4-l"><header class=post-header><h1 class="f2 f1-m f-subheadline-l fw5-ns mv4 lh-solid tracked-tight">PostgreSQL RDS pg-stat-ramdisk-size new feature and its calculations</h1><h2 class="f7 fw7 measure mv0 ttu tracked">If you are using RDS, you want to read this.</h2><p class="f6 measure lh-copy mv1">By 3manuek in <a href=/categories/theme-features>Theme Features</a></p><p class="f7 db mv0 ttu">September 25, 2016</p></header><section class="post-body pt5 pb4"><blockquote><p>IMPORTANT NOTE</p></blockquote><blockquote><p>This has been already addressed in PostgreSQL core, but this option</p></blockquote><blockquote><p>is still available in RDS.</p></blockquote><h2 id=what-does-it-change-and-why-is-so-important>What does it change and why is so important?</h2><p>Tracking databases and <em>not just tables</em> counters in Postgres isn&rsquo;t cheap, but since some time ago there were workarounds involving the setup of a ramdisk to place the directory pointed by <code>stat_temp_directory</code> GUC variable. That directory places a <code>global.stat</code> and a per-database stat files called like <code>db_&lt;oidOfDB>.stat</code>. Although the mechanism for writing into these files avoids extra or unnecessary flushes, it is very write intensive.</p><p>This change does not require any downtime (in standalone installations), as a simple reload will force the Stat Collector to rewrite the files on the folder. There is a pretty much clear blog on <a href=http://hacksoclock.blogspot.com.ar/2014/04/putting-statstempdirectory-on-ramdisk.html>putting stat_temp_directory on a ramdisk</a>.</p><p>The problem relies on the RDS lack of privileges to manipulate file or directory contents, which does not allow you to check the current size and set a proper value. Although, you may probably want to know that there is a limit of <em>1 GB</em> for this setting in RDS.</p><p>If you don&rsquo;t want any further details and you want to relief your storage, set it to 256 MB and continue with your life. Even though is a large setting (next paragraph explain why), you don&rsquo;t want to fall short on it.</p><p>After you apply the change over <code>pg_stat_ramdisk_size</code>, you will see the location in the RDS have changed:</p><pre><code>show stats_temp_directory;
+   stats_temp_directory    
+---------------------------
+ /rdsdbramdisk/pg_stat_tmp
+</code></pre><h2 id=tldr-whats-the-expected-size-of-the-stat_temp_directory>TL;DR <em>What&rsquo;s the expected size of the stat_temp_directory</em>?</h2><p>Before move forward, lets detail the structure of the entries for the stat file:</p><table><thead><tr><th>Structure/Constant</th><th>Size</th></tr></thead><tbody><tr><td>PGSTAT_FILE_FORMAT_ID</td><td>1 byte</td></tr><tr><td>PgStat_StatTabEntry</td><td>164 bytes</td></tr><tr><td>PgStat_StatFuncEntry</td><td>28 bytes</td></tr><tr><td>closingChar</td><td>&lsquo;E&rsquo;</td></tr><tr><td>describers</td><td>char (T or F in this case)</td></tr></tbody></table><p>First of all, as it&rsquo;ll explained later, not all the tables, indexes and functions are written on the <em>db statsfile</em>. Basically, a basic formula will be:</p><blockquote><p><em>SizeOfDBStatFile = PGSTAT_FILE_FORMAT_ID + describers +
+(tableCount * PgStat_StatTabEntry) + (funcCount * PgStat_StatFuncEntry) +
+closingChar</em></p></blockquote><p>In order to get the estimate space needed for the current tables on each database (keep
+in mind that this considers all tables flushed on file), there is a query you can execute
+safely on <em>each database in your PostgreSQL instance</em> (statfile is one <em>per database</em>):</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>SELECT</span> <span style=color:#007020;font-weight:700>count</span>(<span style=color:#666>*</span>) <span style=color:#666>*</span> <span style=color:#40a070>164</span> <span style=color:#4070a0>&#34;</span><span style=color:#4070a0>size in bytes</span><span style=color:#4070a0>&#34;</span>
+  <span style=color:#007020;font-weight:700>FROM</span> pg_class
+  <span style=color:#007020;font-weight:700>WHERE</span> relkind (<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>r</span><span style=color:#4070a0>&#39;</span>,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>i</span><span style=color:#4070a0>&#39;</span>,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>S</span><span style=color:#4070a0>&#39;</span>);
+</code></pre></td></tr></table></div></div><p>Also, you need to do the same within <code>pg_proc</code>, but instead the factor will be 28 bytes. You&rsquo;ll need to run this on every database, and sum them all. This is for tracking stats for function usage, which can be
+disabled from the <code>postgresql.conf</code> file with the <code>track_functions</code> variable. Also, all the aspects
+of runtime statistics can be found <a href=https://www.postgresql.org/docs/9.6/static/runtime-config-statistics.html>here</a>.</p><h3 id=global-stats>Global Stats</h3><p>Structure of the global stats:</p><table><thead><tr><th>Structure</th><th>Size</th></tr></thead><tbody><tr><td>PgStat_StatDBEntry</td><td>180 bytes</td></tr><tr><td>PgStat_GlobalStats</td><td>92 bytes</td></tr><tr><td>PgStat_ArchiverStats</td><td>114 bytes</td></tr><tr><td>describer</td><td>char (&lsquo;D&rsquo;)</td></tr></tbody></table><p>The global statfile is smaller, and contains only the global stats and the counters across databases. Should be something close to:</p><blockquote><p><em>PGSTAT_FILE_FORMAT_ID + describer + PgStat_GlobalStats +
+PgStat_ArchiverStats + (PgStat_StatDBEntry + describer) * numDatabases</em>.</p></blockquote><p>So, as you can see, the limitation imposed by AWS in regarding is way above the amount of data held on this directory in most of the databases that can run inside RDS expectations.</p><h2 id=why-it-affects-rds>Why it affects RDS?</h2><p>Prior to this feature been added, the <code>stat_temp_directory</code> had a place into the persistent storage layer. This was the same as any other Postgres installation by default, however due to the storage characteristics of RDS the impact could be considered higher than a standalone setup.</p><p>If your application is write intensive, you will see the impact on the Write latency and operations.</p><h2 id=a-deeper-look>A deeper look</h2><p>So the <a href=http://dba.stackexchange.com/questions/150474/how-to-determine-optimal-value-for-pg-stat-ramdisk-size-on-amazon-rds/150579#150579>question</a> didn&rsquo;t took much time to appear in the network and, I wasn&rsquo;t the exception. Is there a way to pre calculate the contents of the directory?</p><p>I couldn&rsquo;t end up with an exact number however, you may know that the size of the files are more related to the number of tables, indexes, functions and databases. The following structure is the core of this implementation. It is so important that it actually has a defined <code>PGSTAT_FILE_FORMAT_ID</code> that it is written also in the stat files.</p><p>All the structures for these file contents are placed in the <code>include/pgstat.h</code> header and its implementation is done in <code>postmaster/pgstat.c</code> (as it is a startup worker). Every field that is used for counters use <code>int64</code> and there are some <code>timestampz</code> (64 bits too) with Oid as an exception, which is represented by 32 bits (unsigned int).</p><p>Backends communicate to the collector through <code>StatMsgType</code> struct, when is different from a zeroed struct <code>PgStat_TableCounts</code>. Structures kept in backend local memory while accumulating counts. So, that means that not all the tables, indexes and functions will have an entry.</p><p>Which backends can request a file write? All the backends, the archiver, the bgwriter. All of them use the same structure for passing the changes (PgStat_Msg).</p><p>There are 2 functions for write (<code>pgstat_write_db_statsfile</code>, <code>pgstat_write_statsfiles</code>) and 2 for read (<code>pgstat_read_db_statsfile</code> ,<code>pgstat_read_statsfiles</code> ) each of those controlling either the <code>db_&lt;oid>.stat</code> and <code>global.stat</code>.</p><h2 id=references>References</h2><h3 id=pgstat_statdbentry>PgStat_StatDBEntry</h3><p>The HTAB structure is opaque, and it holds a hash map of tables and functions to be collected. We don&rsquo;t care about the size of this maps as it won&rsquo;t be written to the stats file anyway. The whole database entry is <code>22 * 64 bit</code> values + <code>1 * 32 bits</code>, per database (<em>180 bytes</em>).</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-c data-lang=c><span style=color:#007020>#</span><span style=color:#007020>define PGSTAT_FILE_FORMAT_ID   0x01A5BC9D</span><span style=color:#007020>
+</span><span style=color:#007020></span><span style=color:#007020;font-weight:700>typedef</span> <span style=color:#007020;font-weight:700>struct</span> PgStat_StatDBEntry
+{
+        <span style=color:#60a0b0;font-style:italic>/*
+</span><span style=color:#60a0b0;font-style:italic>        NOTE:
+</span><span style=color:#60a0b0;font-style:italic>        The oid type is currently implemented as an unsigned four-byte integer.
+</span><span style=color:#60a0b0;font-style:italic>            typedef unsigned int Oid;
+</span><span style=color:#60a0b0;font-style:italic>        */</span>
+        Oid                     databaseid;
+        PgStat_Counter n_xact_commit;
+        PgStat_Counter n_xact_rollback;
+        PgStat_Counter n_blocks_fetched;
+        PgStat_Counter n_blocks_hit;
+        PgStat_Counter n_tuples_returned;
+        PgStat_Counter n_tuples_fetched;
+        PgStat_Counter n_tuples_inserted;
+        PgStat_Counter n_tuples_updated;
+        PgStat_Counter n_tuples_deleted;
+        TimestampTz last_autovac_time;
+        PgStat_Counter n_conflict_tablespace;
+        PgStat_Counter n_conflict_lock;
+        PgStat_Counter n_conflict_snapshot;
+        PgStat_Counter n_conflict_bufferpin;
+        PgStat_Counter n_conflict_startup_deadlock;
+        PgStat_Counter n_temp_files;
+        PgStat_Counter n_temp_bytes;
+        PgStat_Counter n_deadlocks;
+        PgStat_Counter n_block_read_time;       <span style=color:#60a0b0;font-style:italic>/* times in microseconds */</span>
+        PgStat_Counter n_block_write_time;
+
+        TimestampTz stat_reset_timestamp;
+        TimestampTz stats_timestamp;    <span style=color:#60a0b0;font-style:italic>/* time of db stats file update */</span>
+
+        <span style=color:#60a0b0;font-style:italic>/*
+</span><span style=color:#60a0b0;font-style:italic>         * tables and functions must be last in the struct, because we don&#39;t write
+</span><span style=color:#60a0b0;font-style:italic>         * the pointers out to the stats file.
+</span><span style=color:#60a0b0;font-style:italic>         */</span>
+        HTAB       <span style=color:#666>*</span>tables;             <span style=color:#60a0b0;font-style:italic>// defined in utils/hsearch.h
+</span><span style=color:#60a0b0;font-style:italic></span>        HTAB       <span style=color:#666>*</span>functions;
+} PgStat_StatDBEntry;
+</code></pre></td></tr></table></div></div><h3 id=structures>Structures</h3><p>In overal, this is the structure size of each:</p><table><thead><tr><th>Structure</th><th>Detail</th><th>Total</th></tr></thead><tbody><tr><td>PgStat_StatTabEntry</td><td>20 * 64 bits and 1 * 32 Oid</td><td>(164 bytes)</td></tr><tr><td>PgStat_StatFuncEntry</td><td>3 * 64 bits and 1 * 32 Oid</td><td>(28 bytes)</td></tr><tr><td>PgStat_GlobalStats</td><td>11 * 64 bits, 8 bytes + 1 * 32 bit, 4 bytes</td><td>(92 bytes)</td></tr><tr><td>PgStat_ArchiverStats</td><td>4 * 8bytes, 2 char 41 bytes.</td><td>(114 bytes)</td></tr></tbody></table><p>Hope you enjoyed the article!</p><details closed class="f6 fw7 input-reset"><dl class="f6 lh-copy"><dt class=fw7>Posted on:</dt><dd class="fw5 ml0">September 25, 2016</dd></dl><dl class="f6 lh-copy"><dt class=fw7>Length:</dt><dd class="fw5 ml0">6 minute read, 1125 words</dd></dl><dl class="f6 lh-copy"><dt class=fw7>Categories:</dt><dd class="fw5 ml0"><a href=/categories/theme-features>Theme Features</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>Series:</dt><dd class="fw5 ml0"><a href=/series/getting-started>Getting Started</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>Tags:</dt><dd class="fw5 ml0"><a href=/tags/hugo-site>hugo-site</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>See Also:</dt><dd class="fw5 ml0"><a href=/blog/2020-01/openlabs/>Open Labs</a></dd><dd class="fw5 ml0"><a href=/blog/2019-07/terraformwithpostgres/>What are the perks of using Postgres as a Terraform backend?</a></dd><dd class="fw5 ml0"><a href=/blog/2019-07/ansiblekubernetes/>Ansible and Kubernetes</a></dd></dl></details></section><footer class=post-footer><div class="post-pagination dt w-100 mt4 mb2"><a class="prev dtc pr2 tl v-top fw6" href=/blog/2016-07/percona-docker/>&larr; HOWTO Percona Server with Docker for DBAs</a>
+<a class="next dtc pl2 tr v-top fw6" href=/blog/2016-10/goplus-and-atom-gopath-fix-howto/>Go-Plus and Atom GOPATH fix &rarr;</a></div></footer></article></section></main><footer class="site-footer pa4 bt b--transparent" role=contentinfo><nav class="db dt-l w-100"><p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">&copy; 2022 tr3sma, Madrid, Spain<br></p><div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0"><a class="dib pv1 ph2 link" href=/index.xml title="RSS Feed">RSS</a></div></nav></footer></div></body></html>

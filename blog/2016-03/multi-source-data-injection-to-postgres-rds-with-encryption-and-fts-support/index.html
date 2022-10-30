@@ -1,0 +1,773 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><title>Multi source data injection to Postgres RDS with encryption and FTS support | tr3sma</title><meta name=description content><meta property="og:title" content="Multi source data injection to Postgres RDS with encryption and FTS support"><meta property="og:description" content="Sponsored: Pythian Inc.
+ Note 1: All the of this presentation is published in this repository. You will find a lot of folders and information, probably part of a blog series.
+  Note 2: All the work on this article is a POC (Proof of concept).
+  Note 3: This is something that is related for HIPAA compliant.
+ KMS/RDS The POC on this article was developed before the releasing of the Key Management service for RDS."><meta property="og:type" content="article"><meta property="og:url" content="/blog/2016-03/multi-source-data-injection-to-postgres-rds-with-encryption-and-fts-support/"><meta property="og:image" content="/blog/assets/thumbnail_db.png"><meta property="og:image" content="/blog/assets/tachyons-logo-script-feature.png"><meta property="article:published_time" content="2016-03-23T00:00:00+00:00"><meta property="article:modified_time" content="2016-03-23T00:00:00+00:00"><meta itemprop=name content="Multi source data injection to Postgres RDS with encryption and FTS support"><meta itemprop=description content="Sponsored: Pythian Inc.
+ Note 1: All the of this presentation is published in this repository. You will find a lot of folders and information, probably part of a blog series.
+  Note 2: All the work on this article is a POC (Proof of concept).
+  Note 3: This is something that is related for HIPAA compliant.
+ KMS/RDS The POC on this article was developed before the releasing of the Key Management service for RDS."><meta itemprop=datePublished content="2016-03-23T00:00:00+00:00"><meta itemprop=dateModified content="2016-03-23T00:00:00+00:00"><meta itemprop=wordCount content="3306"><meta itemprop=image content="/blog/assets/thumbnail_db.png"><meta itemprop=image content="/blog/assets/tachyons-logo-script-feature.png"><meta itemprop=keywords content="hugo-site,"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="/blog/assets/thumbnail_db.png"><meta name=twitter:title content="Multi source data injection to Postgres RDS with encryption and FTS support"><meta name=twitter:description content="Sponsored: Pythian Inc.
+ Note 1: All the of this presentation is published in this repository. You will find a lot of folders and information, probably part of a blog series.
+  Note 2: All the work on this article is a POC (Proof of concept).
+  Note 3: This is something that is related for HIPAA compliant.
+ KMS/RDS The POC on this article was developed before the releasing of the Key Management service for RDS."><meta name=twitter:site content="@3manuek"><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','G-GY0KSNNSTL','auto');ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script><!--[if IE]><script src=//html5shiv.googlecode.com/svn/trunk/html5.js></script><![endif]--><link rel="shortcut icon" href="/img/favicon.ico?v=0" type=image/x-icon><link rel=icon href="/img/favicon.ico?v=0" type=image/x-icon><link rel=stylesheet href=/style.main.min.af051a891b2af29b5e832059f2d65564f8acece3291dcaca54df6ef06e3e084e.css integrity="sha256-rwUaiRsq8ptegyBZ8tZVZPis7OMpHcrKVN9u8G4+CE4=" media=screen></head><body><div class="grid-container single"><header class="site-header pa4 bb b--transparent" role=banner><nav class="site-nav db dt-l w-100" role=nav><a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href=/ title=Home><img src=/img/firma.png class="dib db-l h2 w-auto" alt=tr3sma></a><div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l"><a class="link f6 f5-l dib pv1 ph2" href=/ title="Home Page">Home</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/about/ title="About tr3sma">About</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/blog/ title=Blog>Blog</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/contact/ title="Contact Form">Contact</a></div></nav></header><main class="page-main pa4" role=main><section class="page-content mw7 center"><article class="post-content pa0 ph4-l"><header class=post-header><h1 class="f2 f1-m f-subheadline-l fw5-ns mv4 lh-solid tracked-tight">Multi source data injection to Postgres RDS with encryption and FTS support</h1><h2 class="f7 fw7 measure mv0 ttu tracked">Multi source data injection to Postgres RDS with encryption and FTS support.</h2><p class="f6 measure lh-copy mv1">By 3manuek in <a href=/categories/theme-features>Theme Features</a></p><p class="f7 db mv0 ttu">March 23, 2016</p></header><section class="post-body pt5 pb4"><hr><p>Sponsored: <a href=http://pythian.com>Pythian Inc.</a></p><blockquote><p>Note 1:
+All the of this presentation is published in this <a href>repository</a>. You will find a lot of folders and information, probably part of a blog series.</p></blockquote><blockquote><p>Note 2:
+All the work on this article is a <strong>POC</strong> (Proof of concept).</p></blockquote><blockquote><p>Note 3:
+This is something that is related for <a href=https://en.wikipedia.org/wiki/Health_Insurance_Portability_and_Accountability_Act>HIPAA</a> compliant.</p></blockquote><h2 id=kmshttpawsamazoncomkmsrdshttpsawsamazoncomrdspostgresql><a href=http://aws.amazon.com/kms/>KMS</a>/<a href=https://aws.amazon.com/rds/postgresql/>RDS</a></h2><p>The POC on this article was developed before the releasing of the Key Management service
+for RDS.</p><p>I totally discourage to use the current approach for encrypting data. <em>Use REST.</em></p><h2 id=introduction>Introduction</h2><p>I&rsquo;ve been dealing with an issue that came into my desktop from people of the
+community, regarding RDS and HIPAA rules. There was a confusing scenario whether
+PostgreSQL was using FTS and encryption on RDS. There are a lot of details regarding
+the architecture, however I think it won&rsquo;t be necessary to dig into
+very deeply to understand the basics of the present article moto.</p><p><a href=https://en.wikipedia.org/wiki/Health_Insurance_Portability_and_Accountability_Act>HIPAA</a>
+rules are complex and if you need to deal with them, you&rsquo;ll probably need to go
+through a careful read.</p><p><code>tl;dr</code>? they tell us to store data encrypted on servers that are not in the premises.
+And that&rsquo;s the case of RDS. However, all the communications are encrypted using
+SSL protocol, but is not enough to compliant with HIPAA rules.</p><p>CPU resources in RDS are expensive and not stable sometimes, which makes encryption and
+FTS features not very well suited for this kind of service. I not saying that you
+can&rsquo;t implement them, just keep in mind that a standard CPU against vCPU could
+have a lot difference. If you want to benchmark your local CPU against RDS vCPU,
+you can run the following query inside <code>psql</code> on both instances:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">8
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span>\</span>o <span style=color:#666>/</span>dev<span style=color:#666>/</span><span style=color:#007020;font-weight:700>null</span>
+<span>\</span>timing
+<span style=color:#007020;font-weight:700>SELECT</span> convert_from(
+          pgp_sym_decrypt_bytea(
+              pgp_sym_encrypt_bytea(<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>Text to be encrypted using pgp_sym_decrypt_bytea</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> gen_random_uuid()::<span style=color:#007020>text</span>::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>key</span><span style=color:#4070a0>&#39;</span>, <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>compress-algo=2</span><span style=color:#4070a0>&#39;</span>),
+          <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>key</span><span style=color:#4070a0>&#39;</span>),
+        <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL-ASCII</span><span style=color:#4070a0>&#39;</span>)
+<span style=color:#007020;font-weight:700>FROM</span> generate_series(<span style=color:#40a070>1</span>,<span style=color:#40a070>10000</span>);
+</code></pre></td></tr></table></div></div><p>There are a lot of things and functions you can combine from the <code>pgcrypto</code> package
+(you will see that the repository contemplates all of them).
+I will try to post another blog post regarding this kind of benchmarks. In the
+meantime, this query should be enough to have a rough idea of the performance difference
+between RDS instance vCPU and your server CPUs.</p><h2 id=architecture-basics>Architecture basics</h2><p>For this POC we are going to store FTS and GPG keys locally, in a simple PostgreSQL
+instance and, using a trigger, encrypt and upload transparently to RDS using the
+standard FDW (Foreign Data Wrappers).</p><p>Have in mind that RDS communication is already encrypted via SSL when data flows
+between server/client. It&rsquo;s important to clarify this, to avoid confusions between
+communication encryption and storing data encrypted.</p><p>The simple trigger will split the unencrypted data between a local table storing
+in a <code>tsvector</code> column (jsonb in the TODO), it will encrypt and push the encrypted
+data into RDS using FDW (the standard postgres_fdw package).</p><p>A simple flight view of the idea can be observed in the image bellow.</p><p><a href="https://www.lucidchart.com/documents/edit/c22ce7a1-c09d-4ca8-922d-dcb123d577a5?driveId=0AHk8my7IafcZUk9PVA#">Source</a></p><p><img src=/blog/assets/2016-03/multi-source.png alt=multi-source></p><h2 id=rds-structure-and-mirrored-local-structure-with-fdw>RDS structure and mirrored local structure with FDW</h2><p>RDS instance schema structure contains a parent table , a partitioning trigger and
+its trigger:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>SCHEMA</span> enc_schema;
+
+<span style=color:#007020;font-weight:700>SET</span> search_path <span style=color:#007020;font-weight:700>TO</span> enc_schema;
+
+<span style=color:#60a0b0;font-style:italic>-- Encrpting locally, that&#39;s why we don&#39;t need to reference the key here.
+</span><span style=color:#60a0b0;font-style:italic></span><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> enc_schema.__person__pgp
+     (
+      id <span style=color:#007020>bigint</span>,
+      <span style=color:#007020;font-weight:700>source</span> <span style=color:#007020>varchar</span>(<span style=color:#40a070>8</span>),
+      partial_ssn <span style=color:#007020>varchar</span>(<span style=color:#40a070>4</span>), <span style=color:#60a0b0;font-style:italic>-- Non encrypted field for other fast search purposes
+</span><span style=color:#60a0b0;font-style:italic></span>      ssn bytea,
+      keyid <span style=color:#007020>varchar</span>(<span style=color:#40a070>16</span>),
+      fname bytea,
+      lname bytea,
+      description bytea,
+      auth_drugs bytea, 		<span style=color:#60a0b0;font-style:italic>-- This is an encrypted text vector
+</span><span style=color:#60a0b0;font-style:italic></span>      patology bytea,
+      <span style=color:#007020;font-weight:700>PRIMARY</span> <span style=color:#007020;font-weight:700>KEY</span>(id,<span style=color:#007020;font-weight:700>source</span>)
+);
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>INDEX</span> <span style=color:#007020;font-weight:700>ON</span> enc_schema.__person__pgp (partial_ssn);
+
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>OR</span> <span style=color:#007020;font-weight:700>REPLACE</span> <span style=color:#007020;font-weight:700>FUNCTION</span> basic_ins_trig() <span style=color:#007020;font-weight:700>RETURNS</span> <span style=color:#007020;font-weight:700>trigger</span> <span style=color:#007020;font-weight:700>LANGUAGE</span> plpgsql <span style=color:#007020;font-weight:700>AS</span> <span>$</span>basic_ins_trig$
+<span style=color:#007020;font-weight:700>DECLARE</span>
+  compTable <span style=color:#007020>text</span> :<span style=color:#666>=</span>  TG_RELID::regclass::<span style=color:#007020>text</span> ;
+  childTable <span style=color:#007020>text</span> :<span style=color:#666>=</span> compTable <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>_</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#007020;font-weight:700>NEW</span>.<span style=color:#007020;font-weight:700>source</span> ;
+  <span style=color:#007020;font-weight:700>statement</span> <span style=color:#007020>text</span> :<span style=color:#666>=</span>  <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>INSERT INTO </span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> childTable <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0> SELECT (</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> QUOTE_LITERAL(<span style=color:#007020;font-weight:700>NEW</span>) <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>::</span><span style=color:#4070a0>&#39;</span>  <span style=color:#666>|</span><span style=color:#666>|</span> compTable <span style=color:#666>|</span><span style=color:#666>|</span>  <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>).*</span><span style=color:#4070a0>&#39;</span> ;
+  createStmt <span style=color:#007020>text</span> :<span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>CREATE TABLE </span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> childTable  <span style=color:#666>|</span><span style=color:#666>|</span>
+    <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>(CHECK (source =</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> quote_literal(<span style=color:#007020;font-weight:700>NEW</span>.<span style=color:#007020;font-weight:700>source</span>) <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>)) INHERITS (</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> compTable <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>)</span><span style=color:#4070a0>&#39;</span>;
+  indexAdd1 <span style=color:#007020>text</span> :<span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>CREATE INDEX ON </span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> childTable <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>(source,id)</span><span style=color:#4070a0>&#39;</span> ;
+  indexAdd2 <span style=color:#007020>text</span> :<span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>CREATE INDEX ON </span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> childTable <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>(source,ssn)</span><span style=color:#4070a0>&#39;</span> ;
+<span style=color:#007020;font-weight:700>BEGIN</span>
+  <span style=color:#007020;font-weight:700>BEGIN</span>
+    <span style=color:#007020;font-weight:700>EXECUTE</span> <span style=color:#007020;font-weight:700>statement</span>;
+  <span style=color:#007020;font-weight:700>EXCEPTION</span>
+    <span style=color:#007020;font-weight:700>WHEN</span> undefined_table <span style=color:#007020;font-weight:700>THEN</span>
+      <span style=color:#007020;font-weight:700>EXECUTE</span> createStmt;
+      <span style=color:#007020;font-weight:700>EXECUTE</span> indexAdd1;
+      <span style=color:#007020;font-weight:700>EXECUTE</span> indexAdd2;
+      <span style=color:#007020;font-weight:700>EXECUTE</span> <span style=color:#007020;font-weight:700>statement</span>;
+  <span style=color:#007020;font-weight:700>END</span>;
+  <span style=color:#007020;font-weight:700>RETURN</span> <span style=color:#007020;font-weight:700>NULL</span>;
+
+<span style=color:#007020;font-weight:700>END</span>;
+
+<span>$</span>basic_ins_trig$;
+
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TRIGGER</span> part_person_pgp <span style=color:#007020;font-weight:700>BEFORE</span> <span style=color:#007020;font-weight:700>INSERT</span> <span style=color:#007020;font-weight:700>ON</span> __person__pgp
+<span style=color:#007020;font-weight:700>FOR</span> <span style=color:#007020;font-weight:700>EACH</span> <span style=color:#007020;font-weight:700>ROW</span> <span style=color:#007020;font-weight:700>EXECUTE</span> <span style=color:#007020;font-weight:700>PROCEDURE</span> basic_ins_trig() ;
+</code></pre></td></tr></table></div></div><p>We are not going to use the <code>partial SSN</code> column in the examples, but I found it very helpful to
+do RDS searches over encrypted data without fall into the need of decrypting in-the-fly the SSN.
+The last SSN&rsquo;s 4-digits do not provide useful information if stolen.</p><p>Also, the magic of the multi-source data injection comes from the compound key using a
+bigint and a source tag.</p><p>Basically, you can think on the local nodes as proxies. You can insert data on every node,
+but the data will point to the RDS instance.</p><p>If you are planning to manage large amounts of data, you can partition the table on RDS,
+allowing a better organization for data management.</p><p>You will see no indexes over encrypted data</p><p>Local nodes structure:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>DATABASE</span> fts_proxy;  <span style=color:#60a0b0;font-style:italic>--  connect using \c fts_proxy on psql
+</span><span style=color:#60a0b0;font-style:italic></span>
+<span style=color:#60a0b0;font-style:italic>-- The sauce
+</span><span style=color:#60a0b0;font-style:italic></span><span style=color:#007020;font-weight:700>CREATE</span> EXTENSION postgres_fdw;
+<span style=color:#007020;font-weight:700>CREATE</span> EXTENSION pgcrypto;
+
+<span style=color:#007020;font-weight:700>CREATE</span> SERVER RDS_server
+        <span style=color:#007020;font-weight:700>FOREIGN</span> <span style=color:#007020;font-weight:700>DATA</span> WRAPPER postgres_fdw
+        <span style=color:#007020;font-weight:700>OPTIONS</span> (<span style=color:#007020;font-weight:700>host</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>dbtest1.chuxsnuhtvgl.us-east-1.rds.amazonaws.com</span><span style=color:#4070a0>&#39;</span>, port <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>5432</span><span style=color:#4070a0>&#39;</span>, dbname <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>dbtest</span><span style=color:#4070a0>&#39;</span>);
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>USER</span> MAPPING <span style=color:#007020;font-weight:700>FOR</span> postgres
+        SERVER RDS_server
+        <span style=color:#007020;font-weight:700>OPTIONS</span> (<span style=color:#007020;font-weight:700>user</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>dbtestuser</span><span style=color:#4070a0>&#39;</span>, password <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&lt;shadowed&gt;</span><span style=color:#4070a0>&#39;</span>);
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>FOREIGN</span> <span style=color:#007020;font-weight:700>TABLE</span> __person__pgp_RDS
+(
+       id <span style=color:#007020>bigint</span>,
+       <span style=color:#007020;font-weight:700>source</span> <span style=color:#007020>varchar</span>(<span style=color:#40a070>8</span>),
+       partial_ssn <span style=color:#007020>varchar</span>(<span style=color:#40a070>4</span>), <span style=color:#60a0b0;font-style:italic>-- Non encrypted field for other fast search purposes
+</span><span style=color:#60a0b0;font-style:italic></span>       ssn bytea,
+       keyid <span style=color:#007020>varchar</span>(<span style=color:#40a070>16</span>),
+       fname bytea,
+       lname bytea,
+       description bytea,
+       auth_drugs bytea, <span style=color:#60a0b0;font-style:italic>-- This is an encrypted text vector
+</span><span style=color:#60a0b0;font-style:italic></span>       patology bytea
+)
+SERVER RDS_server
+<span style=color:#007020;font-weight:700>OPTIONS</span> (<span style=color:#007020;font-weight:700>schema_name</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>enc_schema</span><span style=color:#4070a0>&#39;</span>, <span style=color:#007020;font-weight:700>table_name</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>__person__pgp</span><span style=color:#4070a0>&#39;</span>);
+</code></pre></td></tr></table></div></div><p>Same table. Everytime we want to deal with the RDS table, we are going to do so using the <code>__person__pgp_RDS</code> table, which is just a mapping table. We can query this table as any other usual table.</p><p>For testing purposes, I also created a table with the same structure as the above with
+<code>__person_rds_RDS_URE</code> table name and added the <code>use_remote_estimate 'true'</code> option.
+When enabled, postgres_fdw obtains the row count and estimates from the remote server.</p><h2 id=inserting-keys-locally>Inserting keys locally</h2><p>Just to avoid an extended article, I will skip the GPG key creation commands here. Please follow the instructions on the link at the referece section about keys.</p><p>We can insert they keys in several ways, but I found very convenient to use <code>psql</code>
+features to do so. Once the keys are in place you can use <code>\lo_import</code> command:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#bb60d5>postgres</span><span style=color:#666>=</span><span style=color:#60a0b0;font-style:italic># \lo_import /var/lib/postgresql/9.4/main/private.key</span>
+lo_import <span style=color:#40a070>33583</span>
+<span style=color:#bb60d5>postgres</span><span style=color:#666>=</span><span style=color:#60a0b0;font-style:italic># \lo_import /var/lib/postgresql/9.4/main/public.key</span>
+lo_import <span style=color:#40a070>33584</span>
+</code></pre></td></tr></table></div></div><p>The next steps are very straightforward. In a real scenario, you won&rsquo;t probably
+want to upload private keys into the table, just for practical purposes of this
+article I&rsquo;m going to do so (only for decrypt data in the SELECT query).</p><blockquote><p><code>pgp_key_id</code> will return the same key no matter if you use private or public key.</p></blockquote><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> keys (
+   keyid <span style=color:#007020>varchar</span>(<span style=color:#40a070>16</span>) <span style=color:#007020;font-weight:700>PRIMARY</span> <span style=color:#007020;font-weight:700>KEY</span>,
+   pub bytea,
+   priv bytea
+);
+
+<span style=color:#007020;font-weight:700>INSERT</span> <span style=color:#007020;font-weight:700>INTO</span> keys <span style=color:#007020;font-weight:700>VALUES</span> ( pgp_key_id(lo_get(<span style=color:#40a070>33583</span>)) ,lo_get(<span style=color:#40a070>33584</span>), lo_get(<span style=color:#40a070>33583</span>));
+</code></pre></td></tr></table></div></div><h2 id=splitting-data-to-fts-encrypt-and-push-into-rds>Splitting data to FTS, encrypt and push into RDS</h2><p>Now, here is when the tricky part starts. We are going to achieve some functionalities:</p><ul><li>We are going to simulate <em>routing</em> using inheritance on the FTS records. That will allow us to split data as we want and, replicate using Logical Decoding feature between the nodes. I won&rsquo;t include this on the current article just to avoid it to be extense.</li><li>We are going to encrypt using the key that we select on the insert query. If you want a key <em>per table basis</em>, you will find easier to hardcode the key id on the <code>_func_get_FTS_encrypt_and_push_to_RDS</code>.</li><li>Once the records are encrypted, the function will insert those records to the foreign table (RDS).</li><li>When querying the FTS table, we will be able to determine the source (something like the <code>routing</code> technique, you will find this familiar if you played with ElasticSearch). That allow us to make the FTS search transparent to the application, pointing always to the parent table. :dogewow:</li></ul><blockquote><p>Isn&rsquo;t Postgres cool? :o</p></blockquote><h3 id=fts-table-structures>FTS table structures</h3><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#60a0b0;font-style:italic>-- Parent table
+</span><span style=color:#60a0b0;font-style:italic></span><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> local_search (
+  id <span style=color:#007020>bigint</span> <span style=color:#007020;font-weight:700>PRIMARY</span> <span style=color:#007020;font-weight:700>KEY</span>,
+  _FTS tsvector
+);
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>INDEX</span> fts_index <span style=color:#007020;font-weight:700>ON</span> local_search <span style=color:#007020;font-weight:700>USING</span> GIST(_FTS);
+
+<span style=color:#60a0b0;font-style:italic>-- Child table, suffix local_search_&lt;source&gt;
+</span><span style=color:#60a0b0;font-style:italic></span>
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> local_search_host1 () <span style=color:#007020;font-weight:700>INHERITS</span> (local_search);
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>INDEX</span> fts_index_host1 <span style=color:#007020;font-weight:700>ON</span> local_search_host1 <span style=color:#007020;font-weight:700>USING</span> GIST(_FTS);
+</code></pre></td></tr></table></div></div><p>Doing this, you avoid to have a column with a constant value in the table, consuming unnecessary space. You can have with this method, different names and tables accross the cluster, but always using the same query against <code>local_search</code>. You can map/reduce the data if you want to across the nodes, with the very same query.</p><p>Is not necessary to only have 1 source or route per node. The only requirement for this is to have different routes per node (combining source and route could increase complexity, however is possible).</p><h2 id=main-code>Main code</h2><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">52
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">53
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">54
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">55
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">56
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>CREATE</span> SEQUENCE global_seq <span style=color:#007020;font-weight:700>INCREMENT</span> <span style=color:#007020;font-weight:700>BY</span> <span style=color:#40a070>1</span> <span style=color:#007020;font-weight:700>MINVALUE</span> <span style=color:#40a070>1</span> <span style=color:#007020;font-weight:700>NO</span> <span style=color:#007020;font-weight:700>MAXVALUE</span>;
+
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> __person__pgp_map
+     (
+      keyid <span style=color:#007020>varchar</span>(<span style=color:#40a070>16</span>),
+      <span style=color:#007020;font-weight:700>source</span> <span style=color:#007020>varchar</span>(<span style=color:#40a070>8</span>),
+      ssn <span style=color:#007020>bigint</span>,
+      fname <span style=color:#007020>text</span>,
+      lname <span style=color:#007020>text</span>,
+      description <span style=color:#007020>text</span>,
+      auth_drugs <span style=color:#007020>text</span>[], <span style=color:#60a0b0;font-style:italic>-- This is an encrypted text vector
+</span><span style=color:#60a0b0;font-style:italic></span>      patology <span style=color:#007020>text</span>
+    );
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>OR</span> <span style=color:#007020;font-weight:700>REPLACE</span> <span style=color:#007020;font-weight:700>FUNCTION</span> _func_get_FTS_encrypt_and_push_to_RDS() <span style=color:#007020;font-weight:700>RETURNS</span> <span style=color:#4070a0>&#34;</span><span style=color:#4070a0>trigger</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>AS</span> <span>$</span><span>$</span>
+<span style=color:#007020;font-weight:700>DECLARE</span>
+        secret bytea;
+        RDS_MAP __person__pgp_RDS<span style=color:#666>%</span>ROWTYPE;
+        FTS_MAP local_search<span style=color:#666>%</span>ROWTYPE;
+<span style=color:#007020;font-weight:700>BEGIN</span>
+
+    <span style=color:#007020;font-weight:700>SELECT</span> pub <span style=color:#007020;font-weight:700>INTO</span> secret <span style=color:#007020;font-weight:700>FROM</span> keys <span style=color:#007020;font-weight:700>WHERE</span> keyid <span style=color:#666>=</span> <span style=color:#007020;font-weight:700>NEW</span>.keyid;
+
+    RDS_MAP.<span style=color:#007020;font-weight:700>source</span> :<span style=color:#666>=</span> <span style=color:#007020;font-weight:700>NEW</span>.<span style=color:#007020;font-weight:700>source</span>;
+    RDS_MAP.fname :<span style=color:#666>=</span> pgp_pub_encrypt(<span style=color:#007020;font-weight:700>NEW</span>.fname, secret);
+    RDS_MAP.lname :<span style=color:#666>=</span> pgp_pub_encrypt(<span style=color:#007020;font-weight:700>NEW</span>.lname, secret);
+    RDS_MAP.auth_drugs :<span style=color:#666>=</span> pgp_pub_encrypt(<span style=color:#007020;font-weight:700>NEW</span>.auth_drugs::<span style=color:#007020>text</span>, secret);
+    RDS_MAP.description :<span style=color:#666>=</span> pgp_pub_encrypt(<span style=color:#007020;font-weight:700>NEW</span>.description, secret);
+    RDS_MAP.patology :<span style=color:#666>=</span> pgp_pub_encrypt(<span style=color:#007020;font-weight:700>NEW</span>.patology, secret);
+    RDS_MAP.ssn :<span style=color:#666>=</span> pgp_pub_encrypt(<span style=color:#007020;font-weight:700>NEW</span>.ssn::<span style=color:#007020>text</span>, secret);
+    RDS_MAP.partial_ssn :<span style=color:#666>=</span> <span style=color:#007020;font-weight:700>right</span>( (<span style=color:#007020;font-weight:700>NEW</span>.ssn)::<span style=color:#007020>text</span>,<span style=color:#40a070>4</span>);
+    RDS_MAP.id :<span style=color:#666>=</span> nextval(<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>global_seq</span><span style=color:#4070a0>&#39;</span>::regclass);
+
+    RDS_MAP.keyid :<span style=color:#666>=</span> <span style=color:#007020;font-weight:700>NEW</span>.keyid;
+
+    FTS_MAP.id   :<span style=color:#666>=</span> RDS_MAP.id;
+    FTS_MAP._FTS :<span style=color:#666>=</span> (setweight(to_tsvector(<span style=color:#007020;font-weight:700>NEW</span>.fname) , <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>B</span><span style=color:#4070a0>&#39;</span> ) <span style=color:#666>|</span><span style=color:#666>|</span>
+                   setweight(to_tsvector(<span style=color:#007020;font-weight:700>NEW</span>.lname), <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>A</span><span style=color:#4070a0>&#39;</span>) <span style=color:#666>|</span><span style=color:#666>|</span>
+                   setweight(to_tsvector(<span style=color:#007020;font-weight:700>NEW</span>.description), <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>C</span><span style=color:#4070a0>&#39;</span>) <span style=color:#666>|</span><span style=color:#666>|</span>
+                   setweight(to_tsvector(<span style=color:#007020;font-weight:700>NEW</span>.auth_drugs::<span style=color:#007020>text</span>), <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>C</span><span style=color:#4070a0>&#39;</span>) <span style=color:#666>|</span><span style=color:#666>|</span>
+                   setweight(to_tsvector(<span style=color:#007020;font-weight:700>NEW</span>.patology), <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>D</span><span style=color:#4070a0>&#39;</span>)
+                    ) ;
+
+    <span style=color:#60a0b0;font-style:italic>-- Both tables contain same id,source
+</span><span style=color:#60a0b0;font-style:italic></span>    <span style=color:#007020;font-weight:700>INSERT</span> <span style=color:#007020;font-weight:700>INTO</span> __person__pgp_RDS <span style=color:#007020;font-weight:700>SELECT</span> (RDS_MAP.<span style=color:#666>*</span>);
+    <span style=color:#007020;font-weight:700>EXECUTE</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>INSERT INTO local_search_</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#007020;font-weight:700>NEW</span>.<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0> SELECT (</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span>  quote_literal(FTS_MAP) <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>::local_search).* </span><span style=color:#4070a0>&#39;</span>;
+   <span style=color:#007020;font-weight:700>RETURN</span> <span style=color:#007020;font-weight:700>NULL</span>;
+<span style=color:#007020;font-weight:700>END</span>;
+<span>$</span><span>$</span>
+<span style=color:#007020;font-weight:700>LANGUAGE</span> plpgsql;
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TRIGGER</span> trigger_befInsRow_name_FTS
+<span style=color:#007020;font-weight:700>BEFORE</span> <span style=color:#007020;font-weight:700>INSERT</span> <span style=color:#007020;font-weight:700>ON</span> __person__pgp_map
+<span style=color:#007020;font-weight:700>FOR</span> <span style=color:#007020;font-weight:700>EACH</span> <span style=color:#007020;font-weight:700>ROW</span>
+<span style=color:#007020;font-weight:700>EXECUTE</span> <span style=color:#007020;font-weight:700>PROCEDURE</span> _func_get_FTS_encrypt_and_push_to_RDS();
+</code></pre></td></tr></table></div></div><p>This functions does everything. It inserts the data on RDS and split the data on the corresponding FTS child table. For performance purposes, I didn&rsquo;t want to catch exceptions at insert time (if the child table does not exists, i.e.), but you can also add this feature with an exception block as follows:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql>   <span style=color:#007020;font-weight:700>BEGIN</span>
+    <span style=color:#007020;font-weight:700>EXECUTE</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>INSERT INTO local_search_</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#007020;font-weight:700>NEW</span>.<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0> SELECT (</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span>  quote_literal(FTS_MAP) <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>::local_search).* </span><span style=color:#4070a0>&#39;</span>;
+   <span style=color:#007020;font-weight:700>EXCEPTION</span> <span style=color:#007020;font-weight:700>WHEN</span> undefined_table <span style=color:#007020;font-weight:700>THEN</span>
+     <span style=color:#007020;font-weight:700>EXECUTE</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>CREATE TABLE local_search_</span><span style=color:#4070a0>&#39;</span> <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#007020;font-weight:700>NEW</span>.<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>|</span><span style=color:#666>|</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>() INHERITS local_search</span><span style=color:#4070a0>&#39;</span>;
+   <span style=color:#007020;font-weight:700>END</span>;
+</code></pre></td></tr></table></div></div><p>The same can be done over the foreign table. More info in &ldquo;Class HV — Foreign Data Wrapper Error (SQL/MED)&rdquo; (HV00R -<code>fdw_table_not_found</code>).</p><p>Check &ldquo;Appendix A. PostgreSQL Error Codes&rdquo; on the official manual for references about error codes.</p><h3 id=inserting-data>Inserting data</h3><p>At insertion time, we are going to push data through a mapping table. The reason for this is that all the encrypted data is stored in <code>bytea</code> datatype, and we want to have clear queries instead.</p><p>A random data query will look as:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>INSERT</span> <span style=color:#007020;font-weight:700>INTO</span> __person__pgp_map
+  <span style=color:#007020;font-weight:700>SELECT</span>
+      <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>host1</span><span style=color:#4070a0>&#39;</span>,  <span style=color:#60a0b0;font-style:italic>-- source: host1
+</span><span style=color:#60a0b0;font-style:italic></span>                <span style=color:#60a0b0;font-style:italic>-- You can do this better by grabbing this data from a persistent
+</span><span style=color:#60a0b0;font-style:italic></span>                <span style=color:#60a0b0;font-style:italic>-- location
+</span><span style=color:#60a0b0;font-style:italic></span>      <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>76CDA76B5C1EA9AB</span><span style=color:#4070a0>&#39;</span>,
+       round(random()<span style=color:#666>*</span><span style=color:#40a070>1000000000</span>),
+      (<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>{Romulo,Ricardo,Romina,Fabricio,Francisca,Noa,Laura,Priscila,Tiziana,Ana,Horacio,Tim,Mario}</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>[])[round(random()<span style=color:#666>*</span><span style=color:#40a070>12</span><span style=color:#666>+</span><span style=color:#40a070>1</span>)],
+      (<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>{Perez,Ortigoza,Tucci,Smith,Fernandez,Samuel,Veloso,Guevara,Calvo,Cantina,Casas,Korn,Rodriguez,Ike,Baldo,Vespi}</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>[])[round(random()<span style=color:#666>*</span><span style=color:#40a070>15</span><span style=color:#666>+</span><span style=color:#40a070>1</span>)],
+      (<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>{some,random,text,goes,here}</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>[])[round(random()<span style=color:#666>*</span><span style=color:#40a070>5</span><span style=color:#666>+</span><span style=color:#40a070>1</span>)] ,
+      get_drugs_random(round(random()<span style=color:#666>*</span><span style=color:#40a070>10</span>)::<span style=color:#007020>int</span>),
+      (<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>{Anotia,Appendicitis,Apraxia,Argyria,Arthritis,Asthma,Astigmatism,Atherosclerosis,Athetosis,Atrophy,Abscess,Influenza,Melanoma}</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>[])[round(random()<span style=color:#666>*</span><span style=color:#40a070>12</span><span style=color:#666>+</span><span style=color:#40a070>1</span>)]
+      <span style=color:#007020;font-weight:700>FROM</span> generate_series(<span style=color:#40a070>1</span>,<span style=color:#40a070>50</span>) ;
+</code></pre></td></tr></table></div></div><p>Did you see the inner comment? Well, probably you want to split by <code>customer</code> or any other alias. I&rsquo;m using this ugly harcoded text just to avoid a long article.</p><p>Also, if you want to avoid harcoding as much as posible, you can consider to use a function that returns the host name or routing tag.</p><h3 id=querying-the-data>Querying the data</h3><p>We are almost done! Now we can do some queries. Here are some examples:</p><p>Limiting the matches:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#666>#</span> <span style=color:#007020;font-weight:700>SELECT</span> convert_from(pgp_pub_decrypt(ssn::<span style=color:#007020>text</span>::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name)
+<span style=color:#666>#</span> <span style=color:#007020;font-weight:700>FROM</span> __person__pgp_rds <span style=color:#007020;font-weight:700>as</span> rds <span style=color:#007020;font-weight:700>JOIN</span>
+<span style=color:#666>#</span>       keys ks <span style=color:#007020;font-weight:700>USING</span> (keyid)
+<span style=color:#666>#</span> <span style=color:#007020;font-weight:700>WHERE</span> rds.id <span style=color:#007020;font-weight:700>IN</span> (
+<span style=color:#666>#</span>                <span style=color:#007020;font-weight:700>select</span> id
+<span style=color:#666>#</span>                <span style=color:#007020;font-weight:700>from</span> local_search
+<span style=color:#666>#</span>                <span style=color:#007020;font-weight:700>where</span> to_tsquery(<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>Asthma | Athetosis</span><span style=color:#4070a0>&#39;</span>) <span style=color:#666>@</span><span style=color:#666>@</span> _fts <span style=color:#007020;font-weight:700>LIMIT</span> <span style=color:#40a070>5</span>)
+<span style=color:#666>#</span>   <span style=color:#007020;font-weight:700>AND</span> rds.<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>host1</span><span style=color:#4070a0>&#39;</span>;
+
+ <span style=color:#007020;font-weight:700>source</span> <span style=color:#666>|</span> convert_from
+<span style=color:#60a0b0;font-style:italic>--------+--------------
+</span><span style=color:#60a0b0;font-style:italic></span> host1  <span style=color:#666>|</span> <span style=color:#40a070>563588056</span>
+(<span style=color:#40a070>1</span> <span style=color:#007020;font-weight:700>row</span>)               
+
+</code></pre></td></tr></table></div></div><p>All the matches and double check from were the data came from:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#666>#</span> <span style=color:#007020;font-weight:700>SELECT</span> ls.tableoid::regclass, rds.<span style=color:#007020;font-weight:700>source</span>,
+<span style=color:#666>#</span>        convert_from(pgp_pub_decrypt(ssn::<span style=color:#007020>text</span>::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name)
+<span style=color:#666>#</span> <span style=color:#007020;font-weight:700>FROM</span> local_search ls <span style=color:#007020;font-weight:700>JOIN</span>
+<span style=color:#666>#</span>     __person__pgp_rds <span style=color:#007020;font-weight:700>as</span> rds <span style=color:#007020;font-weight:700>USING</span> (id),
+<span style=color:#666>#</span>     keys ks
+<span style=color:#666>#</span> <span style=color:#007020;font-weight:700>WHERE</span> to_tsquery(<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>Asthma | Athetosis</span><span style=color:#4070a0>&#39;</span>) <span style=color:#666>@</span><span style=color:#666>@</span> ls._fts;
+
+     tableoid      <span style=color:#666>|</span> <span style=color:#007020;font-weight:700>source</span> <span style=color:#666>|</span> convert_from
+<span style=color:#60a0b0;font-style:italic>-------------------+--------+--------------
+</span><span style=color:#60a0b0;font-style:italic></span>local_search_host1 <span style=color:#666>|</span> host1  <span style=color:#666>|</span> <span style=color:#40a070>563588056</span>
+(<span style=color:#40a070>1</span> <span style=color:#007020;font-weight:700>row</span>)
+</code></pre></td></tr></table></div></div><p>And, we can&rsquo;t finish the article without showing how to use the ranking (did you see those setweight
+functions used in the function? You got it!):</p><pre><code>#  SELECT rds.id,
+#  convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
+#  convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,''::text)::bytea,'SQL_ASCII'::name),
+#  ts_rank( ls._FTS, query ) as rank
+#    FROM local_search ls JOIN
+#         __person__pgp_rds as rds ON (rds.id = ls.id AND rds.source = 'host1') JOIN
+#         keys ks USING (keyid),
+#         to_tsquery('Mario | Casas | (Casas:*A &amp; Mario:*B) ') query
+#    WHERE
+#        ls._FTS  @@ query
+#    ORDER BY rank DESC;
+
+ id | convert_from | convert_from |   rank   
+----+--------------+--------------+----------
+ 43 | Mario        | Casas        | 0.425549
+ 61 | Ana          | Casas        | 0.303964
+ 66 | Horacio      | Casas        | 0.303964
+(3 rows)
+</code></pre><p>Remember, think that this query is doing FTS, decryption and ranking in just one query, over a local and
+a remote server. You can&rsquo;t say that PostgreSQL isn&rsquo;t hipster enough!</p><p>I can&rsquo;t continue the article without showing the query plan executed by the local host (using buffers,
+analyze and verbose options).</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>EXPLAIN</span> (buffers,<span style=color:#007020;font-weight:700>verbose</span>,<span style=color:#007020;font-weight:700>analyze</span>) <span style=color:#007020;font-weight:700>SELECT</span> rds.id,
+ convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name),
+ convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name),
+ ts_rank( ls._FTS, query ) <span style=color:#007020;font-weight:700>as</span> rank
+   <span style=color:#007020;font-weight:700>FROM</span> local_search ls <span style=color:#007020;font-weight:700>JOIN</span>
+        __person__pgp_rds <span style=color:#007020;font-weight:700>as</span> rds <span style=color:#007020;font-weight:700>ON</span> (rds.id <span style=color:#666>=</span> ls.id <span style=color:#007020;font-weight:700>AND</span> rds.<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>host1</span><span style=color:#4070a0>&#39;</span>) <span style=color:#007020;font-weight:700>JOIN</span>
+        keys ks <span style=color:#007020;font-weight:700>USING</span> (keyid),
+        to_tsquery(<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>Mario | Casas | (Casas:*A &amp; Mario:*B) </span><span style=color:#4070a0>&#39;</span>) query
+   <span style=color:#007020;font-weight:700>WHERE</span>
+       ls._FTS  <span style=color:#666>@</span><span style=color:#666>@</span> query
+   <span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> rank <span style=color:#007020;font-weight:700>DESC</span>;
+
+
+....
+               <span style=color:#666>-</span><span style=color:#666>&gt;</span>  Materialize  (cost<span style=color:#666>=</span><span style=color:#40a070>100</span>.<span style=color:#40a070>00</span>..<span style=color:#40a070>117</span>.<span style=color:#40a070>09</span> <span style=color:#007020;font-weight:700>rows</span><span style=color:#666>=</span><span style=color:#40a070>3</span> width<span style=color:#666>=</span><span style=color:#40a070>122</span>) (actual time<span style=color:#666>=</span><span style=color:#40a070>62</span>.<span style=color:#40a070>946</span>..<span style=color:#40a070>62</span>.<span style=color:#40a070>971</span> <span style=color:#007020;font-weight:700>rows</span><span style=color:#666>=</span><span style=color:#40a070>50</span> loops<span style=color:#666>=</span><span style=color:#40a070>9</span>)
+                     <span style=color:#007020;font-weight:700>Output</span>: rds.id, rds.fname, rds.lname, rds.keyid
+                     <span style=color:#666>-</span><span style=color:#666>&gt;</span>  <span style=color:#007020;font-weight:700>Foreign</span> Scan <span style=color:#007020;font-weight:700>on</span> <span style=color:#007020;font-weight:700>public</span>.__person__pgp_rds rds  (cost<span style=color:#666>=</span><span style=color:#40a070>100</span>.<span style=color:#40a070>00</span>..<span style=color:#40a070>117</span>.<span style=color:#40a070>07</span> <span style=color:#007020;font-weight:700>rows</span><span style=color:#666>=</span><span style=color:#40a070>3</span> width<span style=color:#666>=</span><span style=color:#40a070>122</span>) (actual time<span style=color:#666>=</span><span style=color:#40a070>566</span>.<span style=color:#40a070>495</span>..<span style=color:#40a070>566</span>.<span style=color:#40a070>520</span> <span style=color:#007020;font-weight:700>rows</span><span style=color:#666>=</span><span style=color:#40a070>50</span> loops<span style=color:#666>=</span><span style=color:#40a070>1</span>)
+                           <span style=color:#007020;font-weight:700>Output</span>: rds.id, rds.fname, rds.lname, rds.keyid
+                           Remote <span style=color:#007020;font-weight:700>SQL</span>: <span style=color:#007020;font-weight:700>SELECT</span> id, keyid, fname, lname <span style=color:#007020;font-weight:700>FROM</span> enc_schema.__person__pgp <span style=color:#007020;font-weight:700>WHERE</span> ((<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>host1</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>))
+...
+ Planning time: <span style=color:#40a070>4</span>.<span style=color:#40a070>931</span> ms
+ Execution time: <span style=color:#40a070>2115</span>.<span style=color:#40a070>919</span> ms
+(<span style=color:#40a070>45</span> <span style=color:#007020;font-weight:700>rows</span>)
+
+</code></pre></td></tr></table></div></div><p>From the above <em>Query Plan</em> extract, we can see that the partitioning at RDS is transparent for the query.
+The execution node in charge of extracting data from the RDS is the <em>Foreign Scan</em>, which also
+provides the query executed remotely.</p><p>Wait a minute. Looks like the remote SQL is somehow dangerous to execute. It is not using the
+<em>id</em>! There is a reason for that, and its related on how postgres gather the foreign table statistics.
+If I use the <em>remote estimations</em> we can see how the remote SQL changes in the Query Plan:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql> <span style=color:#007020;font-weight:700>EXPLAIN</span> (<span style=color:#007020;font-weight:700>ANALYZE</span>, <span style=color:#007020;font-weight:700>VERBOSE</span>, BUFFERS) <span style=color:#007020;font-weight:700>SELECT</span> rds.id,
+      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name),
+      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name),
+      ts_rank( ls._FTS, query ) <span style=color:#007020;font-weight:700>as</span> rank
+        <span style=color:#007020;font-weight:700>FROM</span> local_search ls,  __person__pgp_rds_URE  rds  <span style=color:#007020;font-weight:700>JOIN</span>
+             keys ks <span style=color:#007020;font-weight:700>USING</span> (keyid),
+             to_tsquery(<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>Mario | Casas | (Casas:*A &amp; Mario:*B) </span><span style=color:#4070a0>&#39;</span>) query
+        <span style=color:#007020;font-weight:700>WHERE</span>                                                      
+            rds.id <span style=color:#666>=</span> ls.id
+              <span style=color:#007020;font-weight:700>AND</span> rds.<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>host1</span><span style=color:#4070a0>&#39;</span>
+            <span style=color:#007020;font-weight:700>AND</span>
+            ls._FTS  <span style=color:#666>@</span><span style=color:#666>@</span> query
+        <span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> rank <span style=color:#007020;font-weight:700>DESC</span>;
+</code></pre></td></tr></table></div></div><p>Query Plan (Foreign Scan execution node):</p><pre><code>...
+-&gt;  Foreign Scan on public.__person__pgp_rds_ure rds  (cost=100.01..108.21 rows=2 width=1018) (actual time=250.334..250.336 rows=1 loops=31)
+      Output: rds.id, rds.source, rds.partial_ssn, rds.ssn, rds.keyid, rds.fname, rds.lname, rds.description, rds.auth_drugs, rds.patology
+      Remote SQL: SELECT id, keyid, fname, lname FROM enc_schema.__person__pgp WHERE ((source = 'host1'::text)) AND (($1::bigint = id))
+...
+</code></pre><p>Foreign tables also need the local statistics to be updated. In the next examples
+there are 3 queries: using the <code>use_remote_estimate</code>, without previous ANALYZE and
+without <code>use_remote_estimate</code> and a query using the local estimations (<code>__person_pgp_rds</code>)
+after issuing ANALYZE and without <em>URE</em>.</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql>fts_proxy<span style=color:#666>=</span><span style=color:#666>#</span> <span>\</span>o <span style=color:#666>/</span>dev<span style=color:#666>/</span><span style=color:#007020;font-weight:700>null</span>
+fts_proxy<span style=color:#666>=</span><span style=color:#666>#</span>  <span style=color:#007020;font-weight:700>SELECT</span> rds.id,
+      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name),
+      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name),
+      ts_rank( ls._FTS, query ) <span style=color:#007020;font-weight:700>as</span> rank
+        <span style=color:#007020;font-weight:700>FROM</span> local_search ls,  __person__pgp_rds_URE  rds  <span style=color:#007020;font-weight:700>JOIN</span>
+             keys ks <span style=color:#007020;font-weight:700>USING</span> (keyid),
+             to_tsquery(<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>Mario | Casas | (Casas:*A &amp; Mario:*B) </span><span style=color:#4070a0>&#39;</span>) query
+        <span style=color:#007020;font-weight:700>WHERE</span>
+            rds.id <span style=color:#666>=</span> ls.id
+              <span style=color:#007020;font-weight:700>AND</span> rds.<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>host1</span><span style=color:#4070a0>&#39;</span>
+            <span style=color:#007020;font-weight:700>AND</span>
+            ls._FTS  <span style=color:#666>@</span><span style=color:#666>@</span> query
+        <span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> rank <span style=color:#007020;font-weight:700>DESC</span>;
+Time: <span style=color:#40a070>12299</span>,<span style=color:#40a070>691</span> ms
+
+fts_proxy<span style=color:#666>=</span><span style=color:#666>#</span>  <span style=color:#007020;font-weight:700>SELECT</span> rds.id,
+      convert_from(pgp_pub_decrypt(fname::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name),
+      convert_from(pgp_pub_decrypt(lname::bytea, ks.priv,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>&#39;</span>::<span style=color:#007020>text</span>)::bytea,<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>SQL_ASCII</span><span style=color:#4070a0>&#39;</span>::name),
+      ts_rank( ls._FTS, query ) <span style=color:#007020;font-weight:700>as</span> rank
+        <span style=color:#007020;font-weight:700>FROM</span> local_search ls,  __person__pgp_rds  rds  <span style=color:#007020;font-weight:700>JOIN</span>
+             keys ks <span style=color:#007020;font-weight:700>USING</span> (keyid),
+             to_tsquery(<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>Mario | Casas | (Casas:*A &amp; Mario:*B) </span><span style=color:#4070a0>&#39;</span>) query
+        <span style=color:#007020;font-weight:700>WHERE</span>
+            rds.id <span style=color:#666>=</span> ls.id
+              <span style=color:#007020;font-weight:700>AND</span> rds.<span style=color:#007020;font-weight:700>source</span> <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>host1</span><span style=color:#4070a0>&#39;</span>
+            <span style=color:#007020;font-weight:700>AND</span>
+            ls._FTS  <span style=color:#666>@</span><span style=color:#666>@</span> query
+        <span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> rank <span style=color:#007020;font-weight:700>DESC</span>;
+Time: <span style=color:#40a070>20249</span>,<span style=color:#40a070>719</span> ms
+
+<span style=color:#60a0b0;font-style:italic>-- AFTER ANALYZE on the FOREIGN TABLE __person_pgp_rds (in the local server)
+</span><span style=color:#60a0b0;font-style:italic></span>
+Time: <span style=color:#40a070>1656</span>,<span style=color:#40a070>912</span> ms
+
+</code></pre></td></tr></table></div></div><p>After analyzing both foreign tables , the execution time difference was calculated
+at 11% in favor of using local estimations.</p><blockquote><p>NOTE about UPDATES: it is necessary to code the UPDATE trigger also, in order to
+decrypt , modify and re-encrypt the data.</p></blockquote><h3 id=jsonjsonb-datatype-is-here-to-help>Json/jsonb datatype is here to help</h3><p>You can collapse all the data and use <code>json</code> datatype on the mapping and foreign table, allowing you to avoid the pain of pointing and decrypting data per column basis.</p><p>Put all the encrypted columns in a <code>bytea</code> column on RDS. The mapping table will look as follows:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> __person__pgp_map
+     (
+      keyid <span style=color:#007020>varchar</span>(<span style=color:#40a070>16</span>),
+      <span style=color:#007020;font-weight:700>source</span> <span style=color:#007020>varchar</span>(<span style=color:#40a070>8</span>),
+      ssn <span style=color:#007020>bigint</span>,
+      <span style=color:#007020;font-weight:700>data</span> jsonb
+    );
+</code></pre></td></tr></table></div></div><p>At insert time, just use a json column instead per column basis. Keep in mind that you will need to deal within the json contents.
+I found using this easier for insert, but the FTS needs some clean up to avoid insert column names in the <code>_fts</code> field at <code>local_search</code> tables.
+Also, for updates, the jsonb datatype will need extra work when extracting attributes.</p><h2 id=additional-functions-used-here>Additional functions used here</h2><p>In the insert statement above, you will see a user defined function that gets a random length vector of drugs. It is implemented using the following code:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">26
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">27
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">28
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">29
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">30
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">31
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">32
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">33
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">34
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">35
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">36
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">37
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">38
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">39
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">40
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">41
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">42
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">43
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">44
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">45
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">46
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">47
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">48
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">49
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">50
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">51
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">52
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">53
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> drugsList ( id <span style=color:#007020>serial</span> <span style=color:#007020;font-weight:700>PRIMARY</span> <span style=color:#007020;font-weight:700>KEY</span>, drugName <span style=color:#007020>text</span>);
+
+<span style=color:#007020;font-weight:700>INSERT</span> <span style=color:#007020;font-weight:700>INTO</span> drugsList(drugName) <span style=color:#007020;font-weight:700>SELECT</span> p.nameD <span style=color:#007020;font-weight:700>FROM</span> regexp_split_to_table(
+<span style=color:#4070a0>&#39;</span><span style=color:#4070a0>Acetaminophen
+</span><span style=color:#4070a0>Adderall
+</span><span style=color:#4070a0>Alprazolam
+</span><span style=color:#4070a0>Amitriptyline
+</span><span style=color:#4070a0>Amlodipine
+</span><span style=color:#4070a0>Amoxicillin
+</span><span style=color:#4070a0>Ativan
+</span><span style=color:#4070a0>Atorvastatin
+</span><span style=color:#4070a0>Azithromycin
+</span><span style=color:#4070a0>Ciprofloxacin
+</span><span style=color:#4070a0>Citalopram
+</span><span style=color:#4070a0>Clindamycin
+</span><span style=color:#4070a0>Clonazepam
+</span><span style=color:#4070a0>Codeine
+</span><span style=color:#4070a0>Cyclobenzaprine
+</span><span style=color:#4070a0>Cymbalta
+</span><span style=color:#4070a0>Doxycycline
+</span><span style=color:#4070a0>Gabapentin
+</span><span style=color:#4070a0>Hydrochlorothiazide
+</span><span style=color:#4070a0>Ibuprofen
+</span><span style=color:#4070a0>Lexapro
+</span><span style=color:#4070a0>Lisinopril
+</span><span style=color:#4070a0>Loratadine
+</span><span style=color:#4070a0>Lorazepam
+</span><span style=color:#4070a0>Losartan
+</span><span style=color:#4070a0>Lyrica
+</span><span style=color:#4070a0>Meloxicam
+</span><span style=color:#4070a0>Metformin
+</span><span style=color:#4070a0>Metoprolol
+</span><span style=color:#4070a0>Naproxen
+</span><span style=color:#4070a0>Omeprazole
+</span><span style=color:#4070a0>Oxycodone
+</span><span style=color:#4070a0>Pantoprazole
+</span><span style=color:#4070a0>Prednisone
+</span><span style=color:#4070a0>Tramadol
+</span><span style=color:#4070a0>Trazodone
+</span><span style=color:#4070a0>Viagra
+</span><span style=color:#4070a0>Wellbutrin
+</span><span style=color:#4070a0>Xanax
+</span><span style=color:#4070a0>Zoloft</span><span style=color:#4070a0>&#39;</span>, <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>\n</span><span style=color:#4070a0>&#39;</span>) p(nameD);
+
+<span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>OR</span> <span style=color:#007020;font-weight:700>REPLACE</span> <span style=color:#007020;font-weight:700>FUNCTION</span> get_drugs_random(<span style=color:#007020>int</span>)
+       <span style=color:#007020;font-weight:700>RETURNS</span> <span style=color:#007020>text</span>[] <span style=color:#007020;font-weight:700>AS</span>
+      <span>$</span>BODY$
+      <span style=color:#007020;font-weight:700>WITH</span> rdrugs(dname) <span style=color:#007020;font-weight:700>AS</span> (
+        <span style=color:#007020;font-weight:700>SELECT</span> drugName <span style=color:#007020;font-weight:700>FROM</span> drugsList p <span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> random() <span style=color:#007020;font-weight:700>LIMIT</span> <span>$</span><span style=color:#40a070>1</span>
+      )
+      <span style=color:#007020;font-weight:700>SELECT</span> array_agg(dname) <span style=color:#007020;font-weight:700>FROM</span> rdrugs ;
+<span>$</span>BODY$
+<span style=color:#007020;font-weight:700>LANGUAGE</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>sql</span><span style=color:#4070a0>&#39;</span> <span style=color:#007020;font-weight:700>VOLATILE</span>;
+</code></pre></td></tr></table></div></div><h2 id=references>References</h2><p>A very awesome tutorial about FTS for PostgreSQL can be found <a href=http://www.sai.msu.su/~megera/postgres/fts/doc/appendixes.html>here</a>.</p><p><a href=http://www.drugs.com/drug_information.html>Source for drugs list</a></p><p><a href=https://simple.wikipedia.org/wiki/List_of_diseases>Source for diseases</a></p><p><a href=https://www.gnupg.org/gph/en/manual/c14.html>Getting started with GPG keys</a></p><p><a href=https://aws.amazon.com/cli/>AWS command line tool</a></p><p>Discussion in the community mailing lis <a href=http://postgresql.nabble.com/Fast-Search-on-Encrypted-Feild-td1863960.html>here</a></p><details closed class="f6 fw7 input-reset"><dl class="f6 lh-copy"><dt class=fw7>Posted on:</dt><dd class="fw5 ml0">March 23, 2016</dd></dl><dl class="f6 lh-copy"><dt class=fw7>Length:</dt><dd class="fw5 ml0">16 minute read, 3306 words</dd></dl><dl class="f6 lh-copy"><dt class=fw7>Categories:</dt><dd class="fw5 ml0"><a href=/categories/theme-features>Theme Features</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>Series:</dt><dd class="fw5 ml0"><a href=/series/getting-started>Getting Started</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>Tags:</dt><dd class="fw5 ml0"><a href=/tags/hugo-site>hugo-site</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>See Also:</dt><dd class="fw5 ml0"><a href=/blog/2020-01/openlabs/>Open Labs</a></dd><dd class="fw5 ml0"><a href=/blog/2019-07/terraformwithpostgres/>What are the perks of using Postgres as a Terraform backend?</a></dd><dd class="fw5 ml0"><a href=/blog/2019-07/ansiblekubernetes/>Ansible and Kubernetes</a></dd></dl></details></section><footer class=post-footer><div class="post-pagination dt w-100 mt4 mb2"><a class="prev dtc pr2 tl v-top fw6" href=/blog/2016-01/alambre-project/>&larr; Alambre, ugly scripts to save time of your day</a>
+<a class="next dtc pl2 tr v-top fw6" href=/blog/2016-04/fts-in-mysql-5-7-with-innodb/>MySQL 5.7 InnoDB's Full Text Search overview. &rarr;</a></div></footer></article></section></main><footer class="site-footer pa4 bt b--transparent" role=contentinfo><nav class="db dt-l w-100"><p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">&copy; 2022 tr3sma, Madrid, Spain<br></p><div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0"><a class="dib pv1 ph2 link" href=/index.xml title="RSS Feed">RSS</a></div></nav></footer></div></body></html>

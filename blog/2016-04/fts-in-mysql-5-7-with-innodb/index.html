@@ -1,0 +1,340 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><title>MySQL 5.7 InnoDB's Full Text Search overview. | tr3sma</title><meta name=description content><meta property="og:title" content="MySQL 5.7 InnoDB's Full Text Search overview."><meta property="og:description" content="Main application: InnoDB&rsquo;s Full Text Search overview (with Shiny/R)
+Credits  Author: Emanuel Calvo
+Company: Pythian
+Thanks to Valerie Parham-Thompson @ Pythian and Daniel Prince @ Oracle.
+Repository available at Github.
+ For the whole article and the Shinyapp application is available here.
+Some initial thoughts A couple of days ago one of our customers came up with a question regarding FTS over InnoDB engine. Although the question is not answered in the current article, I came up with the conclusion that FTS is sometimes misunderstood."><meta property="og:type" content="article"><meta property="og:url" content="/blog/2016-04/fts-in-mysql-5-7-with-innodb/"><meta property="og:image" content="/blog/assets/thumbnail_db.png"><meta property="og:image" content="/blog/assets/tachyons-logo-script-feature.png"><meta property="article:published_time" content="2016-04-26T00:00:00+00:00"><meta property="article:modified_time" content="2016-04-26T00:00:00+00:00"><meta itemprop=name content="MySQL 5.7 InnoDB's Full Text Search overview."><meta itemprop=description content="Main application: InnoDB&rsquo;s Full Text Search overview (with Shiny/R)
+Credits  Author: Emanuel Calvo
+Company: Pythian
+Thanks to Valerie Parham-Thompson @ Pythian and Daniel Prince @ Oracle.
+Repository available at Github.
+ For the whole article and the Shinyapp application is available here.
+Some initial thoughts A couple of days ago one of our customers came up with a question regarding FTS over InnoDB engine. Although the question is not answered in the current article, I came up with the conclusion that FTS is sometimes misunderstood."><meta itemprop=datePublished content="2016-04-26T00:00:00+00:00"><meta itemprop=dateModified content="2016-04-26T00:00:00+00:00"><meta itemprop=wordCount content="2646"><meta itemprop=image content="/blog/assets/thumbnail_db.png"><meta itemprop=image content="/blog/assets/tachyons-logo-script-feature.png"><meta itemprop=keywords content="hugo-site,"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="/blog/assets/thumbnail_db.png"><meta name=twitter:title content="MySQL 5.7 InnoDB's Full Text Search overview."><meta name=twitter:description content="Main application: InnoDB&rsquo;s Full Text Search overview (with Shiny/R)
+Credits  Author: Emanuel Calvo
+Company: Pythian
+Thanks to Valerie Parham-Thompson @ Pythian and Daniel Prince @ Oracle.
+Repository available at Github.
+ For the whole article and the Shinyapp application is available here.
+Some initial thoughts A couple of days ago one of our customers came up with a question regarding FTS over InnoDB engine. Although the question is not answered in the current article, I came up with the conclusion that FTS is sometimes misunderstood."><meta name=twitter:site content="@3manuek"><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','G-GY0KSNNSTL','auto');ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script><!--[if IE]><script src=//html5shiv.googlecode.com/svn/trunk/html5.js></script><![endif]--><link rel="shortcut icon" href="/img/favicon.ico?v=0" type=image/x-icon><link rel=icon href="/img/favicon.ico?v=0" type=image/x-icon><link rel=stylesheet href=/style.main.min.af051a891b2af29b5e832059f2d65564f8acece3291dcaca54df6ef06e3e084e.css integrity="sha256-rwUaiRsq8ptegyBZ8tZVZPis7OMpHcrKVN9u8G4+CE4=" media=screen></head><body><div class="grid-container single"><header class="site-header pa4 bb b--transparent" role=banner><nav class="site-nav db dt-l w-100" role=nav><a class="site-brand db dtc-l v-mid link no-underline w-100 w-33-l tc tl-l" href=/ title=Home><img src=/img/firma.png class="dib db-l h2 w-auto" alt=tr3sma></a><div class="site-links db dtc-l v-mid w-100 w-47-l tc tr-l mt3 mt0-l"><a class="link f6 f5-l dib pv1 ph2" href=/ title="Home Page">Home</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/about/ title="About tr3sma">About</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/blog/ title=Blog>Blog</a>
+<a class="link f6 f5-l dib pv1 ph2" href=/contact/ title="Contact Form">Contact</a></div></nav></header><main class="page-main pa4" role=main><section class="page-content mw7 center"><article class="post-content pa0 ph4-l"><header class=post-header><h1 class="f2 f1-m f-subheadline-l fw5-ns mv4 lh-solid tracked-tight">MySQL 5.7 InnoDB's Full Text Search overview.</h1><h2 class="f7 fw7 measure mv0 ttu tracked">MySQL (+5.7) InnoDB's Full Text Search overview with a dynamic application.</h2><p class="f6 measure lh-copy mv1">By 3manuek in <a href=/categories/theme-features>Theme Features</a></p><p class="f7 db mv0 ttu">April 26, 2016</p></header><section class="post-body pt5 pb4"><p>Main application:
+<a href=https://3manuek.shinyapps.io/FTS_Innodb/>InnoDB&rsquo;s Full Text Search overview (with Shiny/R)</a></p><h2 id=credits>Credits</h2><blockquote><p>Author: Emanuel Calvo</p><p>Company: Pythian</p><p>Thanks to Valerie Parham-Thompson @ Pythian and Daniel Prince @ Oracle.</p><p>Repository available at <a href=https://github.com/3manuek/fts_article>Github</a>.</p></blockquote><p>For the whole article and the Shinyapp application is available <a href=https://3manuek.shinyapps.io/FTS_Innodb/>here</a>.</p><h2 id=some-initial-thoughts>Some initial thoughts</h2><p>A couple of days ago one of our customers came up with a question regarding FTS
+over InnoDB engine. Although the question is not answered in the current article,
+I came up with the conclusion that FTS is sometimes misunderstood.</p><p>The point of this <em>article</em> is to show dynamically how the search algorithms work,
+using non-fictional data (data sources were downloaded from <a href=www.gutenberg.org>Gutenberg project</a>
+) within an easy interface.</p><p>In order to show the effects off the field sizes over the query expansion algorithm,
+you will see two main tables (bookContent and bookContentByLine) both containing
+the same books in different approaches: by line and by paragraph. You&rsquo;ll see the
+noise generated by the <code>QUERY EXPANSION</code> algorithm when phrases are too large.</p><p>The current article has been developed using Shiny/R in order to allow you to see
+the effects of the algorithms.</p><p>For the sake of simplicity, in this article we won&rsquo;t go through the FTS parsers.
+Probably that would be material for a future post.</p><h2 id=why-i-consider-fts-sometimes-misunderstood>Why I consider FTS sometimes misunderstood?</h2><p>FTS is a technology that can be use for any purpose, not only simple searches.
+There is a myth that the FTS only should be placed on clusters for that purpose,
+which I agree. However, certain bussines rules require complex searches, and
+having such feature can be a win.</p><p>RDBMS aren&rsquo;t a good place for massive amount of FTS queries, without using any
+of the join capabilities that they offer, or the ACID complaints.</p><p>As I said above, FTS is totally acceptable in RDBMS, if you are using at least
+one RDBMS critical feature, required by your bussines model.</p><h2 id=action>Action!</h2><p>Here is an example of how ranks differ among algorithms and field sizes using the word &lsquo;country&rsquo;:</p><p>To start showing the effects of the algorithms, the following example searches
+the word &lsquo;country&rsquo; using <code>query expansion</code>. This means that we are not looking
+only the exact matches, but also the entries that appear the most when the
+the exact match has been found.</p><p>In the <code>SELECT</code> clause you&rsquo;ll see both FTS expressions using <code>NATURAL LANGUAGE</code>
+with query expansion and <code>BOOLEAN</code>modes respectively.</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>set</span> <span style=color:#007020;font-weight:700>global</span> innodb_ft_aux_table <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>ftslab/bookContentByLine</span><span style=color:#4070a0>&#39;</span>;
+
+<span style=color:#007020;font-weight:700>SELECT</span>  content, bookid, group_concat(it.<span style=color:#007020;font-weight:700>POSITION</span>) <span style=color:#007020;font-weight:700>as</span> pos,
+        round(<span style=color:#007020;font-weight:700>MATCH</span>(content) AGAINST (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>country</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020;font-weight:700>NATURAL</span> <span style=color:#007020;font-weight:700>LANGUAGE</span> <span style=color:#007020;font-weight:700>MODE</span> <span style=color:#007020;font-weight:700>WITH</span> QUERY EXPANSION)) <span style=color:#007020;font-weight:700>as</span> QERank,
+        round(<span style=color:#007020;font-weight:700>MATCH</span>(content) AGAINST (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>country</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020>BOOLEAN</span> <span style=color:#007020;font-weight:700>MODE</span>)) <span style=color:#007020;font-weight:700>as</span> BoolRank
+      <span style=color:#007020;font-weight:700>FROM</span> bookContentByLine bl <span style=color:#007020;font-weight:700>join</span> information_schema.INNODB_FT_INDEX_TABLE it
+          <span style=color:#007020;font-weight:700>ON</span> (bl.FTS_DOC_ID <span style=color:#666>=</span> it.DOC_ID)  
+      <span style=color:#007020;font-weight:700>WHERE</span>  <span style=color:#007020;font-weight:700>MATCH</span>(content) AGAINST (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>country</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020;font-weight:700>NATURAL</span> <span style=color:#007020;font-weight:700>LANGUAGE</span> <span style=color:#007020;font-weight:700>MODE</span> <span style=color:#007020;font-weight:700>WITH</span> QUERY EXPANSION)
+          <span style=color:#007020;font-weight:700>AND</span> it.WORD <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>country</span><span style=color:#4070a0>&#39;</span>
+     <span style=color:#007020;font-weight:700>GROUP</span> <span style=color:#007020;font-weight:700>BY</span> FTS_DOC_ID
+     <span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> <span style=color:#40a070>4</span> <span style=color:#007020;font-weight:700>DESC</span>
+     <span style=color:#007020;font-weight:700>LIMIT</span> <span style=color:#40a070>10</span> ;
+</code></pre></td></tr></table></div></div><p>Result:</p><pre><code>+-----------------------------------------------------------------------------+--------+-----+--------+--------+
+|content                                                                      | bookid | pos | QERank |BoolRank|
++-----------------------------------------------------------------------------+--------+-----+--------+--------+
+|&quot;country in September, migrating into Holland, and leave their mates behind&quot; |  15707 | 1   |    105 |      7 |
+|&quot;unsatisfied desire to serve his country, the two prevalent enthusiasms at&quot;  |  15707 | 33  |     98 |      7 |
+|&quot;Language, Vol. I. p. 212. In this country, where four or five horses travel&quot;|  15707 | 35  |     93 |      7 |
+|&quot;inflicting immense damage upon the country. Whereupon the Florentines&quot;      |   1232 | 36  |     89 |      7 |
+|&quot;made for a country of twenty or thirty millionsâ€™ population, can be laid&quot; |  39064 | 12  |     89 |      7 |
+|&quot;The spiders of this country manufacture nets of various forms, adapted to&quot;  |  15707 | 21  |     87 |      7 |
+|&quot;a velvet-covered arm-chair at my head! This country is too decadent&quot;        |  33415 | 45  |     86 |      7 |
+|&quot;country may be ennobled, and under its auspices may be verified that&quot;       |   1232 | 1   |     84 |      7 |
+|&quot;name. The writer of this unpublished pamphlet sees his country in a&quot;        |  39064 | 56  |     84 |      7 |
+|&quot;In our country, Mr. Pennant informs us, that some quails migrate, and&quot;      |  15707 | 8   |     83 |      7 |
+|&quot;all the morning in passing over the adjacent country.&quot; (Voyage to Senegal,&quot; |  15707 | 46  |     82 |      7 |
+|&quot;the electoral system of the country. Immediately an outcry burst out&quot;       |  39064 | 29  |     82 |      7 |
+|&quot;country, under a most excellent president, wherein all cities had their&quot;    |   1232 | 1   |     81 |      7 |
+|&quot;Though in this country horses shew little vestiges of policy, yet in the&quot;   |  15707 | 16  |     81 |      7 |
+|&quot;country districts. As Lucca had five gates, he divided his own country&quot;     |   1232 | 1,63|     80 |     14 |
++-----------------------------------------------------------------------------+--------+-----+--------+--------+
+15 rows in set (1,16 sec)
+</code></pre><p>The noise generated by the query expansion is expected and described in the official documentation <a href=https://dev.mysql.com/doc/refman/5.7/en/fulltext-query-expansion.html>here</a>.</p><p>The interesting case is the following row, which has 2 exact occurrences and it is not the highest rank using query
+extension. Remember, this is expected.</p><pre><code>Text: &quot;country districts. As Lucca had five gates, he divided his own country&quot;
+bookid: 1232
+pos: 1,63
+QERank: 80
+BoolRank: 14
+</code></pre><p>This is even worser when using large sentences. In the example bellow you will see the same query, against the table
+storing by paragraph. The boolean rank shows some of the entries way above others, however the query extension
+locates at the top records that not necessarily has a lot of exact matches.</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>SET</span> <span style=color:#007020;font-weight:700>GLOBAL</span> innodb_ft_aux_table <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>ftslab/bookContent</span><span style=color:#4070a0>&#39;</span>;
+
+<span style=color:#007020;font-weight:700>SELECT</span> bookid, FTS_DOC_ID,
+                group_concat(it.<span style=color:#007020;font-weight:700>POSITION</span>) <span style=color:#007020;font-weight:700>as</span> positions,
+                round(<span style=color:#007020;font-weight:700>MATCH</span>(content) AGAINST (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>country</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020;font-weight:700>NATURAL</span> <span style=color:#007020;font-weight:700>LANGUAGE</span> <span style=color:#007020;font-weight:700>MODE</span> <span style=color:#007020;font-weight:700>WITH</span> QUERY EXPANSION)) <span style=color:#007020;font-weight:700>as</span> QERank,
+                round(<span style=color:#007020;font-weight:700>MATCH</span>(content) AGAINST (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>country</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020>BOOLEAN</span> <span style=color:#007020;font-weight:700>MODE</span>)) <span style=color:#007020;font-weight:700>as</span> BooleanRank,
+                <span style=color:#007020;font-weight:700>length</span>(content) <span style=color:#007020;font-weight:700>as</span> len
+          <span style=color:#007020;font-weight:700>FROM</span> bookContent bl <span style=color:#007020;font-weight:700>join</span> information_schema.INNODB_FT_INDEX_TABLE it <span style=color:#007020;font-weight:700>ON</span> (bl.FTS_DOC_ID <span style=color:#666>=</span> it.DOC_ID)  
+          <span style=color:#007020;font-weight:700>WHERE</span>  <span style=color:#007020;font-weight:700>MATCH</span>(content) AGAINST (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>country</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020;font-weight:700>NATURAL</span> <span style=color:#007020;font-weight:700>LANGUAGE</span> <span style=color:#007020;font-weight:700>MODE</span> <span style=color:#007020;font-weight:700>WITH</span> QUERY EXPANSION)
+              <span style=color:#007020;font-weight:700>AND</span> it.WORD <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>country</span><span style=color:#4070a0>&#39;</span>
+          <span style=color:#007020;font-weight:700>GROUP</span> <span style=color:#007020;font-weight:700>BY</span> FTS_DOC_ID
+          <span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> QERank <span style=color:#007020;font-weight:700>DESC</span>
+          <span style=color:#007020;font-weight:700>LIMIT</span> <span style=color:#40a070>10</span> ;
+</code></pre></td></tr></table></div></div><p>Result:</p><pre><code>+--------+------------+-----------------+--------+-------------+-------+
+| bookid | FTS_DOC_ID | positions       | QERank | BooleanRank | len   |
++--------+------------+-----------------+--------+-------------+-------+
+|  16452 |      17637 | 942,2552,9084   |  32494 |          10 | 51790 |
+|  16452 |      17827 | 31699           |  30232 |           3 | 51701 |
+|  16452 |      17761 | 667,47646       |  29517 |           7 | 50264 |
+|  16452 |      17791 | 13566           |  28888 |           3 | 49129 |
+|  16452 |      17927 | 23259,7044      |  26731 |           7 | 48983 |
+|  16452 |      17839 | 9012,199        |  24933 |           7 | 44451 |
+|  16452 |      17815 | 29318           |  24745 |           3 | 44011 |
+|  16452 |      17729 | 895,16485,24034 |  23305 |          10 | 42612 |
+|  16452 |      17621 | 1765            |  19935 |           3 | 36698 |
+|  16452 |      17803 | 3942            |  17552 |           3 | 30586 |
++--------+------------+-----------------+--------+-------------+-------+
+10 rows in set (1,88 sec)
+</code></pre><p>The query expansion is useful when you intend to search which entries contain
+more words that appear frequently within the search term. Having large text fields
+increase the probability to have more words that appear among the search term.
+In the case of <code>bookContent</code> table (by paragraph table), the average field size
+is <code>r rs$len</code> characters.</p><h2 id=the-innodb_ft_index_table>The <code>INNODB_FT_INDEX_TABLE</code></h2><p>There is a way to play with the contents of the FTS indexes. As you may noticed
+in the previous examples, I used the <code>set global innodb_ft_aux_table = 'ftslab/bookContent';</code>
+statement, which loads the index content to memory for an easy querying.</p><p>If you use RDS, the option <code>innodb_ft_aux_table</code> is not available as it is GLOBAL
+and require SUPER privileges.</p><p>i.e. You can easily get the most frequent tokens:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>SELECT</span> WORD,<span style=color:#007020;font-weight:700>count</span>(<span style=color:#666>*</span>)
+           <span style=color:#007020;font-weight:700>FROM</span> information_schema.INNODB_FT_INDEX_TABLE   
+           <span style=color:#007020;font-weight:700>group</span> <span style=color:#007020;font-weight:700>by</span> WORD <span style=color:#007020;font-weight:700>having</span> <span style=color:#007020;font-weight:700>count</span>(<span style=color:#666>*</span>) <span style=color:#666>&gt;</span> <span style=color:#40a070>1000</span>
+           <span style=color:#007020;font-weight:700>order</span> <span style=color:#007020;font-weight:700>by</span> <span style=color:#40a070>2</span>
+           <span style=color:#007020;font-weight:700>limit</span> <span style=color:#40a070>10</span>;
+</code></pre></td></tr></table></div></div><p>Result:</p><pre><code>+--------+----------+
+| WORD   | count(*) |
++--------+----------+
+| should |     1023 |
+| yet    |     1027 |
+| any    |     1070 |
+| like   |     1071 |
+| been   |     1073 |
+| first  |     1080 |
+| nor    |     1087 |
+| your   |     1106 |
+| thou   |     1130 |
+| shall  |     1164 |
++--------+----------+
+10 rows in set (5,40 sec)
+</code></pre><p>Probably it isn&rsquo;t a very useful information as most of this words appears too frequently
+and are modal verbs, adverbs, pronouns, determiners, etc. It could be the case that you
+are not interested on indexing those words. If that&rsquo;s the case you can add them as <code>stopwords</code>
+in your own stopwords table. Specially if you are more interested in boolean searches, loosing
+some part of the language expressions. I built I query for this situation to allow us to build
+the stopwords table using the current words that we want to add to the filtering:</p><pre><code>(ftslab) &gt; select group_concat(WORD) FROM (select distinct WORD  
+  FROM information_schema.INNODB_FT_INDEX_TABLE               
+  group by WORD having count(*) &gt; 1000) d\G
+*************************** 1. row ***************************
+group_concat(WORD): all,and,any,been,but,can,first,had,has,have,her,him,his,into,
+its,like,may,more,nor,not,now,one,only,other,our,said,shall,she,should,some,such,
+than,their,them,then,there,these,they,those,thou,thus,thy,time,were,which,would,
+yet,you,your
+1 row in set (5,28 sec)
+</code></pre><p>Let&rsquo;s build our filter table using both default and new entries and keeping the
+alphabetical order:</p><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> bookContentByLine_stopwords(value <span style=color:#007020>VARCHAR</span>(<span style=color:#40a070>30</span>)) ENGINE <span style=color:#666>=</span> INNODB;
+
+<span style=color:#007020;font-weight:700>INSERT</span> <span style=color:#007020;font-weight:700>INTO</span> bookContentByLine_stopwords
+<span style=color:#007020;font-weight:700>SELECT</span> value <span style=color:#007020;font-weight:700>FROM</span> (
+    <span style=color:#007020;font-weight:700>SELECT</span> value <span style=color:#007020;font-weight:700>FROM</span>
+    INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD
+    <span style=color:#007020;font-weight:700>UNION</span>
+    <span style=color:#007020;font-weight:700>SELECT</span> <span style=color:#007020;font-weight:700>DISTINCT</span> WORD <span style=color:#007020;font-weight:700>as</span> value  
+      <span style=color:#007020;font-weight:700>FROM</span> information_schema.INNODB_FT_INDEX_TABLE               
+      <span style=color:#007020;font-weight:700>GROUP</span> <span style=color:#007020;font-weight:700>BY</span> WORD <span style=color:#007020;font-weight:700>having</span> <span style=color:#007020;font-weight:700>count</span>(<span style=color:#666>*</span>) <span style=color:#666>&gt;</span> <span style=color:#40a070>1000</span>
+) allEntries
+<span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> value <span style=color:#007020;font-weight:700>ASC</span>;
+
+<span style=color:#007020;font-weight:700>DROP</span> <span style=color:#007020;font-weight:700>INDEX</span> ftscontent <span style=color:#007020;font-weight:700>ON</span> bookContentByLine;
+<span style=color:#007020;font-weight:700>SET</span> <span style=color:#007020;font-weight:700>GLOBAL</span> innodb_ft_server_stopword_table <span style=color:#666>=</span> <span style=color:#4070a0>&#39;</span><span style=color:#4070a0>ftslab/bookContentByLine_stopwords</span><span style=color:#4070a0>&#39;</span>;
+<span style=color:#007020;font-weight:700>CREATE</span> FULLTEXT <span style=color:#007020;font-weight:700>INDEX</span> ftscontent <span style=color:#007020;font-weight:700>ON</span> bookContentByLine(content);
+
+</code></pre></td></tr></table></div></div><p>Checking the contents of the index is easy as:</p><pre><code>(ftslab) &gt; select *
+          from information_schema.INNODB_FT_INDEX_TABLE
+          WHERE lower(WORD) like '%country%';
++------------------+--------------+-------------+-----------+--------+----------+
+| WORD             | FIRST_DOC_ID | LAST_DOC_ID | DOC_COUNT | DOC_ID | POSITION |
++------------------+--------------+-------------+-----------+--------+----------+
+| country          |          149 |         787 |        28 |    733 |      265 |
+| country          |          149 |         787 |        28 |    733 |     1342 |
+| countrydistricts |          733 |         733 |         1 |    733 |      816 |
+| thecountry       |          249 |         733 |         2 |    733 |      750 |
++------------------+--------------+-------------+-----------+--------+----------+
+4 rows in set (0,08 sec)
+
+(ftslab) &gt; select *
+          from information_schema.INNODB_FT_INDEX_TABLE
+          WHERE DOC_ID = 155 AND lower(WORD) like '%country%';
++---------+--------------+-------------+-----------+--------+----------+
+| WORD    | FIRST_DOC_ID | LAST_DOC_ID | DOC_COUNT | DOC_ID | POSITION |
++---------+--------------+-------------+-----------+--------+----------+
+| country |          149 |         787 |        28 |    155 |       31 |
+| country |          149 |         787 |        28 |    155 |      495 |
+| country |          149 |         787 |        28 |    155 |      158 |
+| country |          149 |         787 |        28 |    155 |      525 |
++---------+--------------+-------------+-----------+--------+----------+
+4 rows in set (0,09 sec)
+
+</code></pre><blockquote><p>In the example shown before the is no intention to compare ranks score as they are based in different algorithms.
+The idea there is to show that QUERY EXPANSION can have non desire results in some cases due to its mechanism.</p></blockquote><h3 id=going-ahead-on-choosing-stop-words>Going ahead on choosing stop words</h3><p>The full <a href="https://en.wikipedia.org/wiki/Zipf's_law">article</a> is amazingly interesting. In a brief, it says that
+the most frequent word will occur approximately twice as often as the second most frequent word, three times as
+often as the third most frequent word, and so on (rank-frequency distribution is an inverse relation).</p><p>The idea here is to measure how much index do we safe cutting those words that are extremely frequent and don&rsquo;t add
+a necessary meaning to the search.</p><h2 id=considerations-and-recommendations>Considerations and recommendations</h2><ul><li>Use QUERY EXPANSION only if you are interested to search relations over exact matches. Remember that the field
+size is crucial when using this.</li><li>FTS is not the best fit for exact string matches in single columns. You don&rsquo;t want to use FTS for searching emails in
+a single column, name and lastname fields , i.e. For those, you&rsquo;ll probably use other techniques as reverse searches or
+exact match operator (=).</li><li>Keep your FTS indexes short. Do not add ALL the text columns. Parse first from your application the user search and
+adapt the query.</li><li>If you are using BOOLEAN MODE, you can use the rank score to filter rows. MySQL is clever enough to optimize the
+FTS functions to avoid double executions. You can do this using something like:
+<code>match(content,title) against ("first (&lt;second >third)") > 1</code>
+Generally, scores lower than 1 can be ignored when using boolean or natural mode searches.</li><li><code>OPTIMIZE TABLE</code> does a rebuild of the table. To avoid this, set <code>innodb_optimize_fulltext_only=1</code> in order to do an incremental
+maintance on the table.</li><li>Recall that NATURAL LANGUAGE MODE does not take the operands as the BOOLEAN MODE. This affects the ranking score (try <strong>+bad (thing)</strong> i.e.)</li><li>If you plan to order by rank, it is not necessary to specify the clause <code>ORDER BY</code> as InnoDB does the order after retrieve the doc ids . Also,the behavior is different from the default as it returns the heaviest at the top (like an <strong>ORDER BY rank DESC</strong>).</li><li>If you come from MyISAM&rsquo;s FTS implementation, recall that the ranking scoring is different.</li><li>Create the FULLTEXT index after the data is loaded <a href=http://dev.mysql.com/doc/refman/5.7/en/optimizing-innodb-bulk-data-loading.html>InnoDB bulk load</a>. When restoring FTS backups, you will probably hit the &ldquo;ERROR 182 (HY000) at line nn: Invalid InnoDB FTS Doc ID&rdquo;.</li><li>Try to avoid using use more than one FTS expression in the where clause. Keep in mind that this affects the order in the results and
+it consumes a considerably amount of CPU. InnoDB orders by the latest expression in the WHERE clause. <a href="https://dev.mysql.com/worklog/task/?id=7123">WL#7123</a></li><li>Also, if avoiding the rank information in the projection (SELECT clause) and using other aggregations like <code>count(*)</code>, will use
+the &ldquo;no ranking&rdquo; FT_hints. The <code>limit</code> hint won&rsquo;t be used if invoked explicitely an <code>ORDER BY</code> and th <code>MATCH</code> clause in the projection.</li></ul><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 7
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 8
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f"> 9
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">10
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">11
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">12
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">13
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">14
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">15
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">16
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">17
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">18
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">19
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">20
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">21
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">22
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">23
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">24
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">25
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>explain</span>  <span style=color:#007020;font-weight:700>select</span>  <span style=color:#666>*</span>
+                      <span style=color:#007020;font-weight:700>from</span> bookContentByLine
+                      <span style=color:#007020;font-weight:700>where</span> <span style=color:#007020;font-weight:700>match</span>(content) against (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>+home</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020>BOOLEAN</span> <span style=color:#007020;font-weight:700>MODE</span>)
+                      <span style=color:#007020;font-weight:700>ORDER</span> <span style=color:#007020;font-weight:700>BY</span> FTS_DOC_ID  
+                      <span style=color:#007020;font-weight:700>LIMIT</span> <span style=color:#40a070>10</span><span>\</span><span style=color:#007020;font-weight:700>G</span>
+  select_type: <span style=color:#007020;font-weight:700>SIMPLE</span>
+        <span style=color:#007020;font-weight:700>table</span>: bookContentByLine
+         <span style=color:#007020;font-weight:700>type</span>: fulltext
+        Extra: <span style=color:#007020;font-weight:700>Using</span> <span style=color:#007020;font-weight:700>where</span>; Ft_hints: no_ranking; <span style=color:#007020;font-weight:700>Using</span> filesort
+
+<span style=color:#007020;font-weight:700>explain</span>  <span style=color:#007020;font-weight:700>select</span>  <span style=color:#666>*</span>
+                      <span style=color:#007020;font-weight:700>from</span> bookContentByLine
+                      <span style=color:#007020;font-weight:700>where</span> <span style=color:#007020;font-weight:700>match</span>(content) against (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>+home</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020>BOOLEAN</span> <span style=color:#007020;font-weight:700>MODE</span>)
+                      <span style=color:#007020;font-weight:700>LIMIT</span> <span style=color:#40a070>10</span><span>\</span><span style=color:#007020;font-weight:700>G</span>
+        <span style=color:#007020;font-weight:700>table</span>: bookContentByLine
+         <span style=color:#007020;font-weight:700>type</span>: fulltext
+        Extra: <span style=color:#007020;font-weight:700>Using</span> <span style=color:#007020;font-weight:700>where</span>; Ft_hints: no_ranking, <span style=color:#007020;font-weight:700>limit</span> <span style=color:#666>=</span> <span style=color:#40a070>10</span>
+
+<span style=color:#007020;font-weight:700>explain</span>  <span style=color:#007020;font-weight:700>select</span>  <span style=color:#007020;font-weight:700>count</span>(content)
+                    <span style=color:#007020;font-weight:700>from</span> bookContentByLine
+                    <span style=color:#007020;font-weight:700>where</span> <span style=color:#007020;font-weight:700>match</span>(content) against (<span style=color:#4070a0>&#34;</span><span style=color:#4070a0>+home</span><span style=color:#4070a0>&#34;</span> <span style=color:#007020;font-weight:700>IN</span> <span style=color:#007020>BOOLEAN</span> <span style=color:#007020;font-weight:700>MODE</span>) <span>\</span><span style=color:#007020;font-weight:700>G</span>
+        <span style=color:#007020;font-weight:700>table</span>: bookContentByLine
+         <span style=color:#007020;font-weight:700>type</span>: fulltext
+        Extra: <span style=color:#007020;font-weight:700>Using</span> <span style=color:#007020;font-weight:700>where</span>; Ft_hints: no_ranking
+
+</code></pre></td></tr></table></div></div><ul><li>If you plan to use <code>FTS_DOC_ID</code> column with <code>AUTO_INCREMENT</code> option,
+have in mind that there is a limitation regarding this. You must declare
+a single column PRIMARY KEY constraint or as an UNIQUE index. Also, the data
+type is stricted as <code>bigint unsigned</code>. i.e:</li></ul><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sql data-lang=sql><span style=color:#007020;font-weight:700>CREATE</span> <span style=color:#007020;font-weight:700>TABLE</span> test ( FTS_DOC_ID <span style=color:#007020>bigint</span> unsigned  AUTO_INCREMENT,
+                    mainPk <span style=color:#007020>bigint</span>, other <span style=color:#007020>text</span>,
+                    <span style=color:#007020;font-weight:700>PRIMARY</span> <span style=color:#007020;font-weight:700>KEY</span>(mainPk),
+                    <span style=color:#007020;font-weight:700>UNIQUE</span>(FTS_DOC_ID)
+                    );
+</code></pre></td></tr></table></div></div><h3 id=ft_query_expansion_limit>FT_QUERY_EXPANSION_LIMIT</h3><p>This variable controls the number of top matches when using <code>WITH QUERY EXPANSION</code> (affects only MyISAM).</p><p><a href=http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_ft_query_expansion_limit>reference</a></p><h3 id=bug-80347---invalid-innodb-fts-doc-id>Bug 80347 - Invalid InnoDB FTS Doc ID</h3><blockquote><p>Submitted <a href="https://bugs.mysql.com/bug.php?id=80347">https://bugs.mysql.com/bug.php?id=80347</a></p></blockquote><div class=highlight><div style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><table style=border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block><tr><td style=vertical-align:top;padding:0;margin:0;border:0><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">1
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">2
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">3
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">4
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">5
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">6
+</span><span style="margin-right:.4em;padding:0 .4em;color:#7f7f7f">7
+</span></code></pre></td><td style=vertical-align:top;padding:0;margin:0;border:0;width:100%><pre style=background-color:#f0f0f0;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>emanuel@3laptop ~/sandboxes/rsandbox_5_7_9 $ ./m dumpTest &lt; full.dump
+ERROR <span style=color:#40a070>182</span> <span style=color:#666>(</span>HY000<span style=color:#666>)</span> at line 73: Invalid InnoDB FTS Doc ID
+
+emanuel@3laptop ~/sandboxes/rsandbox_5_7_9 $ ./m dumpTest &lt; ddl.dump
+emanuel@3laptop ~/sandboxes/rsandbox_5_7_9 $ ./m dumpTest &lt; onlyData.dump
+emanuel@3laptop ~/sandboxes/rsandbox_5_7_9 $ ./m dumpTest &lt; full.dump
+ERROR <span style=color:#40a070>182</span> <span style=color:#666>(</span>HY000<span style=color:#666>)</span> at line 73: Invalid InnoDB FTS Doc ID
+</code></pre></td></tr></table></div></div><p>mysqldump is not very clever if you use <code>FTS_DOC_ID</code>:</p><pre><code>2016-02-13T22:11:53.125300Z 19 [ERROR] InnoDB: Doc ID 10002 is too big. Its difference with largest used Doc ID 1 cannot exceed or equal to 10000
+</code></pre><p>It takes dumps without considering the restriction coded in
+<code>innobase/row/row0mysql.cc</code>:</p><pre><code>Difference between Doc IDs are restricted within
+4 bytes integer. See fts_get_encoded_len()
+</code></pre><p>The fix to this is backuping the table by chunks of 10000 documents.</p><h3 id=fine-tuning>Fine tuning</h3><p><a href=https://dev.mysql.com/doc/refman/5.7/en/fulltext-fine-tuning.html>Fine tuning</a>
+<a href=https://blogs.oracle.com/mysqlinnodb/entry/innodb_full_text_search_performance>Performance</a></p><h3 id=features-introduces>Features introduces</h3><h3 id=maintenance>Maintenance</h3><p><a href=https://dev.mysql.com/doc/refman/5.7/en/innodb-parameters.html#sysvar_innodb_optimize_fulltext_only>innodb_optimize_fulltext_only</a></p><h3 id=parsers-internals>Parsers internals</h3><p><a href=https://dev.mysql.com/doc/refman/5.7/en/writing-full-text-plugins.html>Writting FTS parser plugins</a></p><h2 id=version>Version</h2><p>This R Markdown document is made interactive using Shiny. Unlike the more traditional
+workflow of creating static reports, you can now create documents that allow your
+readers to change the assumptions underlying your analysis and see the results immediately.<br>To learn more, see <a href=http://rmarkdown.rstudio.com/authoring_shiny.html>Interactive Documents</a>.</p><blockquote></blockquote><details closed class="f6 fw7 input-reset"><dl class="f6 lh-copy"><dt class=fw7>Posted on:</dt><dd class="fw5 ml0">April 26, 2016</dd></dl><dl class="f6 lh-copy"><dt class=fw7>Length:</dt><dd class="fw5 ml0">13 minute read, 2646 words</dd></dl><dl class="f6 lh-copy"><dt class=fw7>Categories:</dt><dd class="fw5 ml0"><a href=/categories/theme-features>Theme Features</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>Series:</dt><dd class="fw5 ml0"><a href=/series/getting-started>Getting Started</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>Tags:</dt><dd class="fw5 ml0"><a href=/tags/hugo-site>hugo-site</a></dd></dl><dl class="f6 lh-copy"><dt class=fw7>See Also:</dt><dd class="fw5 ml0"><a href=/blog/2020-01/openlabs/>Open Labs</a></dd><dd class="fw5 ml0"><a href=/blog/2019-07/terraformwithpostgres/>What are the perks of using Postgres as a Terraform backend?</a></dd><dd class="fw5 ml0"><a href=/blog/2019-07/ansiblekubernetes/>Ansible and Kubernetes</a></dd></dl></details></section><footer class=post-footer><div class="post-pagination dt w-100 mt4 mb2"><a class="prev dtc pr2 tl v-top fw6" href=/blog/2016-03/multi-source-data-injection-to-postgres-rds-with-encryption-and-fts-support/>&larr; Multi source data injection to Postgres RDS with encryption and FTS support</a>
+<a class="next dtc pl2 tr v-top fw6" href=/blog/2016-05/random-databases-postgres/>Random data for PostgreSQL &rarr;</a></div></footer></article></section></main><footer class="site-footer pa4 bt b--transparent" role=contentinfo><nav class="db dt-l w-100"><p class="site-copyright f7 db dtc-l v-mid w-100 w-33-l tc tl-l pv2 pv0-l mv0 lh-copy">&copy; 2022 tr3sma, Madrid, Spain<br></p><div class="site-links f6 db dtc-l v-mid w-100 w-67-l tc tr-l pv2 pv0-l mv0"><a class="dib pv1 ph2 link" href=/index.xml title="RSS Feed">RSS</a></div></nav></footer></div></body></html>
